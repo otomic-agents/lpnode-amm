@@ -1,0 +1,30 @@
+{
+  "extends": "eslint-config-egg/typescript",
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "array-bracket-spacing": "off",
+    "newline-per-chained-call": "off",
+    "dot-notation": "off",
+    "comma-dangle": "off",
+    "jsdoc/require-param-description": "off",
+    "jsdoc/check-tag-names": "off",
+    "valid-jsdoc": "warn",
+    "indent": [
+      "error",
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "linebreak-style": [0, "unix", "windows"],
+    "quotes": "off",
+    "semi": ["error", "always"],
+    "strict": ["error", "global"],
+    "global-require": 0
+  }
+}

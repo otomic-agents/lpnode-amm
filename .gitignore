@@ -1,0 +1,13 @@
+node_modules
+.vscode
+dist
+log
+.idea
+data.json
+data.txt
+.DS_Store
+.history
+config_id
+src/env.ts
+src/dev.mongodb
+map/**/*
