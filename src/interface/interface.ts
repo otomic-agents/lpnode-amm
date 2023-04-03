@@ -13,14 +13,17 @@ interface IBridgeTokenConfigItem {
   };
   dst_chain_client_uri: string; // 目标链客户端的链接地址
 }
+
 enum ICoinType {
   Coin = "coin",
   StableCoin = "stable_coin",
 }
+
 interface IHedgeConfig {
   hedgeType: IHedgeType;
   hedgeAccount: string;
 }
+
 interface ILPConfig {
   lp_id_fake: string; // lp 的id
 }
@@ -43,9 +46,11 @@ interface ILPConfigCacheItem {
   dst_client_uri: string; // 'http://obridge-chain-client-evm-bsc-server-9006:9100/evm-client-9006',
   relay_api_key: string; // '96OZBSog7PeRHBn'
 }
+
 interface ILPConfigCache {
   bridges: ILPConfigCacheItem[];
 }
+
 enum ILpCmd {
   "EVENT_ASK_REPLY" = "EVENT_ASK_REPLY", // 询价的回答
   "CMD_UPDATE_QUOTE" = "CMD_UPDATE_QUOTE", // 报价Cmd
@@ -54,27 +59,37 @@ enum ILpCmd {
   "CMD_TRANSFER_IN_CONFIRM" = "CMD_TRANSFER_IN_CONFIRM", // B链发钱给用户Cmd
   "CMD_TRANSFER_IN_REFUND" = "CMD_TRANSFER_IN_REFUND", // B链取消Tx In Cmd
 }
+
 interface ICexCoinConfig {
   chainId: number;
   address: string;
   coinType: string;
+  addressLower: string;
   symbol: string;
   precision: number; // 币在Dex上的精度
 }
+
 interface IMarketOrderbookRet {
   code: number;
   data: { [key: string]: IOrderbookStoreItem };
 }
+
 enum IHedgeType {
   Null = "Null", // 不进行对冲
   CoinSpotHedge = "CoinSpotHedge", // 币本金 现货对冲
 }
+
 interface IHedgeClass {
   checkHedgeCond(ammContext: AmmContext);
+
   hedge(info: ISpotHedgeInfo);
+
   lockHedgeBalance(ammContext: AmmContext, accountId: string);
+
   writeJob(hedgeinfo: ISpotHedgeInfo);
+
   calculateCapacity(ammContext: AmmContext);
+
   getMinUsdAmount(): Promise<number>;
 }
 
@@ -88,15 +103,18 @@ interface IOrderbookStoreItem {
   bids: string[][];
   asks: string[][];
 }
+
 interface ISpotHedgeInfo {
   orderId: number; // Lp_orderId
   ammContext: AmmContext;
 }
+
 interface IBalanceLock {
   locked: string;
   lockedTime: number;
   lockedId: string;
 }
+
 export {
   ISpotHedgeInfo,
   IBridgeTokenConfigItem,

@@ -30,9 +30,10 @@ class Business {
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
     await quotation.asksQuote(AmmContext);
   }
+
   private async makeAmmContext(
     item: IBridgeTokenConfigItem,
-    msg: IEVENT_ASK_QUOTE
+    msg: IEVENT_ASK_QUOTE,
   ): Promise<AmmContext> {
     const [token0, token1]: [
       {
@@ -53,7 +54,7 @@ class Business {
       item.srcToken,
       item.dstToken,
       item.src_chain_id,
-      item.dst_chain_id
+      item.dst_chain_id,
     );
     if (!token0 || !token1) {
       logger.error(`token not found`);
@@ -112,6 +113,7 @@ class Business {
     };
     return context;
   }
+
   /**
    * Description 用户锁定价格时
    * @date 1/17/2023 - 9:11:56 PM
@@ -144,6 +146,7 @@ class Business {
   public async onTransferOut(msg: IEVENT_TRANSFER_OUT) {
     await eventProcessTransferOut.process(msg);
   }
+
   // eslint-disable-next-line valid-jsdoc
   /**
    * src chain 确认转出事件 (Step 6 Complete)
@@ -158,15 +161,15 @@ class Business {
     // -> CMD_TRANSFER_IN_REFUND
     const srcToken = _.get(
       msg,
-      "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.src_token"
+      "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.src_token",
     );
     const dstToken = _.get(
       msg,
-      "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.dst_token"
+      "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.dst_token",
     );
     const tokenConfigItem = dataConfig.findMsgChannelByStrTokenAndDstToken(
       srcToken,
-      dstToken
+      dstToken,
     );
     const msmqName = _.get(tokenConfigItem, "msmq_name", "");
     if (msmqName === "") {
@@ -186,10 +189,11 @@ class Business {
       ILpCmd.CMD_TRANSFER_IN_REFUND,
       "Channel",
       msmqName,
-      cmdMsg
+      cmdMsg,
     );
     redisPub.publish(msmqName, cmdMsg);
   }
 }
+
 const business: Business = new Business();
 export { business };

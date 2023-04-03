@@ -8,13 +8,20 @@ import {
 } from "../interface/interface";
 import { eventBus } from "../sys_lib/event.bus";
 import { logger } from "../sys_lib/logger";
+
 const axios = require("axios");
 import * as _ from "lodash";
+
 class Orderbook {
   private spotOrderbook: Map<string, IOrderbookStoreItem> = new Map();
+  public spotOrderbookOnceLoaded = false;
+
+  // public cumulativeErrorCount = 0;
+
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
     return this.spotOrderbook.get(stdSymbol);
   }
+
   public async init(): Promise<void> {
     logger.debug("初始化Orderbook..");
     this.startOrderbookGc();
@@ -44,7 +51,13 @@ class Orderbook {
    * @returns {Promise<void>} ""
    */
   private async syncSpotOrderbook(): Promise<void> {
-    await this.requestSpotOrderbook(); // Update and set up Spotorderbook
+    try {
+      await this.requestSpotOrderbook(); // Update and set up Spotorderbook
+      this.spotOrderbookOnceLoaded = true;
+    } catch (e) {
+      //
+    }
+
     setTimeout(() => {
       this.syncSpotOrderbook();
     }, 1000 * 10);
@@ -65,17 +78,18 @@ class Orderbook {
       logger.error(e);
     }
   }
+
   private async requestSpotOrderbook() {
     try {
       const orderbookServiceHost = _.get(
-        process,
-        "_sys_config.lp_market_host",
-        undefined
+          process,
+          "_sys_config.lp_market_host",
+          undefined,
       );
       const orderbookServicePort = _.get(
-        process,
-        "_sys_config.lp_market_port",
-        undefined
+          process,
+          "_sys_config.lp_market_port",
+          undefined,
       );
       if (!orderbookServiceHost) {
         throw "Unable to obtain orderbook service address";
@@ -96,9 +110,10 @@ class Orderbook {
     } catch (e) {
       const error: any = e;
       logger.error(
-        `An error occurred while obtaining the orderbook....`,
-        error.toString()
+          `An error occurred while obtaining the orderbook....`,
+          error.toString(),
       );
+      throw e;
     }
   }
 

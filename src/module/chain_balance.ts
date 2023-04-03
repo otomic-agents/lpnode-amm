@@ -10,7 +10,9 @@ import { getNumberFrom16 } from "../utils/ethjs_unit";
 const cTable = require("console.table");
 import { AsyncEach } from "../sys_lib/async_each";
 import { eventBus } from "../sys_lib/event.bus";
+
 const var_dump = require("var_dump");
+
 interface IChainListItem {
   chainId: number;
   clientUri: string;
@@ -32,14 +34,16 @@ class ChainBalance {
       };
     };
   } = {};
+
   public init() {
     logger.debug(`sync dex account balance`, "🟥");
     const chainList: IChainListItem[] = this.uniqDstChain();
-    this.getChainWalletInfo(chainList).then(async () => {
-      logger.debug("emit", "balance:load:complete");
-      // await TimeSleepMs(1000 * 20);
-      eventBus.emit("balance:load:complete");
-    });
+    this.getChainWalletInfo(chainList)
+        .then(async () => {
+          logger.debug("emit", "balance:load:complete");
+          // await TimeSleepMs(1000 * 20);
+          eventBus.emit("balance:load:complete");
+        });
     setTimeout(() => {
       this.init();
     }, 1000 * 60 * 10);
@@ -75,13 +79,13 @@ class ChainBalance {
           throw new Error("The server returned an error. status !==200");
         }
         this.setRemoteInfoToLocalBalance(
-          _.get(ret, "data.data", {}),
-          item.chainId
+            _.get(ret, "data.data", {}),
+            item.chainId,
         );
       } catch (e) {
         const err: any = e;
         logger.error(
-          `An error occurred with the request :${reqUrl} dex balance sync error:${err.toString()}`
+            `An error occurred with the request :${reqUrl} dex balance sync error:${err.toString()}`,
         );
       }
     };
@@ -108,46 +112,49 @@ class ChainBalance {
     logger.info(findKey, balance);
     return balance;
   }
+
   private setRemoteInfoToLocalBalance(
-    info: {
-      wallet_name: string;
-      token: string;
-      wallet_address: string;
-      balance_value: {
-        type: string;
-        hex: string;
-      };
-    }[],
-    chainId: number
+      info: {
+        wallet_name: string;
+        token: string;
+        wallet_address: string;
+        balance_value: {
+          type: string;
+          hex: string;
+        };
+      }[],
+      chainId: number,
   ) {
     for (const item of info) {
       _.set(
-        this.chainWalletBalance,
-        `Cid_${chainId}.${item.wallet_name}.balance.${item.token}`,
-        {
-          source: item.balance_value.hex,
-          balance: getNumberFrom16(item.balance_value.hex),
-          decimals: 0,
-        }
+          this.chainWalletBalance,
+          `Cid_${chainId}.${item.wallet_name}.balance.${item.token}`,
+          {
+            source: item.balance_value.hex,
+            balance: getNumberFrom16(item.balance_value.hex),
+            decimals: 0,
+          },
       ); // Set balance first so that it will not be overwritten
       _.set(this.chainWalletBalance, `Cid_${chainId}.${item.wallet_name}`, {
-        wallet_name: item.wallet_address,
+        wallet_name: item.wallet_name,
         address: item.wallet_address,
+        addressLower: item.wallet_address.toLowerCase(),
         balance: _.get(
-          this.chainWalletBalance,
-          `Cid_${chainId}.${item.wallet_name}.balance`
+            this.chainWalletBalance,
+            `Cid_${chainId}.${item.wallet_name}.balance`,
         ),
       });
     }
   }
+
   // @ts-ignore
   private reportBalanceInfo() {
     this.reporting = true;
     logger.debug("\r\n", "BalanceData:", "\r\n");
     for (const key in this.chainWalletBalance) {
       console.log(
-        key,
-        "___________________________________________________________________________________________"
+          key,
+          "___________________________________________________________________________________________",
       );
       console.log(JSON.stringify(this.chainWalletBalance[key]));
     }
@@ -178,5 +185,6 @@ class ChainBalance {
     return ret;
   }
 }
+
 const chainBalance: ChainBalance = new ChainBalance();
 export { chainBalance };

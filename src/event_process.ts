@@ -6,8 +6,13 @@ import { lockEventQueue } from "./module/event_process/lock_queue";
 import { redisSub } from "./redis_bus";
 import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
+import { systemRedisBus } from "./system_redis_bus";
+
 class EventProcess {
   public async process() {
+    systemRedisBus.on("bridgeUpdate", () => {
+      this.relistenEvent();
+    });
     await this.listenEvent();
     await this.startProcessQueue(); // 启动队列处理
   }
@@ -21,14 +26,7 @@ class EventProcess {
    * @returns {*} void
    */
   private async listenEvent(): Promise<void> {
-    const itemList: IBridgeTokenConfigItem[] = dataConfig.getBridgeTokenList();
-    for (const item of itemList) {
-      logger.debug(
-        `subscribe bridgeItem channel ${item.msmq_name} ${item.srcToken}/${item.dstToken}`
-      );
-      await redisSub.subscribe(item.msmq_name);
-      item.msmq_name;
-    }
+    await this.listenAllBridge();
     redisSub.on("message", async (channel: string, message: string) => {
       try {
         await this.onMessage(message, channel);
@@ -37,7 +35,32 @@ class EventProcess {
       }
     });
   }
+
+  private async relistenEvent(): Promise<void> {
+    logger.warn(`重新订阅事件,bridgeUpdate 事件已经发生`);
+    const readySubList = _.get(redisSub, "_subList", []);
+    readySubList.forEach(item => {
+      logger.warn("unsubscribe item", item);
+      redisSub.unsubscribe(item);
+    });
+    await this.listenAllBridge();
+  }
+
+  private async listenAllBridge() {
+    const subList: string[] = [];
+    const itemList: IBridgeTokenConfigItem[] = dataConfig.getBridgeTokenList();
+    for (const item of itemList) {
+      logger.debug(
+          `subscribe bridgeItem channel ${item.msmq_name} ${item.srcToken}/${item.dstToken}`,
+      );
+      await redisSub.subscribe(item.msmq_name);
+      subList.push(item.msmq_name);
+    }
+    _.set(redisSub, "_subList", subList);
+  }
+
   private startProcessQueue() {
+    logger.info("开始处理Lock事件队列");
     lockEventQueue.process(async (job, done) => {
       const msg: IEVENT_LOCK_QUOTE = _.get(job, "data", undefined);
       try {
@@ -66,9 +89,10 @@ class EventProcess {
     ];
     if (processCmdList.includes(msg.cmd)) {
       logger.debug(
-        "🟩<--",
-        `【${msg.cmd}】`,
-        JSON.stringify(msg).substring(0, 100)
+          "🟩<--",
+          `【${msg.cmd}】`,
+          JSON.stringify(msg)
+              .substring(0, 100),
       );
     }
     // 处理Cmd的主要逻辑
@@ -102,6 +126,7 @@ class EventProcess {
     }
   }
 }
+
 const eventProcess: EventProcess = new EventProcess();
 
 export { eventProcess };
