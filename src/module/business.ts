@@ -2,20 +2,20 @@
  * 事件处理逻辑，主要对应，做价格验证和对冲，这里是一个Ctrl ，细化逻辑需要拆到Service中
  */
 import _ from "lodash";
-import { dataConfig } from "../data_config";
-import { logger } from "../sys_lib/logger";
-import { redisPub } from "../redis_bus";
+import {dataConfig} from "../data_config";
+import {logger} from "../sys_lib/logger";
+import {redisPub} from "../redis_bus";
 import {
   IEVENT_ASK_QUOTE,
   IEVENT_LOCK_QUOTE,
   IEVENT_TRANSFER_OUT,
 } from "../interface/event";
-import { IBridgeTokenConfigItem, ILpCmd } from "../interface/interface";
-import { eventProcessLock } from "./event_process/lock";
-import { eventProcessTransferOut } from "./event_process/transferout";
-import { eventProcessTransferOutConfirm } from "./event_process/transferout_confirm";
-import { quotation } from "./quotation";
-import { AmmContext } from "../interface/context";
+import {IBridgeTokenConfigItem, ILpCmd} from "../interface/interface";
+import {eventProcessLock} from "./event_process/lock";
+import {eventProcessTransferOut} from "./event_process/transferout";
+import {eventProcessTransferOutConfirm} from "./event_process/transferout_confirm";
+import {quotation} from "./quotation";
+import {AmmContext} from "../interface/context";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
@@ -24,7 +24,7 @@ class Business {
       return;
     }
     const bridgeItem: IBridgeTokenConfigItem =
-      dataConfig.findItemByMsmqName(channel);
+        dataConfig.findItemByMsmqName(channel);
     // logger.info("channel", channel);
     // logger.info("ask_quote message", msg);
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
@@ -32,8 +32,8 @@ class Business {
   }
 
   private async makeAmmContext(
-    item: IBridgeTokenConfigItem,
-    msg: IEVENT_ASK_QUOTE,
+      item: IBridgeTokenConfigItem,
+      msg: IEVENT_ASK_QUOTE,
   ): Promise<AmmContext> {
     const [token0, token1]: [
       {
@@ -51,10 +51,10 @@ class Business {
         chainId: number;
       }
     ] = dataConfig.getCexStdSymbolInfoByToken(
-      item.srcToken,
-      item.dstToken,
-      item.src_chain_id,
-      item.dst_chain_id,
+        item.srcToken,
+        item.dstToken,
+        item.src_chain_id,
+        item.dst_chain_id,
     );
     if (!token0 || !token1) {
       logger.error(`token not found`);
@@ -105,6 +105,7 @@ class Business {
         dstAmountNumber: 0,
       },
       quoteInfo: {
+        price: "",
         quote_hash: "",
         mode: "",
         origPrice: "",
@@ -160,16 +161,16 @@ class Business {
   public async onTransferOutRefund(msg: any) {
     // -> CMD_TRANSFER_IN_REFUND
     const srcToken = _.get(
-      msg,
-      "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.src_token",
+        msg,
+        "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.src_token",
     );
     const dstToken = _.get(
-      msg,
-      "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.dst_token",
+        msg,
+        "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.dst_token",
     );
     const tokenConfigItem = dataConfig.findMsgChannelByStrTokenAndDstToken(
-      srcToken,
-      dstToken,
+        srcToken,
+        dstToken,
     );
     const msmqName = _.get(tokenConfigItem, "msmq_name", "");
     if (msmqName === "") {
@@ -185,15 +186,15 @@ class Business {
       business_full_data: _.get(msg, "business_full_data"),
     });
     logger.debug(
-      `🟦🟦🟦🟦🟦🟦🟦-->`,
-      ILpCmd.CMD_TRANSFER_IN_REFUND,
-      "Channel",
-      msmqName,
-      cmdMsg,
+        `🟦🟦🟦🟦🟦🟦🟦-->`,
+        ILpCmd.CMD_TRANSFER_IN_REFUND,
+        "Channel",
+        msmqName,
+        cmdMsg,
     );
     redisPub.publish(msmqName, cmdMsg);
   }
 }
 
 const business: Business = new Business();
-export { business };
+export {business};

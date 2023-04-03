@@ -11,16 +11,16 @@ import {
   IHedgeConfig,
   IHedgeType,
 } from "./interface/interface";
-import { logger } from "./sys_lib/logger";
-import { chainListModule } from "./mongo_module/chain_list";
+import {logger} from "./sys_lib/logger";
+import {chainListModule} from "./mongo_module/chain_list";
 import axios from "axios";
-import { appEnv } from "./app_env";
-import { tokensModule } from "./mongo_module/tokens";
-import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
-import { bridgesModule } from "./mongo_module/bridge";
-import { dataRedis } from "./redis_bus";
-import { installModule } from "./mongo_module/install";
-import { statusReport } from "./status_report";
+import {appEnv} from "./app_env";
+import {tokensModule} from "./mongo_module/tokens";
+import {TimeSleepForever, TimeSleepMs} from "./utils/utils";
+import {bridgesModule} from "./mongo_module/bridge";
+import {dataRedis} from "./redis_bus";
+import {installModule} from "./mongo_module/install";
+import {statusReport} from "./status_report";
 
 const Web3 = require("web3");
 const web3 = new Web3();
@@ -147,6 +147,7 @@ class DataConfig {
   }
 
   private async initBaseConfig(baseConfig: any) {
+    console.log(baseConfig)
     const chainDataConfigList: {
       chainId: number;
       config: { minSwapNativeTokenValue: string };
@@ -346,7 +347,7 @@ class DataConfig {
     const key = `${chainKey}_${uniqAddress}`;
     const info = this.tokenToSymbolMap.get(key);
     if (!info) {
-      return { symbol: null, coinType: "" };
+      return {symbol: null, coinType: ""};
     }
     return info;
   }
@@ -425,6 +426,10 @@ class DataConfig {
     return usd;
   }
 
+  public getChainGasTokenUsdMax(chainId: number): number {
+    return 0;
+  }
+
   /**
    * Description 从Lp的缓存池中启动
    * @date 1/18/2023 - 2:08:47 PM
@@ -439,7 +444,7 @@ class DataConfig {
       logger.error("读取配置时,没有找到AppName.");
       process.exit(1);
     }
-    const findOption = { ammName: appName };
+    const findOption = {ammName: appName};
     const lpConfigList: {
       bridgeName: string;
       srcChainId: number;
@@ -532,4 +537,4 @@ class DataConfig {
 }
 
 const dataConfig: DataConfig = new DataConfig();
-export { dataConfig };
+export {dataConfig};

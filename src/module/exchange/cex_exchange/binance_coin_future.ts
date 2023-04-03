@@ -85,7 +85,7 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
       };
       const signedStr = signatureObject(queryStr, this.apiSecret);
       const requestUrl = `${this.apiBaseUrl}/dapi/v1/balance?${signedStr}`;
-      logger.debug(`request account api`, requestUrl);
+      // logger.debug(`request account api`, requestUrl);
       const result = await axios.request({
         url: requestUrl,
         method: "get",

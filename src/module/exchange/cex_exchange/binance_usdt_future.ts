@@ -30,7 +30,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
       };
       const signedStr = signatureObject(queryStr, this.apiSecret);
       const requestUrl = `${this.apiBaseUrl}/fapi/v2/balance?${signedStr}`;
-      logger.debug(`request account api`, requestUrl);
+      // logger.debug(`request account api`, requestUrl);
       const result = await axios.request({
         url: requestUrl,
         method: "get",

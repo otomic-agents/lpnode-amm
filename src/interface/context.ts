@@ -37,6 +37,7 @@ interface AmmContext {
     quote_hash: string;
     mode: string;
     origPrice: string;
+    price: string; // 1 的报价
   };
   lockInfo: {
     price: string;
@@ -50,4 +51,4 @@ interface AmmContext {
   };
 }
 
-export { AmmContext };
+export {AmmContext};
