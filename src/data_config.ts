@@ -438,7 +438,7 @@ class DataConfig {
    * @async
    * @returns {Promise<void>} ""
    */
-  public async syncLpConfigFromLocalDatabase(): Promise<void> {
+  public async syncBridgeConfigFromLocalDatabase(): Promise<void> {
     const appName = _.get(process, "_sys_config.app_name", null);
     if (!appName) {
       logger.error("读取配置时,没有找到AppName.");
@@ -511,18 +511,6 @@ class DataConfig {
     });
     return ret;
   }
-
-  public findMsgChannelByStrTokenAndDstToken(
-      srcToken: string,
-      dstToken: string,
-  ): IBridgeTokenConfigItem {
-    const ret: any = _.find(this.bridgeTokenList, {
-      srcToken,
-      dstToken,
-    });
-    return ret;
-  }
-
   public getPrecision(hexAddress: string) {
     const findHex = hexAddress.toLowerCase();
 

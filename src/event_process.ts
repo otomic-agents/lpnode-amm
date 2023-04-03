@@ -1,12 +1,12 @@
-import { dataConfig } from "./data_config";
-import { IEVENT_LOCK_QUOTE, IEVENT_NAME } from "./interface/event";
-import { IBridgeTokenConfigItem } from "./interface/interface";
-import { business } from "./module/business";
-import { lockEventQueue } from "./module/event_process/lock_queue";
-import { redisSub } from "./redis_bus";
-import { logger } from "./sys_lib/logger";
+import {dataConfig} from "./data_config";
+import {IEVENT_LOCK_QUOTE, IEVENT_NAME} from "./interface/event";
+import {IBridgeTokenConfigItem} from "./interface/interface";
+import {business} from "./module/business";
+import {lockEventQueue} from "./module/event_process/lock_queue";
+import {redisSub} from "./redis_bus";
+import {logger} from "./sys_lib/logger";
 import * as _ from "lodash";
-import { systemRedisBus } from "./system_redis_bus";
+import {systemRedisBus} from "./system_redis_bus";
 
 class EventProcess {
   public async process() {
@@ -48,6 +48,7 @@ class EventProcess {
 
   private async listenAllBridge() {
     const subList: string[] = [];
+    await dataConfig.syncBridgeConfigFromLocalDatabase();
     const itemList: IBridgeTokenConfigItem[] = dataConfig.getBridgeTokenList();
     for (const item of itemList) {
       logger.debug(
@@ -129,4 +130,4 @@ class EventProcess {
 
 const eventProcess: EventProcess = new EventProcess();
 
-export { eventProcess };
+export {eventProcess};

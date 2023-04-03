@@ -70,7 +70,7 @@ class Main extends App {
     await httpServer.start(); // 启动web服务器组件
     try {
       // Do not start without basic configuration
-      await dataConfig.syncLpConfigFromLocalDatabase(); // First get the Lp configuration from the Lp settings
+      await dataConfig.syncBridgeConfigFromLocalDatabase(); // First get the Lp configuration from the Lp settings
     } catch (e) {
       logger.warn("目前没有获得Lp的Bridge配置.", e);
       await statusReport.pendingStatus("waiting bridge config");
