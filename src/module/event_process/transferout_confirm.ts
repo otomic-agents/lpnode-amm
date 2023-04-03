@@ -8,13 +8,14 @@ import { getNumberFrom16 } from "../../utils/ethjs_unit";
 import { hedgeManager } from "../hedge_manager";
 import { BaseEventProcess } from "./base_event_process";
 import * as _ from "lodash";
+
 class EventProcessTransferOutConfirm extends BaseEventProcess {
   public async process(msg: IEVENT_TRANSFER_OUT_CONFIRM) {
     const ammContext: AmmContext = await ammContextModule
-        .findOne({
-          "systemOrder.orderId": this.getLpOrderId(msg),
-        })
-        .lean();
+      .findOne({
+        "systemOrder.orderId": this.getLpOrderId(msg),
+      })
+      .lean();
     if (!ammContext) {
       throw new Error("No order information found");
     }
@@ -34,9 +35,10 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     };
     await this.responseMessage(responseMsg, ammContext.systemInfo.msmqName);
   }
+
   private async processHedge(
-      msg: IEVENT_TRANSFER_OUT_CONFIRM,
-      ammContext: AmmContext
+    msg: IEVENT_TRANSFER_OUT_CONFIRM,
+    ammContext: AmmContext
   ) {
     if (dataConfig.getHedgeConfig().hedgeType === IHedgeType.Null) {
       return true;
@@ -44,18 +46,18 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     const hedgeType = dataConfig.getHedgeConfig().hedgeType;
 
     const sourceCountEtherString = _.get(
-        msg,
-        "business_full_data.event_transfer_out.amount",
-        "0"
+      msg,
+      "business_full_data.event_transfer_out.amount",
+      "0"
     );
     const targetCountEtherString = _.get(
-        msg,
-        "business_full_data.event_transfer_out.dst_amount",
-        "0"
+      msg,
+      "business_full_data.event_transfer_out.dst_amount",
+      "0"
     );
     if (sourceCountEtherString === "0" || targetCountEtherString === "0") {
       throw new Error(
-          `Unexpected transfers in or out ${sourceCountEtherString} ${targetCountEtherString}`
+        `Unexpected transfers in or out ${sourceCountEtherString} ${targetCountEtherString}`
       );
     }
     const orderId: number = this.getLpOrderId(msg);
@@ -68,35 +70,36 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
       ammContext,
     };
     hedgeInfo.ammContext.swapInfo.srcAmountNumber = getNumberFrom16(
-        sourceCountEtherString,
-        hedgeInfo.ammContext.baseInfo.srcToken.precision
+      sourceCountEtherString,
+      hedgeInfo.ammContext.baseInfo.srcToken.precision
     );
     hedgeInfo.ammContext.swapInfo.dstAmountNumber = getNumberFrom16(
-        targetCountEtherString,
-        hedgeInfo.ammContext.baseInfo.dstToken.precision
+      targetCountEtherString,
+      hedgeInfo.ammContext.baseInfo.dstToken.precision
     );
     await ammContextModule.findOneAndUpdate(
-        {
-          "systemOrder.orderId": _.get(ammContext, "systemOrder.orderId", 0),
+      {
+        "systemOrder.orderId": _.get(ammContext, "systemOrder.orderId", 0),
+      },
+      {
+        $set: {
+          "swapInfo.srcAmount": sourceCountEtherString,
+          "swapInfo.srcAmountNumber":
+          hedgeInfo.ammContext.swapInfo.srcAmountNumber,
+          "swapInfo.dstAmount": targetCountEtherString,
+          "swapInfo.dstAmountNumber":
+          hedgeInfo.ammContext.swapInfo.dstAmountNumber,
         },
-        {
-          $set: {
-            "swapInfo.srcAmount": sourceCountEtherString,
-            "swapInfo.srcAmountNumber":
-            hedgeInfo.ammContext.swapInfo.srcAmountNumber,
-            "swapInfo.dstAmount": targetCountEtherString,
-            "swapInfo.dstAmountNumber":
-            hedgeInfo.ammContext.swapInfo.dstAmountNumber,
-          },
-        }
+      }
     );
     await hedgeManager.getHedgeIns(hedgeType).hedge(hedgeInfo);
   }
+
   private getLpOrderId(msg: IEVENT_TRANSFER_OUT_CONFIRM): number {
     const orderInfo = _.get(
-        msg,
-        "business_full_data.pre_business.order_append_data",
-        "{}"
+      msg,
+      "business_full_data.pre_business.order_append_data",
+      "{}"
     );
     if (!orderInfo) {
       logger.error("order information could not be found...");
@@ -110,6 +113,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     return orderId;
   }
 }
+
 const eventProcessTransferOutConfirm: EventProcessTransferOutConfirm =
-    new EventProcessTransferOutConfirm();
+  new EventProcessTransferOutConfirm();
 export { eventProcessTransferOutConfirm };
