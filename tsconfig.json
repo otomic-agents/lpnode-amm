@@ -24,7 +24,10 @@
     "skipDefaultLibCheck": true,
     "importHelpers": true
   },
-  "comma-dangle": ["error", "never"],
+  "comma-dangle": [
+    "error",
+    "never"
+  ],
   "exclude": [
     "app/public",
     "app/views",
