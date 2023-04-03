@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { dataConfig } from "../../data_config";
+
 import { logger } from "../../sys_lib/logger";
 
 class EventAdaptor {
@@ -27,6 +27,7 @@ class EventAdaptor {
     }
     return `${srcToken}/${dstToken}`;
   }
+
   public getChainIdFromEventLock(sourceMessage: any): [number, number] {
     const srcChainId = _.get(
       sourceMessage,
@@ -44,6 +45,7 @@ class EventAdaptor {
     }
     return [srcChainId, dstChainId];
   }
+
   public getTokenFromEventLock(
     sourceMessage: any
   ): [string | undefined, string | undefined] {
@@ -62,6 +64,7 @@ class EventAdaptor {
     }
     return [srcToken, dstToken];
   }
+
   public getTokenSymbolFromEventTransferOut(sourceMessage: any): string {
     const srcToken = _.get(
       sourceMessage,
@@ -78,6 +81,7 @@ class EventAdaptor {
     }
     return `${srcToken}/${dstToken}`;
   }
+
   public getTokenSymbolFromEventTransferOutConfirm(sourceMessage: any): string {
     const srcToken = _.get(
       sourceMessage,
@@ -93,26 +97,6 @@ class EventAdaptor {
       return "";
     }
     return `${srcToken}/${dstToken}`;
-  }
-
-  /**
-   * Description 根据tokenSymbol 找到需要返回的通道
-   * @date 1/18/2023 - 12:10:19 PM
-   *
-   * @public
-   * @param {string} tokenSymbol address/address
-   * @returns {string} ""
-   */
-  public getChannelWithTokenSymbol(tokenSymbol: string): string {
-    const tokenList = tokenSymbol.split("/");
-    if (tokenList.length !== 2) {
-      return "";
-    }
-    const bridgeItemInfo = dataConfig.findMsgChannelByStrTokenAndDstToken(
-      tokenList[0],
-      tokenList[1]
-    );
-    return _.get(bridgeItemInfo, "msmq_name", "");
   }
 }
 

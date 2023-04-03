@@ -2,20 +2,22 @@
  * 事件处理逻辑，主要对应，做价格验证和对冲，这里是一个Ctrl ，细化逻辑需要拆到Service中
  */
 import _ from "lodash";
-import {dataConfig} from "../data_config";
-import {logger} from "../sys_lib/logger";
-import {redisPub} from "../redis_bus";
+import { dataConfig } from "../data_config";
+import { logger } from "../sys_lib/logger";
+import { redisPub } from "../redis_bus";
 import {
   IEVENT_ASK_QUOTE,
   IEVENT_LOCK_QUOTE,
   IEVENT_TRANSFER_OUT,
+  IEVENT_TRANSFER_OUT_CONFIRM,
 } from "../interface/event";
-import {IBridgeTokenConfigItem, ILpCmd} from "../interface/interface";
-import {eventProcessLock} from "./event_process/lock";
-import {eventProcessTransferOut} from "./event_process/transferout";
-import {eventProcessTransferOutConfirm} from "./event_process/transferout_confirm";
-import {quotation} from "./quotation";
-import {AmmContext} from "../interface/context";
+import { IBridgeTokenConfigItem, ILpCmd } from "../interface/interface";
+import { eventProcessLock } from "./event_process/lock";
+import { eventProcessTransferOut } from "./event_process/transferout";
+import { eventProcessTransferOutConfirm } from "./event_process/transferout_confirm";
+import { quotation } from "./quotation";
+import { AmmContext } from "../interface/context";
+import { ammContextModule } from "../mongo_module/amm_context";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
@@ -24,7 +26,7 @@ class Business {
       return;
     }
     const bridgeItem: IBridgeTokenConfigItem =
-        dataConfig.findItemByMsmqName(channel);
+      dataConfig.findItemByMsmqName(channel);
     // logger.info("channel", channel);
     // logger.info("ask_quote message", msg);
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
@@ -32,8 +34,8 @@ class Business {
   }
 
   private async makeAmmContext(
-      item: IBridgeTokenConfigItem,
-      msg: IEVENT_ASK_QUOTE,
+    item: IBridgeTokenConfigItem,
+    msg: IEVENT_ASK_QUOTE
   ): Promise<AmmContext> {
     const [token0, token1]: [
       {
@@ -51,10 +53,10 @@ class Business {
         chainId: number;
       }
     ] = dataConfig.getCexStdSymbolInfoByToken(
-        item.srcToken,
-        item.dstToken,
-        item.src_chain_id,
-        item.dst_chain_id,
+      item.srcToken,
+      item.dstToken,
+      item.src_chain_id,
+      item.dst_chain_id
     );
     if (!token0 || !token1) {
       logger.error(`token not found`);
@@ -158,25 +160,35 @@ class Business {
     await eventProcessTransferOutConfirm.process(msg);
   }
 
-  public async onTransferOutRefund(msg: any) {
-    // -> CMD_TRANSFER_IN_REFUND
-    const srcToken = _.get(
-        msg,
-        "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.src_token",
+  private getLpOrderId(msg: IEVENT_TRANSFER_OUT_CONFIRM): number {
+    const orderInfo = _.get(
+      msg,
+      "business_full_data.pre_business.order_append_data",
+      "{}"
     );
-    const dstToken = _.get(
-        msg,
-        "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.dst_token",
-    );
-    const tokenConfigItem = dataConfig.findMsgChannelByStrTokenAndDstToken(
-        srcToken,
-        dstToken,
-    );
-    const msmqName = _.get(tokenConfigItem, "msmq_name", "");
-    if (msmqName === "") {
-      logger.error(`没有找到对应的币对Lp信息`);
-      return;
+    if (!orderInfo) {
+      logger.error("order information could not be found...");
+      return 0;
     }
+    const orderId = _.get(JSON.parse(orderInfo), "orderId", undefined);
+    if (!orderId || !_.isFinite(orderId)) {
+      logger.error("orderId parsing failed...");
+      return 0;
+    }
+    return orderId;
+  }
+
+  public async onTransferOutRefund(msg: any) {
+    const orderId = this.getLpOrderId(msg);
+    const ammContext: AmmContext = await ammContextModule
+      .findOne({
+        "systemOrder.orderId": orderId,
+      })
+      .lean();
+    if (!ammContext) {
+      throw new Error("No order information found");
+    }
+
     if (Number(1) !== 1) {
       logger.warn(`用户取消转出后，系统竟然不取消.....`);
       return;
@@ -186,15 +198,15 @@ class Business {
       business_full_data: _.get(msg, "business_full_data"),
     });
     logger.debug(
-        `🟦🟦🟦🟦🟦🟦🟦-->`,
-        ILpCmd.CMD_TRANSFER_IN_REFUND,
-        "Channel",
-        msmqName,
-        cmdMsg,
+      `🟦🟦🟦🟦🟦🟦🟦-->`,
+      ILpCmd.CMD_TRANSFER_IN_REFUND,
+      "Channel",
+      ammContext.systemInfo.msmqName,
+      cmdMsg
     );
-    redisPub.publish(msmqName, cmdMsg);
+    redisPub.publish(ammContext.systemInfo.msmqName, cmdMsg);
   }
 }
 
 const business: Business = new Business();
-export {business};
+export { business };

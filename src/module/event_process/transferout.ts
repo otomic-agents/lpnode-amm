@@ -4,8 +4,9 @@ import { ILpCmd } from "../../interface/interface";
 import { ammContextModule } from "../../mongo_module/amm_context";
 import { logger } from "../../sys_lib/logger";
 import { BaseEventProcess } from "./base_event_process";
-import { eventAdaptor } from "./event_adaptor";
+
 import * as _ from "lodash";
+
 class EventProcessTransferOut extends BaseEventProcess {
   /**
    * Description 转入事件的基本处理
@@ -42,6 +43,7 @@ class EventProcessTransferOut extends BaseEventProcess {
     };
     await this.responseMessage(responseMsg, ammContext.systemInfo.msmqName);
   }
+
   private async updateOrderInfo(
     ammContext: AmmContext,
     orderId: number,
@@ -75,6 +77,7 @@ class EventProcessTransferOut extends BaseEventProcess {
     }
     logger.info(`修改信息`, _.get(doc, "systemOrder.transferOutInfo", {}));
   }
+
   private verificationBaseParameters(msg: IEVENT_TRANSFER_OUT): number {
     const orderInfo = _.get(
       msg,
@@ -90,6 +93,7 @@ class EventProcessTransferOut extends BaseEventProcess {
     }
     return orderId;
   }
+
   private async verificationTime(msg: IEVENT_TRANSFER_OUT) {
     const lockQuoteTimestamp = Number(
       _.get(
@@ -108,23 +112,10 @@ class EventProcessTransferOut extends BaseEventProcess {
       throw new Error(`距离锁定价格的时间过长,延迟为:${eventDelay}`);
     }
   }
+
   // @ts-ignore
   private async checkTransferoutAmount(msg: IEVENT_TRANSFER_OUT) {
     //
-  }
-
-  public getTokenInfoAndChannel(msg: IEVENT_TRANSFER_OUT): string[] {
-    const tokenSymbol = eventAdaptor.getTokenSymbolFromEventTransferOut(msg);
-    if (tokenSymbol === "") {
-      logger.error("Can't find Lp for Symbol");
-      throw new Error("Can't find Lp for Symbol");
-    }
-    const channelName = eventAdaptor.getChannelWithTokenSymbol(tokenSymbol);
-    if (channelName === "") {
-      logger.error(`Can't find channel for Symbol:${tokenSymbol}`);
-      throw new Error(`Can't find channel for Symbol:${tokenSymbol}`);
-    }
-    return [tokenSymbol, channelName];
   }
 }
 
