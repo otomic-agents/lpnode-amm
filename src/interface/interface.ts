@@ -1,4 +1,5 @@
-import { AmmContext } from "./context";
+import {AmmContext} from "./context";
+import BigNumber from "bignumber.js";
 
 interface IBridgeTokenConfigItem {
   bridge_name: string; // tokenBridge的name
@@ -80,11 +81,15 @@ enum IHedgeType {
 }
 
 interface IHedgeClass {
-  checkHedgeCond(ammContext: AmmContext);
+  getHedgeAccountState(): Promise<number>
 
-  hedge(info: ISpotHedgeInfo);
+  getSwapMax(ammContext: AmmContext): Promise<BigNumber>; // 返回可以swap的最大量
 
-  lockHedgeBalance(ammContext: AmmContext, accountId: string);
+  checkHedgeCond(ammContext: AmmContext); // 检查是否可以完成对冲
+
+  hedge(info: ISpotHedgeInfo); // 设置对冲信息
+
+  lockHedgeBalance(ammContext: AmmContext, accountId: string); //  锁定用户余额
 
   writeJob(hedgeinfo: ISpotHedgeInfo);
 

@@ -1,19 +1,13 @@
 /* eslint-disable arrow-parens */
 import _ from "lodash";
 import {dataConfig} from "../../data_config";
-import {
-  ICexCoinConfig,
-  ICoinType,
-  IHedgeClass,
-  ISpotHedgeInfo,
-} from "../../interface/interface";
+import {ICexCoinConfig, ICoinType, IHedgeClass, IHedgeType, ISpotHedgeInfo,} from "../../interface/interface";
 import {logger} from "../../sys_lib/logger";
 import {chainBalance} from "../chain_balance";
 import {accountManager} from "../exchange/account_manager";
 import BigNumber from "bignumber.js";
 import {getRedisConfig} from "../../redis_bus";
 import Bull from "bull";
-import {RedisStore} from "../../redis_store";
 import {quotationPrice} from "../quotation/quotation_price";
 import {getNumberFrom16} from "../../utils/ethjs_unit";
 import {AmmContext} from "../../interface/context";
@@ -31,13 +25,15 @@ const hedgeQueue = new Bull("SYSTEM_HEDGE_QUEUE", {
  * coin spot Hedge
  */
 class CoinSpotHedge implements IHedgeClass {
+  // @ts-ignore
+  private accountStatus = 0
+
   public constructor() {
     logger.info("CoinSpotHedge loaded.. ");
   }
 
   public async init() {
     logger.debug(`Start consuming the hedging queue......`);
-    this.maintainBalanceLocked();
     // Start processing the hedge queue
     hedgeQueue.process(async (job, done) => {
       try {
@@ -48,6 +44,31 @@ class CoinSpotHedge implements IHedgeClass {
         done();
       }
     });
+    if (dataConfig.getHedgeConfig().hedgeType === IHedgeType.CoinSpotHedge && dataConfig.getHedgeConfig().hedgeAccount !== "") {
+      logger.info(`开始初始化账户，因为配置了对冲..`)
+      await this.initAccount();
+    }
+
+  }
+
+  private async initAccount() {
+    try {
+      await accountManager.init();
+      this.accountStatus = 1
+      logger.info(`账号已经初始化完毕，可以正常处理报价了.`)
+    } catch (e) {
+      logger.error(e)
+    }
+
+  }
+
+
+  public async getHedgeAccountState() {
+    return 0
+  }
+
+  public async getSwapMax(): Promise<BigNumber> {
+    return new BigNumber(0)
   }
 
   private async worker(call: { orderId: number; ammContext: AmmContext }) {
@@ -257,34 +278,6 @@ class CoinSpotHedge implements IHedgeClass {
     return insertData._id.toHexString();
   }
 
-  /**
-   * Description Maintain and manage expired balance locks
-   * @date 2023/2/10 - 16:10:14
-   *
-   * @private
-   * @async
-   * @returns {Promise<any>} ""
-   */
-  private async maintainBalanceLocked(): Promise<any> {
-    const accountId = dataConfig.getHedgeConfig().hedgeAccount;
-    const balanceStore = new RedisStore(
-        `SYSTEM_BALANCE_LOCK_LIST_${accountId}`
-    );
-    const list: { val: any; socre: any }[] = await balanceStore.getList();
-    logger.debug("maintainBalanceLocked...");
-    for (const item of list) {
-      const lockTime = _.get(list, "val.lockedTime", 0);
-      if (
-          new Date().getTime() - lockTime >
-          _.get(process, "_sys_config.balance_lock_expiration_time", 1000)
-      ) {
-        logger.info(
-            `start releasing the lock ...PkId :${item.val._primaryKey}`
-        );
-        await balanceStore.removeByPrimaryKey(item.val._primaryKey);
-      }
-    }
-  }
 
   /**
    * DescriptionWhen checking whether there are enough conditions to complete the hedging Lock lock, for example, if the hedging is configured, but there are not enough coins, it should stop

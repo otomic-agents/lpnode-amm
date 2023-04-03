@@ -8,28 +8,28 @@ if (envFile) {
 }
 
 // process.exit();
-import { App } from "./app";
+import {App} from "./app";
 
-import { logger } from "./sys_lib/logger";
+import {logger} from "./sys_lib/logger";
 import * as _ from "lodash";
-import { IHedgeType } from "./interface/interface";
-import { appEnv } from "./app_env"; // 这个要在最前边
+
+import {appEnv} from "./app_env"; // 这个要在最前边
 appEnv.initConfig(); // 初始化基本配置
-import { dataConfig } from "./data_config";
-import { Mdb } from "./module/database/mdb";
-import { orderbook } from "./module/orderbook";
-import { eventProcess } from "./event_process";
-import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
-import { quotation } from "./module/quotation";
-import { httpServer } from "./httpd/server";
+import {dataConfig} from "./data_config";
+import {Mdb} from "./module/database/mdb";
+import {orderbook} from "./module/orderbook";
+import {eventProcess} from "./event_process";
+import {TimeSleepForever, TimeSleepMs} from "./utils/utils";
+import {quotation} from "./module/quotation";
+import {httpServer} from "./httpd/server";
 // @ts-ignore
 const cTable = require("console.table"); //  替换console table
-import { accountManager } from "./module/exchange/account_manager";
-import { chainBalance } from "./module/chain_balance";
 
-import { hedgeManager } from "./module/hedge_manager";
-import { systemRedisBus } from "./system_redis_bus";
-import { statusReport } from "./status_report";
+import {chainBalance} from "./module/chain_balance";
+
+import {hedgeManager} from "./module/hedge_manager";
+import {systemRedisBus} from "./system_redis_bus";
+import {statusReport} from "./status_report";
 
 class Main extends App {
   public constructor() {
@@ -80,32 +80,15 @@ class Main extends App {
      * 1.加载 loadTokenToSymbol
      * 2.loadChainConfig
      */
-    await dataConfig.loadConfigFromRedis(); // Load basic configuration from redis
+    await dataConfig.loadBaseConfig(); // Load basic configuration from redis
 
     await TimeSleepMs(300); // Show bridgeTokenList table
-    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
-      // 当前有配置对冲信息，初始化账号信息
-      logger.debug(`当前有配置对冲，开始初始化账号`);
-      await accountManager.init();
-    } // Initialize hedging account information
     await chainBalance.init(); // Initialize Dexchain balance
-
-    // console.log(
-    //   accountManager.getAccount("a001")?.balance.getUsdtFutureBalance("USDT")
-    // );
-    // console.log(
-    //   accountManager.getAccount("a001")?.balance.getCoinFutureBalance("BTC")
-    // );
-    // 测试部分
-    // await accountManager.getAccount("a001")?.balance.capitalAll(); // 查询所有的可提币对
-    // await accountManager.getAccount("a001")?.balance.withdrawApply(); // 提币
-    // await TimeSleepMs(1000 * 60 * 10);
     await orderbook.init(); // Initialize the Orderbook handler, Cex Orderbook
-    await TimeSleepMs(1000);
+    await hedgeManager.init();
     await eventProcess.process(); // Subscribe and start processing business events
-    hedgeManager.init();
-    quotation.init(); // Initialize the quote program
-    // debugDrive.init(); // Start the local mock
+    await quotation.init(); // Initialize the quote program
+
     statusReport.init();
     statusReport.intervalReport();
     logger.debug(`debug drive loaded.`);

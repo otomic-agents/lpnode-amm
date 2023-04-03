@@ -243,7 +243,7 @@ class DataConfig {
     return [];
   }
 
-  public async loadConfigFromRedis() {
+  public async loadBaseConfig() {
     setInterval(() => {
       // 自动定期刷新TokenList
       this.loadTokenToSymbol()
