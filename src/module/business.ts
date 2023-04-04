@@ -18,6 +18,7 @@ import { eventProcessTransferOutConfirm } from "./event_process/transferout_conf
 import { quotation } from "./quotation";
 import { AmmContext } from "../interface/context";
 import { ammContextModule } from "../mongo_module/amm_context";
+import { getNumberFrom16 } from "../utils/ethjs_unit";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
@@ -101,6 +102,7 @@ class Business {
       },
       swapInfo: {
         inputAmount: _.get(msg, "amount", ""),
+        inputAmountNumber: getNumberFrom16(_.get(msg, "amount", ""), token0.precision),
         srcAmount: "",
         dstAmount: "",
         srcAmountNumber: 0,

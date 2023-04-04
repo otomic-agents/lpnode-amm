@@ -28,6 +28,7 @@ interface AmmContext {
   };
   swapInfo: {
     inputAmount: string; //  前端输入的量
+    inputAmountNumber: number;
     srcAmount: string; // 实际收到的量
     srcAmountNumber: number;
     dstAmount: string; // 实际转出的量
@@ -51,4 +52,4 @@ interface AmmContext {
   };
 }
 
-export {AmmContext};
+export { AmmContext };

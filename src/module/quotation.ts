@@ -100,6 +100,7 @@ class Quotation {
       await this.priceDstGasToken(ammContext, quoteInfo); // 计算目标链的Gas币兑换量
       this.calculateGas(ammContext, quoteInfo); // 计算gas
       await this.calculateCapacity(ammContext, quoteInfo); // 计算最大量
+      await this.analysis(ammContext, quoteInfo);
     } catch (e) {
       logger.error(e);
       return [undefined, undefined];
@@ -679,6 +680,14 @@ class Quotation {
         .toString(),
       capacity: `0x${etherWei}`,
     });
+  }
+
+  private async analysis(ammContext: AmmContext, sourceObject: any) {
+    const max = _.get(sourceObject, "quote_data.capacity_num", 0);
+    const input = ammContext.swapInfo.inputAmountNumber;
+    if (max <= input) {
+      logger.warn("The quotation has expired, and the maximum quantity is not enough to meet the input requirement.");
+    }
   }
 
   // @ts-ignore

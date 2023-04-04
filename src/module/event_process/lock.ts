@@ -156,10 +156,14 @@ class EventProcessLock extends BaseEventProcess {
       );
       throw new Error(`can't fand locked price`);
     }
-    const diff = new BigNumber(historyPrice).div(new BigNumber(curPrice));
-    const spread = new BigNumber(1).minus(diff.abs());
+    const historyBN = new BigNumber(historyPrice);
+    const curBN = new BigNumber(curPrice);
+    const spreadBN = historyBN.minus(curBN).div(historyBN);
+    const spread = spreadBN.toString();
+    logger.info(`当前的锁定价差是:${spread}`);
+
     logger.info(`Lock quote spread ${spread.toString()}`);
-    if (spread.gt(new BigNumber(0.003))) {
+    if (spreadBN.gt(new BigNumber(0.003))) {
       throw new Error(`max spread ${spread.toString()}`);
     }
   }

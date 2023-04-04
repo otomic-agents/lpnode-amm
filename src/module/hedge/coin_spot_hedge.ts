@@ -26,7 +26,7 @@ const hedgeQueue = new Bull("SYSTEM_HEDGE_QUEUE", {
  */
 class CoinSpotHedge implements IHedgeClass {
   // @ts-ignore
-  private accountStatus = 0;
+  // private accountStatus = 0;
 
   public constructor() {
     logger.info("CoinSpotHedge loaded.. ");
@@ -54,7 +54,7 @@ class CoinSpotHedge implements IHedgeClass {
   private async initAccount() {
     try {
       await accountManager.init();
-      this.accountStatus = 1;
+      // this.accountStatus = 1;
       logger.info(`账号已经初始化完毕，可以正常处理报价了.`);
     } catch (e) {
       logger.error(e);
@@ -67,15 +67,12 @@ class CoinSpotHedge implements IHedgeClass {
    * @param ammContext
    */
   public async checkSwapAmount(ammContext: AmmContext) {
-    if (this.accountStatus < 1) {
-      throw new Error(`账号数据没有就绪`);
-    }
     const symbol = ammContext.baseInfo.srcToken.symbol;
     const balance = accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount)?.balance.getSpotBalance(symbol);
     if (!balance) {
       throw new Error(`获取余额失败`);
     }
-    const free = Number(balance?.free);
+    const free = Number(balance.free);
     const inputAmount = getNumberFrom16(ammContext.swapInfo.inputAmount, ammContext.baseInfo.srcToken.precision);
     if (free > inputAmount) {
       return true;
@@ -512,7 +509,7 @@ class CoinSpotHedge implements IHedgeClass {
       .div(priceBn)
       .toFixed(8)
       .toString(); // 目标币的Dex 余额，能换多少个SrcToken
-
+    logger.info(`目标DstChain: [${ammContext.baseInfo.dstToken.chainId}] [${ammContext.baseInfo.dstToken.symbol}],余额可提供，SrcToken[${ammContext.baseInfo.srcToken.symbol}] Max Input:${dstTokenDexBalanceToSrcTokenCount}`);
     const dstTokenDexBalanceToSrcTokenCountNumber = Number(
       dstTokenDexBalanceToSrcTokenCount
     );
