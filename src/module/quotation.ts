@@ -1,31 +1,26 @@
 /**
  *报价的第一版服务，还在填充逻辑中
  * **/
-import {
-  IBridgeTokenConfigItem,
-  ICoinType,
-  IHedgeType,
-  ILpCmd,
-} from "../interface/interface";
-import {redisPub} from "../redis_bus";
-import {logger} from "../sys_lib/logger";
-import {orderbook} from "./orderbook";
+import { IBridgeTokenConfigItem, ICoinType, IHedgeType, ILpCmd, } from "../interface/interface";
+import { redisPub } from "../redis_bus";
+import { logger } from "../sys_lib/logger";
+import { orderbook } from "./orderbook";
 import * as crypto from "crypto";
-
-const {v4: uuidv4} = require("uuid");
 import BigNumber from "bignumber.js";
+import { gas } from "./gas";
+import { dataConfig } from "../data_config";
+import * as _ from "lodash";
+import { quotationListHistory } from "./quotation/quotation_history";
+import { hedgeManager } from "./hedge_manager";
+import { QuotationPrice } from "./quotation/quotation_price";
+import { AmmContext } from "../interface/context";
+import { ammContextModule } from "../mongo_module/amm_context";
+import { systemRedisBus } from "../system_redis_bus";
+import { getNumberFrom16 } from "../utils/ethjs_unit";
+
+const { v4: uuidv4 } = require("uuid");
 
 const Web3 = require("web3");
-import {gas} from "./gas";
-import {dataConfig} from "../data_config";
-import * as _ from "lodash";
-import {quotationListHistory} from "./quotation/quotation_history";
-import {hedgeManager} from "./hedge_manager";
-import {QuotationPrice} from "./quotation/quotation_price";
-import {AmmContext} from "../interface/context";
-import {ammContextModule} from "../mongo_module/amm_context";
-import {systemRedisBus} from "../system_redis_bus";
-import {getNumberFrom16} from "../utils/ethjs_unit";
 
 const web3 = new Web3();
 // @ts-ignore
@@ -46,9 +41,9 @@ class Quotation {
     this.bridgeTokenList = dataConfig.getBridgeTokenList();
     logger.debug("Quotation program loading list completed", this.bridgeTokenList.length);
     this.startQuotation()
-        .then(() => {
-          logger.info(`Start a timed quote`);
-        });
+      .then(() => {
+        logger.info(`Start a timed quote`);
+      });
   }
 
   private async startQuotation() {
@@ -58,10 +53,11 @@ class Quotation {
     }
     for (const item of this.bridgeTokenList) {
       this.quotationKeep(item)
-          .then(() => {
-            logger.info("完成了一次定时报价Keep", new Date().getTime());
-          }); // 对单一个跨链进行报价
+        .then(() => {
+          //
+        }); // 对单一个跨链进行报价
     }
+    logger.info("完成了一次定时报价Keep", new Date().getTime());
     setTimeout(() => {
       this.startQuotation();
     }, 1000 * 30);
@@ -73,8 +69,8 @@ class Quotation {
    */
   public async quotationItem(ammContext: AmmContext): Promise<any> {
     const quoteHash = crypto.createHash("sha1")
-        .update(uuidv4())
-        .digest("hex");
+      .update(uuidv4())
+      .digest("hex");
     const quoteInfo = {
       cmd: ILpCmd.CMD_UPDATE_QUOTE,
       quote_data: {
@@ -93,6 +89,10 @@ class Quotation {
     };
     try {
       this.prePrice(ammContext); // 前置检查,检查是否支持币对兑换，主要看是 币 和稳定币之间的关系
+      ammContext.quoteInfo.mode = this.getSwapType(ammContext);
+      if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+        await hedgeManager.getHedgeIns(dataConfig.getHedgeConfig().hedgeType).checkSwapAmount(ammContext);
+      }
       await this.price(ammContext, quoteInfo);
       await this.amountCheck(ammContext);
       await this.min_amount(ammContext, quoteInfo);
@@ -113,11 +113,11 @@ class Quotation {
    * @param ammContext
    */
   public async amountCheck(ammContext: AmmContext) {
-    const inputNumberBN = new BigNumber(getNumberFrom16(ammContext.swapInfo.inputAmount, ammContext.baseInfo.srcToken.precision)).toFixed().toString()
+    const inputNumberBN = new BigNumber(getNumberFrom16(ammContext.swapInfo.inputAmount, ammContext.baseInfo.srcToken.precision)).toFixed().toString();
     if (!_.isFinite(Number(inputNumberBN.toString()))) {
-      throw new Error(`输入的量不合法:${ammContext.swapInfo.inputAmount}`)
+      throw new Error(`输入的量不合法:${ammContext.swapInfo.inputAmount}`);
     }
-    return true
+    return true;
   }
 
   public async quotationKeep(item: IBridgeTokenConfigItem) {
@@ -144,9 +144,9 @@ class Quotation {
     // logger.debug(`send update quote to keep alive.${item.msmq_name}`);
     const quoteCmd = JSON.stringify(quoteInfo);
     redisPub.publish(item.msmq_name, quoteCmd)
-        .catch((e: any) => {
-          logger.debug(`报价产生了错误`, e);
-        });
+      .catch((e: any) => {
+        logger.debug(`报价产生了错误`, e);
+      });
   }
 
   public async quotationPremise() {
@@ -163,24 +163,24 @@ class Quotation {
    */
   private async priceDstGasToken(ammContext: AmmContext, sourceObject: any) {
     const [token0] = dataConfig.getCexStdSymbolInfoByToken(
-        ammContext.baseInfo.srcToken.address,
-        ammContext.baseInfo.dstToken.address,
-        ammContext.baseInfo.srcToken.chainId,
-        ammContext.baseInfo.dstToken.chainId,
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.srcToken.chainId,
+      ammContext.baseInfo.dstToken.chainId,
     );
     let quoteType = "bid";
     const gasSymbol = dataConfig.getDstChainTokenName(
-        ammContext.baseInfo.dstToken.chainId,
+      ammContext.baseInfo.dstToken.chainId,
     );
     if (!gasSymbol) {
       throw new Error(
-          `没有找到目标链的Token Symbol${ammContext.baseInfo.dstToken.chainId}`,
+        `没有找到目标链的Token Symbol${ammContext.baseInfo.dstToken.chainId}`,
       );
     }
     const srcTokenSymbol = `${ammContext.baseInfo.srcToken.address}/0x0`;
-    const {bids: bid, asks: ask} = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.srcToken.address,
-        ammContext.baseInfo.srcToken.chainId,
+    const { bids: bid, asks: ask } = this.quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.srcToken.chainId,
     );
     let srcUPriceInfo = bid;
     if (token0.coinType === ICoinType.StableCoin) {
@@ -199,21 +199,21 @@ class Quotation {
     if (!_.isFinite(tokenUPrice) || tokenUPrice === 0) {
       logger.error(`没有找到U价，报价失败 ${gasSymbol}`);
       throw new Error(
-          `目标链Gas币Usdt 价值获取失败，无法报价${srcTokenSymbol}`,
+        `目标链Gas币Usdt 价值获取失败，无法报价${srcTokenSymbol}`,
       );
     }
     const targetPrice = new BigNumber(srcUprice)
-        .div(new BigNumber(tokenUPrice))
-        .toFixed(8)
-        .toString();
+      .div(new BigNumber(tokenUPrice))
+      .toFixed(8)
+      .toString();
     const minGasUsed = dataConfig.getChainGasTokenUsd(
-        ammContext.baseInfo.dstToken.chainId,
+      ammContext.baseInfo.dstToken.chainId,
     ); // usd 单位 ,兑换多少U的 nToken
     // 至少需要换多少个目标Token
     const minGasTokenCount = new BigNumber(minGasUsed)
-        .div(new BigNumber(tokenUPrice))
-        .toFixed(8)
-        .toString();
+      .div(new BigNumber(tokenUPrice))
+      .toFixed(8)
+      .toString();
     logger.debug(minGasTokenCount);
 
     Object.assign(sourceObject.quote_data, {
@@ -221,9 +221,9 @@ class Quotation {
       native_token_price: targetPrice, // ETH-USDT 到BSC  则是 ETH/BNB的价格
       native_token_symbol: `${gasSymbol}/USDT`,
       native_token_max: new BigNumber(minGasTokenCount)
-          .times(new BigNumber(10))
-          .toFixed(8)
-          .toString(),
+        .times(new BigNumber(10))
+        .toFixed(8)
+        .toString(),
       native_token_min_usd: minGasUsed.toString(),
       native_token_min_count: minGasTokenCount,
       native_token_min: minGasTokenCount,
@@ -232,7 +232,7 @@ class Quotation {
 
   public async queryRealtimeQuote(ammContext: AmmContext): Promise<string> {
     await orderbook.refreshOrderbook(); // 立即刷新一次最新的orderbook ，然后计算价格
-    const [price] = this.calculatePrice(ammContext, {quote_data: {}});
+    const [price] = this.calculatePrice(ammContext, { quote_data: {} });
     return price;
   }
 
@@ -247,10 +247,10 @@ class Quotation {
     console.table(quoteInfo.quote_data);
     logger.info(`send Message`, ammContext.systemInfo.msmqName, quoteInfo.cmd);
     redisPub
-        .publish(ammContext.systemInfo.msmqName, quoteCmd)
-        .catch((e: any) => {
-          logger.debug(`报价产生了错误`, e);
-        });
+      .publish(ammContext.systemInfo.msmqName, quoteCmd)
+      .catch((e: any) => {
+        logger.debug(`报价产生了错误`, e);
+      });
     ammContext.quoteInfo = quoteInfo.quote_data;
     await ammContextModule.create(ammContext);
     await this.storeQuoteHistory(quoteHash, quoteInfo.quote_data);
@@ -269,8 +269,8 @@ class Quotation {
     const token1 = ammContext.baseInfo.dstToken;
     if (token0.symbol !== token1.symbol) {
       if (
-          token0.coinType === ICoinType.StableCoin &&
-          token1.coinType === ICoinType.StableCoin
+        token0.coinType === ICoinType.StableCoin &&
+        token1.coinType === ICoinType.StableCoin
       ) {
         return true;
         // throw new Error(
@@ -278,8 +278,8 @@ class Quotation {
         // );
       }
       if (
-          token0.coinType !== ICoinType.StableCoin &&
-          token1.coinType !== ICoinType.StableCoin
+        token0.coinType !== ICoinType.StableCoin &&
+        token1.coinType !== ICoinType.StableCoin
       ) {
         // 如果左右两个币不一样，且没有任何一个是稳定币，则不支持
         // throw new Error(`暂不支持的报价币对${token0.symbol}/${token1.symbol}`);
@@ -300,9 +300,9 @@ class Quotation {
   public price(ammContext: AmmContext, sourceObject: any) {
     // 扣除千三的手续费，单价中
     // 获取目标币的U价格
-    const {bids: dstTokenBids} = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.dstToken.address,
-        ammContext.baseInfo.dstToken.chainId,
+    const { bids: dstTokenBids } = this.quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId,
     );
 
     const [[usdPrice]] = dstTokenBids;
@@ -311,10 +311,10 @@ class Quotation {
       throw new Error(`没有获取到dstToken/USDT,无法进行报价`);
     }
     const [bTargetPrice, origPrice] = this.calculatePrice(
-        ammContext,
-        sourceObject,
+      ammContext,
+      sourceObject,
     );
-    ammContext.quoteInfo.price = bTargetPrice.toString()
+    ammContext.quoteInfo.price = bTargetPrice.toString();
     Object.assign(sourceObject.quote_data, {
       origPrice,
       price: bTargetPrice.toString(),
@@ -330,7 +330,7 @@ class Quotation {
 
     if (!srcSymbol || !dstSymbol) {
       logger.error(`没有找到币对的基本信息`);
-      return;
+      throw new Error("没有找到币对的基本信息");
     }
     if (srcSymbol === dstSymbol) {
       return "11";
@@ -339,42 +339,43 @@ class Quotation {
       return "bb";
     }
     if (
-        srcCoinType === ICoinType.StableCoin &&
-        dstCoinType === ICoinType.StableCoin
+      srcCoinType === ICoinType.StableCoin &&
+      dstCoinType === ICoinType.StableCoin
     ) {
       return "ss";
     }
     if (
-        srcCoinType === ICoinType.StableCoin &&
-        dstCoinType === ICoinType.Coin
+      srcCoinType === ICoinType.StableCoin &&
+      dstCoinType === ICoinType.Coin
     ) {
       return "sb";
     }
     if (
-        srcCoinType === ICoinType.Coin &&
-        dstCoinType === ICoinType.StableCoin
+      srcCoinType === ICoinType.Coin &&
+      dstCoinType === ICoinType.StableCoin
     ) {
       return "bs";
     }
+    throw "未适配的工作类型";
   }
 
   private calculatePrice_bb(
-      ammContext: AmmContext,
-      sourceObject: any = undefined,
+    ammContext: AmmContext,
+    sourceObject: any = undefined,
   ): [string, string] {
     // ETH/AVAX
     const srcTokenPrice = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.srcToken.address,
-        ammContext.baseInfo.srcToken.chainId,
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.srcToken.chainId,
     );
     const dstTokenPrice = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.dstToken.address,
-        ammContext.baseInfo.dstToken.chainId,
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId,
     );
     const priceBn = this.quotationPrice.getABPrice(
-        new BigNumber(1),
-        srcTokenPrice,
-        dstTokenPrice,
+      new BigNumber(1),
+      srcTokenPrice,
+      dstTokenPrice,
     );
     const targetPriceBN = priceBn.times(new BigNumber(0.997));
     Object.assign(sourceObject.quote_data, {
@@ -388,14 +389,14 @@ class Quotation {
   }
 
   private calculatePrice_bs(
-      ammContext: AmmContext,
-      sourceObject: any = undefined,
+    ammContext: AmmContext,
+    sourceObject: any = undefined,
   ): [string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
-    const {stdSymbol, bids, asks} = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.srcToken.address,
-        ammContext.baseInfo.srcToken.chainId,
+    const { stdSymbol, bids, asks } = this.quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.srcToken.chainId,
     );
     if (stdSymbol === null) {
       logger.error(`获取orderbook失败无法计算价格`, "calculatePrice_bs");
@@ -408,7 +409,7 @@ class Quotation {
     const targetPriceBN = priceBn.times(new BigNumber(0.997));
     Object.assign(sourceObject.quote_data, {
       orderbook: {
-        A: {bids, asks},
+        A: { bids, asks },
         B: null,
       },
     });
@@ -417,8 +418,8 @@ class Quotation {
   }
 
   private calculatePrice_ss(
-      ammContext: AmmContext,
-      sourceObject: any = undefined,
+    ammContext: AmmContext,
+    sourceObject: any = undefined,
   ): [string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
@@ -433,8 +434,8 @@ class Quotation {
   }
 
   private calculatePrice_11(
-      ammContext: AmmContext,
-      sourceObject: any = undefined,
+    ammContext: AmmContext,
+    sourceObject: any = undefined,
   ): [string, string] {
     const priceBn = new BigNumber(1);
     const targetPriceBN = priceBn.times(new BigNumber(0.997));
@@ -446,14 +447,14 @@ class Quotation {
   }
 
   private calculatePrice_sb(
-      ammContext: AmmContext,
-      sourceObject: any = undefined,
+    ammContext: AmmContext,
+    sourceObject: any = undefined,
   ): [string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
-    const {stdSymbol, bids, asks} = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.dstToken.address,
-        ammContext.baseInfo.dstToken.chainId,
+    const { stdSymbol, bids, asks } = this.quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId,
     );
     if (stdSymbol === null) {
       logger.error(`获取orderbook失败无法计算价格`, "calculatePrice_bs");
@@ -468,21 +469,21 @@ class Quotation {
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: null,
-        B: {bids, asks},
+        B: { bids, asks },
       },
     });
     var_dump(sourceObject.quote_data);
     return [
       targetPriceBN.toFixed(8)
-          .toString(),
+        .toString(),
       dstTokenPriceBn.toFixed(8)
-          .toString(),
+        .toString(),
     ];
   }
 
   private calculatePrice(
-      ammContext: AmmContext,
-      sourceObject: any = undefined,
+    ammContext: AmmContext,
+    sourceObject: any = undefined,
   ): [string, string] {
     const swapType = this.getSwapType(ammContext);
     logger.info(`当前的swapType`, swapType);
@@ -514,32 +515,32 @@ class Quotation {
   private async min_amount(ammContext: AmmContext, sourceObject: any) {
     // 获取目标币的U价格
 
-    const {bids: bid} = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.dstToken.address,
-        ammContext.baseInfo.dstToken.chainId,
+    const { bids: bid } = this.quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId,
     );
-    const {bids: sbid} = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.srcToken.address,
-        ammContext.baseInfo.srcToken.chainId,
+    const { bids: sbid } = this.quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.srcToken.chainId,
     );
     const tokenPrice = new BigNumber(bid[0][0])
-        .div(new BigNumber(sbid[0][0]))
-        .toFixed(8)
-        .toString();
+      .div(new BigNumber(sbid[0][0]))
+      .toFixed(8)
+      .toString();
     const [usdPrice] = bid;
     if (usdPrice[0] === 0) {
       return "0";
     }
     // 需要扣除的币个数
     const coinCount = new BigNumber(gas.getGasUsd()).div(
-        new BigNumber(usdPrice[0]),
+      new BigNumber(usdPrice[0]),
     );
     let minCount = ``;
     if (coinCount.gt(new BigNumber(1))) {
       minCount = coinCount.div("0.003")
-          .times(tokenPrice)
-          .toFixed(8)
-          .toString();
+        .times(tokenPrice)
+        .toFixed(8)
+        .toString();
       console.table({
         gasCos: `${coinCount.toString()} == $${gas.getGasUsd()}`,
         usdPrice,
@@ -565,13 +566,13 @@ class Quotation {
       return -1;
     }
     const minUsd = await hedgeManager.getHedgeIns(hedgeType)
-        .getMinUsdAmount();
+      .getMinUsdAmount();
     if (minUsd === 0) {
       return -1;
     }
-    const {stdSymbol, bids} = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.srcToken.address,
-        ammContext.baseInfo.srcToken.chainId,
+    const { stdSymbol, bids } = this.quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.srcToken.chainId,
     );
     if (!stdSymbol) {
       throw "Unable to calculate left minimum,empty order book";
@@ -582,9 +583,9 @@ class Quotation {
     }
     // 多少个左侧币对，才能满足最小下单量
     const minLeftCoinInput = Number(
-        new BigNumber(minUsd).div(new BigNumber(price))
-            .toFixed(8)
-            .toString(),
+      new BigNumber(minUsd).div(new BigNumber(price))
+        .toFixed(8)
+        .toString(),
     );
     if (!_.isFinite(minLeftCoinInput)) {
       throw "Minimum volume calculation error";
@@ -604,9 +605,9 @@ class Quotation {
    */
   private calculateGas(ammContext: AmmContext, sourceObject: any) {
     // 获取目标币的U价格
-    const {bids: bid} = this.quotationPrice.getCoinUsdtOrderbook(
-        ammContext.baseInfo.dstToken.address,
-        ammContext.baseInfo.dstToken.chainId,
+    const { bids: bid } = this.quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId,
     );
     const [[usdPrice]] = bid;
     if (usdPrice === 0) {
@@ -614,24 +615,24 @@ class Quotation {
     }
     // 需要扣除的币个数
     const coinCount = new BigNumber(gas.getGasUsd()).div(
-        new BigNumber(usdPrice),
+      new BigNumber(usdPrice),
     );
 
     Object.assign(sourceObject.quote_data, {
       gas: coinCount.toFixed(8)
-          .toString(),
+        .toString(),
       gas_usd: gas.getGasUsd(),
     });
   }
 
   private async renderInfo(ammContext: AmmContext, sourceObject: any) {
-    const [{symbol: token0}, {symbol: token1}] =
-        dataConfig.getCexStdSymbolInfoByToken(
-            ammContext.baseInfo.srcToken.address,
-            ammContext.baseInfo.dstToken.address,
-            ammContext.baseInfo.srcToken.chainId,
-            ammContext.baseInfo.dstToken.chainId,
-        );
+    const [{ symbol: token0 }, { symbol: token1 }] =
+      dataConfig.getCexStdSymbolInfoByToken(
+        ammContext.baseInfo.srcToken.address,
+        ammContext.baseInfo.dstToken.address,
+        ammContext.baseInfo.srcToken.chainId,
+        ammContext.baseInfo.dstToken.chainId,
+      );
     logger.debug(token0, token1);
     Object.assign(sourceObject.quote_data, {
       assetName: `${token0}/${token1}`,
@@ -655,8 +656,8 @@ class Quotation {
       return;
     }
     const capacity = await hedgeManager
-        .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
-        .calculateCapacity(ammContext);
+      .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
+      .calculateCapacity(ammContext);
     // ETH-USDT // min(能卖出的最大对冲量,目标链钱包最大余额)
     // USDT-ETH // min(目标链钱包的最大余额)
     // USDT-USDT // min(目标链钱包的最大余额)
@@ -664,18 +665,18 @@ class Quotation {
     // const capacity16 = new BigNumber(capacity).toString(16);
     // const capacity16Str = `0x${capacity16}`;
     logger.debug(
-        `最大价格应该报价为`,
-        new BigNumber(capacity).toFixed(8)
-            .toString(),
+      `最大价格应该报价为`,
+      new BigNumber(capacity).toFixed(8)
+        .toString(),
     );
     const etherWei = web3.utils.toWei(
-        new BigNumber(capacity).toFixed(8)
-            .toString(),
-        "ether",
+      new BigNumber(capacity).toFixed(8)
+        .toString(),
+      "ether",
     );
     _.assign(sourceObject.quote_data, {
       capacity_num: new BigNumber(capacity).toFixed(8)
-          .toString(),
+        .toString(),
       capacity: `0x${etherWei}`,
     });
   }
@@ -691,4 +692,4 @@ class Quotation {
 }
 
 const quotation: Quotation = new Quotation();
-export {quotation};
+export { quotation };

@@ -82,14 +82,14 @@ class Orderbook {
   private async requestSpotOrderbook() {
     try {
       const orderbookServiceHost = _.get(
-          process,
-          "_sys_config.lp_market_host",
-          undefined,
+        process,
+        "_sys_config.lp_market_host",
+        undefined,
       );
       const orderbookServicePort = _.get(
-          process,
-          "_sys_config.lp_market_port",
-          undefined,
+        process,
+        "_sys_config.lp_market_port",
+        undefined,
       );
       if (!orderbookServiceHost) {
         throw "Unable to obtain orderbook service address";
@@ -110,8 +110,8 @@ class Orderbook {
     } catch (e) {
       const error: any = e;
       logger.error(
-          `An error occurred while obtaining the orderbook....`,
-          error.toString(),
+        `An error occurred while obtaining the orderbook....`,
+        error.toString(),
       );
       throw e;
     }

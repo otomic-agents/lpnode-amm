@@ -1,4 +1,6 @@
 /* eslint-disable arrow-parens */
+import { chainAdapter } from "./chain_adapter/chain_adapter";
+
 /**
  * 从基础数据、环境变量、Httpd 中组合项目的配置
  */
@@ -11,16 +13,16 @@ import {
   IHedgeConfig,
   IHedgeType,
 } from "./interface/interface";
-import {logger} from "./sys_lib/logger";
-import {chainListModule} from "./mongo_module/chain_list";
+import { logger } from "./sys_lib/logger";
+import { chainListModule } from "./mongo_module/chain_list";
 import axios from "axios";
-import {appEnv} from "./app_env";
-import {tokensModule} from "./mongo_module/tokens";
-import {TimeSleepForever, TimeSleepMs} from "./utils/utils";
-import {bridgesModule} from "./mongo_module/bridge";
-import {dataRedis} from "./redis_bus";
-import {installModule} from "./mongo_module/install";
-import {statusReport} from "./status_report";
+import { appEnv } from "./app_env";
+import { tokensModule } from "./mongo_module/tokens";
+import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
+import { bridgesModule } from "./mongo_module/bridge";
+import { dataRedis } from "./redis_bus";
+import { installModule } from "./mongo_module/install";
+import { statusReport } from "./status_report";
 
 const Web3 = require("web3");
 const web3 = new Web3();
@@ -101,15 +103,15 @@ class DataConfig {
         process.exit(0);
       }
       await dataRedis.set(configIdKey, clientId)
-          .then(() => {
-            console.log("设置ClientId 到持久化数据库中成功", clientId);
-          });
+        .then(() => {
+          console.log("设置ClientId 到持久化数据库中成功", clientId);
+        });
       await (() => {
         return new Promise(() => {
           statusReport.pendingStatus("等待配置完成")
-              .catch(() => {
-                logger.error(`写入状态失败`);
-              });
+            .catch(() => {
+              logger.error(`写入状态失败`);
+            });
           logger.warn("等待配置完成..");
         });
       })();
@@ -130,10 +132,10 @@ class DataConfig {
       return;
     }
     const marketServiceRow = await installModule
-        .findOne({
-          installType: "market",
-        })
-        .lean();
+      .findOne({
+        installType: "market",
+      })
+      .lean();
     if (!marketServiceRow) {
       logger.error(`没有找到正确的market地址，无法覆盖默认值`);
       await statusReport.pendingStatus("没有找到正确的market地址,无法覆盖默认值");
@@ -147,27 +149,30 @@ class DataConfig {
   }
 
   private async initBaseConfig(baseConfig: any) {
-    console.log(baseConfig)
+    console.log(baseConfig);
     const chainDataConfigList: {
       chainId: number;
       config: { minSwapNativeTokenValue: string };
     }[] = _.get(baseConfig, "chainDataConfig", []);
     for (const chainData of chainDataConfigList) {
       this.chainTokenUsd.set(
-          chainData.chainId,
-          Number(chainData.config.minSwapNativeTokenValue),
+        chainData.chainId,
+        Number(chainData.config.minSwapNativeTokenValue),
       );
       logger.debug(
-          "set chain usd",
-          chainData.chainId,
-          Number(chainData.config.minSwapNativeTokenValue),
+        "set chain usd",
+        chainData.chainId,
+        Number(chainData.config.minSwapNativeTokenValue),
       );
     }
-    const hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
+    let hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
     const hedgeAccount = _.get(baseConfig, "hedgeConfig.hedgeAccount", null);
     if (!hedgeType || !hedgeAccount) {
       logger.error(`基础配置数据不正确`);
       await TimeSleepForever("基础配置数据不正确,等待重新配置");
+    }
+    if (hedgeType === "null" || !hedgeType) {
+      hedgeType = "Null";
     }
     this.hedgeConfig.hedgeType = hedgeType;
     this.hedgeConfig.hedgeAccount = hedgeAccount;
@@ -196,7 +201,7 @@ class DataConfig {
         },
       });
       const configData = JSON.parse(
-          _.get(result, "data.result.templateResult", {}),
+        _.get(result, "data.result.templateResult", {}),
       );
       return configData;
     } catch (e) {
@@ -216,12 +221,12 @@ class DataConfig {
           appName: _.get(process.env, "APP_NAME", ""),
           version: _.get(process.env, "APP_VERSION", ""),
           clientId: Buffer.from(new Date().getTime()
-              .toString())
-              .toString(
-                  "base64",
-              ),
+            .toString())
+            .toString(
+              "base64",
+            ),
           template:
-              '{"chainDataConfig":[{"chainId":9006,"config":{"minSwapNativeTokenValue":"0.5"}},{"chainId":9000,"config":{"minSwapNativeTokenValue":"0.5"}}],"hedgeConfig":{"hedgeAccount":"a001","hedgeType":"CoinSpotHedge","accountList":[{"accountId":"a001","exchangeName":"binance","spotAccount":{"apiKey":"","apiSecret":""},"usdtFutureAccount":{"apiKey":"","apiSecret":""},"coinFutureAccount":{"apiKey":"","apiSecret":""}}]}}',
+            '{"chainDataConfig":[{"chainId":9006,"config":{"minSwapNativeTokenValue":"0.5"}},{"chainId":9000,"config":{"minSwapNativeTokenValue":"0.5"}}],"hedgeConfig":{"hedgeAccount":"a001","hedgeType":"CoinSpotHedge","accountList":[{"accountId":"a001","exchangeName":"binance","spotAccount":{"apiKey":"","apiSecret":""},"usdtFutureAccount":{"apiKey":"","apiSecret":""},"coinFutureAccount":{"apiKey":"","apiSecret":""}}]}}',
         },
       });
       logger.debug("创建配置返回", _.get(result, "data", ""));
@@ -235,9 +240,9 @@ class DataConfig {
     } catch (e) {
       const err: any = e;
       logger.error(
-          "创建配置发生了错误",
-          err.toString(),
-          _.get(e, "response.data", ""),
+        "创建配置发生了错误",
+        err.toString(),
+        _.get(e, "response.data", ""),
       );
     }
     return [];
@@ -247,9 +252,9 @@ class DataConfig {
     setInterval(() => {
       // 自动定期刷新TokenList
       this.loadTokenToSymbol()
-          .catch((e) => {
-            logger.error("同步TokenList出错");
-          });
+        .catch((e) => {
+          logger.error("同步TokenList出错");
+        });
     }, 1000 * 60 * 2);
     await this.loadTokenToSymbol();
     await this.loadChainConfig();
@@ -263,10 +268,10 @@ class DataConfig {
       chainId: number;
       precision: number;
     }[] = await tokensModule
-        .find({
-          ammName: _.get(process.env, "APP_NAME", ""),
-        })
-        .lean();
+      .find({
+        ammName: _.get(process.env, "APP_NAME", ""),
+      })
+      .lean();
     // 同步的内容一定放在一起，保证同步币对，不会影响其它地方的报价
     this.tokenToSymbolMap = new Map();
     this.tokenToSymbolMap.set("0x0", {
@@ -300,7 +305,7 @@ class DataConfig {
         chainId: it.chainId,
         address: this.convertAddressToHex(it.address, it.chainId),
         addressLower: this.convertAddressToHex(it.address, it.chainId)
-            .toLowerCase(),
+          .toLowerCase(),
         coinType: it.coinType,
         symbol: it.marketName,
         precision: it.precision,
@@ -330,7 +335,7 @@ class DataConfig {
       tokenName: string;
       tokenUsd: number;
     }[] = await chainListModule.find({})
-        .lean();
+      .lean();
 
     _.map(chainList, (item) => {
       this.chainMap.set(item.chainId, item.chainName);
@@ -347,16 +352,16 @@ class DataConfig {
     const key = `${chainKey}_${uniqAddress}`;
     const info = this.tokenToSymbolMap.get(key);
     if (!info) {
-      return {symbol: null, coinType: ""};
+      return { symbol: null, coinType: "" };
     }
     return info;
   }
 
   public getCexStdSymbolInfoByToken(
-      token0: string,
-      token1: string,
-      token0ChainId: number,
-      token1ChainId: number,
+    token0: string,
+    token1: string,
+    token0ChainId: number,
+    token1ChainId: number,
   ): ICexCoinConfig[] | any {
     const uniqAddress0 = this.convertAddressToUniq(token0, token0ChainId);
     const uniqAddress1 = this.convertAddressToUniq(token1, token1ChainId);
@@ -378,8 +383,8 @@ class DataConfig {
     if (chainId === 397) {
       const bytes = bs58.decode(address);
       const ud = web3.utils.hexToNumberString(
-          `0x${Buffer.from(bytes)
-              .toString("hex")}`,
+        `0x${Buffer.from(bytes)
+          .toString("hex")}`,
       );
       return ud;
     }
@@ -390,10 +395,12 @@ class DataConfig {
     if (address.startsWith("0x")) {
       return address;
     }
-    if (chainId === 397) {
-      const bytes = bs58.decode(address);
-      return `0x${Buffer.from(bytes)
-          .toString("hex")}`;
+    try {
+      const hexAddress: string = chainAdapter[`AddressAdapter_${chainId}`](address);
+      return hexAddress;
+    } catch (e) {
+      logger.error("处理地址发生了错误");
+      logger.warn("未知的格式");
     }
     logger.warn("未知的格式");
     return address;
@@ -444,7 +451,7 @@ class DataConfig {
       logger.error("读取配置时,没有找到AppName.");
       process.exit(1);
     }
-    const findOption = {ammName: appName};
+    const findOption = { ammName: appName };
     const lpConfigList: {
       bridgeName: string;
       srcChainId: number;
@@ -455,13 +462,13 @@ class DataConfig {
       walletName: string;
       dstClientUri: string;
     }[] = await bridgesModule.find()
-        .lean();
+      .lean();
     this.bridgeTokenList = [];
     if (!lpConfigList || lpConfigList.length <= 0) {
       logger.warn(
-          "没有查询到任何可用的BridgeItem配置",
-          "findOption",
-          findOption,
+        "没有查询到任何可用的BridgeItem配置",
+        "findOption",
+        findOption,
       );
       await TimeSleepMs(1000 * 10);
       process.exit(1);
@@ -511,6 +518,7 @@ class DataConfig {
     });
     return ret;
   }
+
   public getPrecision(hexAddress: string) {
     const findHex = hexAddress.toLowerCase();
 
@@ -525,4 +533,4 @@ class DataConfig {
 }
 
 const dataConfig: DataConfig = new DataConfig();
-export {dataConfig};
+export { dataConfig };

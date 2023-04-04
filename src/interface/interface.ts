@@ -1,4 +1,4 @@
-import {AmmContext} from "./context";
+import { AmmContext } from "./context";
 import BigNumber from "bignumber.js";
 
 interface IBridgeTokenConfigItem {
@@ -81,7 +81,9 @@ enum IHedgeType {
 }
 
 interface IHedgeClass {
-  getHedgeAccountState(): Promise<number>
+  checkSwapAmount(ammContext: AmmContext): Promise<boolean>;
+
+  getHedgeAccountState(): Promise<number>;
 
   getSwapMax(ammContext: AmmContext): Promise<BigNumber>; // 返回可以swap的最大量
 

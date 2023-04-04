@@ -1,6 +1,6 @@
-import {IHedgeClass, IHedgeType} from "../interface/interface";
-import {logger} from "../sys_lib/logger";
-import {coinSpotHedge} from "./hedge/coin_spot_hedge";
+import { IHedgeClass, IHedgeType } from "../interface/interface";
+import { logger } from "../sys_lib/logger";
+import { coinSpotHedge } from "./hedge/coin_spot_hedge";
 
 class HedgeManager {
   public async init() {
@@ -17,4 +17,4 @@ class HedgeManager {
 }
 
 const hedgeManager: HedgeManager = new HedgeManager();
-export {HedgeManager, hedgeManager};
+export { HedgeManager, hedgeManager };
