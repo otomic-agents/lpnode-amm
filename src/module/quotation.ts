@@ -32,8 +32,8 @@ class Quotation {
   private quotationPrice: QuotationPrice = new QuotationPrice();
 
   public async init() {
-    systemRedisBus.on("bridgeUpdate", () => {
-      dataConfig.syncBridgeConfigFromLocalDatabase();
+    systemRedisBus.on("bridgeUpdate", async () => {
+      await dataConfig.syncBridgeConfigFromLocalDatabase();
       this.bridgeTokenList = dataConfig.getBridgeTokenList();
       logger.info(`更新报价程序中的bridge列表`, this.bridgeTokenList.length);
     });

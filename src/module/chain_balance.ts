@@ -103,7 +103,8 @@ class ChainBalance {
    * @returns {*} cex balance number
    */
   public getBalance(chainId: number, walletName: string, token: string): any {
-    const findKey = `Cid_${chainId}.${walletName}.balance.${token}.balance`;
+    const uniqToken = dataConfig.convertAddressToUniq(token, chainId);
+    const findKey = `Cid_${chainId}.${walletName}.balance.${uniqToken}.balance`;
     logger.debug(`Get Balance:Find Key ${findKey}`);
     const balance = Number(_.get(this.chainWalletBalance, findKey, 0));
     if (!_.isFinite(balance)) {
@@ -126,9 +127,10 @@ class ChainBalance {
     chainId: number,
   ) {
     for (const item of info) {
+      const uniqToken = dataConfig.convertAddressToUniq(item.token, chainId);
       _.set(
         this.chainWalletBalance,
-        `Cid_${chainId}.${item.wallet_name}.balance.${item.token}`,
+        `Cid_${chainId}.${item.wallet_name}.balance.${uniqToken}`,
         {
           source: item.balance_value.hex,
           balance: getNumberFrom16(item.balance_value.hex),

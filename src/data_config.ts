@@ -376,7 +376,7 @@ class DataConfig {
     return [token0Symbol, token1Symbol];
   }
 
-  private convertAddressToUniq(address: string, chainId: number): string {
+  public convertAddressToUniq(address: string, chainId: number): string {
     if (address.startsWith("0x")) {
       return web3.utils.hexToNumberString(address);
     }
