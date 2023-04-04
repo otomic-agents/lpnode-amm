@@ -261,7 +261,8 @@ class BinanceSpot implements IStdExchangeSpot {
         _.set(fee, it.commissionAsset, new BigNumber(it.commission).toString());
         return null;
       }
-      const feeVal = curCommission.plus(it.commission);
+      const BnNumber = new BigNumber(curCommission);
+      const feeVal = BnNumber.plus(new BigNumber(it.commission));
       _.set(fee, it.commissionAsset, feeVal.toString());
       return null;
     });
@@ -360,6 +361,7 @@ class BinanceSpot implements IStdExchangeSpot {
     );
     return val;
   }
+
   public async capitalAll() {
     // /sapi/v1/capital/config/getall
     const capitalAllUrl = `https://api.binance.com/sapi/v1/capital/config/getall`;
@@ -374,6 +376,7 @@ class BinanceSpot implements IStdExchangeSpot {
     );
     return _.get(ret, "data", undefined);
   }
+
   public async withdrawApply() {
     const withdrawApplyUrl = `https://api.binance.com/sapi/v1/capital/withdraw/apply`;
     const orderData = {

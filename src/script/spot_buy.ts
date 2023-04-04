@@ -12,6 +12,7 @@ appEnv.initConfig(); // 初始化基本配置
 import { dataConfig } from "../data_config";
 import { accountManager } from "../module/exchange/account_manager";
 import { logger } from "../sys_lib/logger";
+
 appEnv.initConfig(); // 初始化基本配置
 async function main() {
   await dataConfig.prepareConfigResource(); // 提前创建配置
@@ -20,7 +21,7 @@ async function main() {
     logger.info("开始Buy___NEAR/USDT");
     const result = await accountManager
       .getAccount("a001")
-      ?.order.spotBuy("C020983", "NEAR/USDT", new BigNumber(100).toString());
+      ?.order.spotSell("C020983", "ETH/USDT", new BigNumber(1).toString());
     logger.debug(result);
   }, 10000);
 }

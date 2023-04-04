@@ -109,8 +109,8 @@ class DataConfig {
       await (() => {
         return new Promise(() => {
           statusReport.pendingStatus("等待配置完成")
-            .catch(() => {
-              logger.error(`写入状态失败`);
+            .catch((e) => {
+              logger.error(`写入状态失败`, e);
             });
           logger.warn("等待配置完成..");
         });

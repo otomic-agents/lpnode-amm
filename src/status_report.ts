@@ -1,7 +1,7 @@
 import * as _ from "lodash";
-import {statusRedis} from "./redis_bus";
-import {logger} from "./sys_lib/logger";
-import {dataConfig} from "./data_config";
+import { statusRedis } from "./redis_bus";
+import { logger } from "./sys_lib/logger";
+import { dataConfig } from "./data_config";
 
 class StatusReport {
   private store: any = {};
@@ -28,7 +28,7 @@ class StatusReport {
   }
 
   public async appendStatus(key: string, val: any) {
-    _.set(this.store, key, val)
+    _.set(this.store, key, val);
   }
 
   public async pendingStatus(message: string) {
@@ -44,15 +44,15 @@ class StatusReport {
       return;
     }
     statusRedis
-        .set(statusKey, JSON.stringify(this.store))
-        .then(() => {
-          //
-        })
-        .catch((e: any) => {
-          logger.error(e);
-        });
+      .set(statusKey, JSON.stringify(this.store))
+      .then(() => {
+        //
+      })
+      .catch((e: any) => {
+        logger.error(e);
+      });
   }
 }
 
 const statusReport: StatusReport = new StatusReport();
-export {statusReport};
+export { statusReport };
