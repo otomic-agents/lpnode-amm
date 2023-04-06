@@ -30,12 +30,12 @@ class EventProcess {
     await this.listenAllBridge();
     redisSub.on("message", async (channel: string, message: string) => {
       try {
-        await this.onMessage(message, channel);
         this.saveMessage(message, channel).then(() => {
           //
         }).catch(() => {
           logger.error("写入message到数据库发生了错误");
         });
+        await this.onMessage(message, channel);
       } catch (e) {
         logger.error(`处理来自Redis 的消息发生了错误`, e);
       }
@@ -43,6 +43,10 @@ class EventProcess {
   }
 
   private async saveMessage(msg: string, channel: string) {
+    const message = JSON.parse(msg);
+    if (message["cmd"] === "CMD_UPDATE_QUOTE") {
+      return;
+    }
     await channelMessageModule.create({
       channelName: channel,
       message: JSON.parse(msg)
