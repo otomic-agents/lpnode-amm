@@ -34,6 +34,14 @@ interface AmmContext {
     dstAmount: string; // 实际转出的量
     dstAmountNumber: number;
   };
+  chainOptInfo: {
+    srcChainReceiveAmount: string // A 链实际 tr in 的量
+    srcChainReceiveAmountNumber: number // A 链实际 tr in 的量
+    dstChainPayAmount: string // B 链实际付款金额
+    dstChainPayAmountNumber: number // B链实际付款的number
+    dstChainPayNativeTokenAmount: string
+    dstChainPayNativeTokenAmountNumber: number
+  },
   quoteInfo: {
     quote_hash: string;
     mode: string;

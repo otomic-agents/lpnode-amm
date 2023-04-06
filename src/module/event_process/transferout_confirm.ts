@@ -22,7 +22,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     if (_.get(ammContext, "systemOrder.cexResult", undefined)) {
       throw new Error("Confirm cannot be repeated");
     }
-
+    await this.setChainOptInfoData(ammContext, msg);
     const hedgeType = dataConfig.getHedgeConfig().hedgeType;
     logger.debug(`hedgeType:${hedgeType}`);
     if (hedgeType !== IHedgeType.Null) {
@@ -34,6 +34,25 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
       business_full_data: _.get(msg, "business_full_data"),
     };
     await this.responseMessage(responseMsg, ammContext.systemInfo.msmqName);
+  }
+
+  private async setChainOptInfoData(ammContext: AmmContext, msg: IEVENT_TRANSFER_OUT_CONFIRM) {
+    const srcChainReceiveAmountRaw = _.get(msg, "business_full_data.event_transfer_out.amount", "");
+    const srcChainReceiveAmountNumber = getNumberFrom16(srcChainReceiveAmountRaw, ammContext.baseInfo.srcToken.precision);
+    ammContext.chainOptInfo.srcChainReceiveAmount = srcChainReceiveAmountRaw;
+    ammContext.chainOptInfo.srcChainReceiveAmountNumber = srcChainReceiveAmountNumber;
+
+    const dstChainPayAmountRaw = _.get(msg, "business_full_data.event_transfer_in.token_amount", "");
+    const dstChainPayAmountNumber = getNumberFrom16(dstChainPayAmountRaw, ammContext.baseInfo.dstToken.precision);
+    ammContext.chainOptInfo.dstChainPayAmount = dstChainPayAmountRaw;
+    ammContext.chainOptInfo.dstChainPayAmountNumber = dstChainPayAmountNumber;
+
+    const dstChainPayNativeTokenAmountRaw = _.get(msg, "business_full_data.event_transfer_in.eth_amount", "");
+    const dstChainPayNativeTokenAmountNumber = getNumberFrom16(dstChainPayNativeTokenAmountRaw, 18);
+
+    ammContext.chainOptInfo.dstChainPayNativeTokenAmount = dstChainPayNativeTokenAmountRaw;
+    ammContext.chainOptInfo.dstChainPayNativeTokenAmountNumber = dstChainPayNativeTokenAmountNumber;
+    logger.info(`debug line`);
   }
 
   private async processHedge(

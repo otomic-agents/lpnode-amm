@@ -28,8 +28,10 @@ class Business {
     }
     const bridgeItem: IBridgeTokenConfigItem =
       dataConfig.findItemByMsmqName(channel);
-    // logger.info("channel", channel);
-    // logger.info("ask_quote message", msg);
+    if (!bridgeItem) {
+      logger.error(`没有找到正确的bridge配置，channelName:${channel}`);
+      return;
+    }
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
     await quotation.asksQuote(AmmContext);
   }
@@ -68,6 +70,14 @@ class Business {
         orderId: 0,
         balanceLockedId: "",
         bridgeConfig: {},
+      },
+      chainOptInfo: {
+        srcChainReceiveAmount: "",
+        srcChainReceiveAmountNumber: 0,
+        dstChainPayAmount: "",
+        dstChainPayAmountNumber: 0,
+        dstChainPayNativeTokenAmount: "",
+        dstChainPayNativeTokenAmountNumber: 0,
       },
       systemInfo: {
         msmqName: item.msmq_name,

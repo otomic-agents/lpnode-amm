@@ -1,9 +1,11 @@
 import { Schema } from "mongoose";
 import { Mdb } from "../module/database/mdb";
 import * as _ from "lodash";
+
 const dbKey = "main"; // model 链接的数据库
 const mongoConn = Mdb.getInstance().getMongoDb(dbKey);
 const ammContextSchema = new Schema({
+  chainOptInfo: Object,
   systemInfo: Object,
   walletInfo: Object,
   AskInfo: Object,
