@@ -123,6 +123,7 @@ class ChainBalance {
         type: string;
         hex: string;
       };
+      decimals?: number
     }[],
     chainId: number,
   ) {
@@ -133,8 +134,8 @@ class ChainBalance {
         `Cid_${chainId}.${item.wallet_name}.balance.${uniqToken}`,
         {
           source: item.balance_value.hex,
-          balance: getNumberFrom16(item.balance_value.hex),
-          decimals: 0,
+          balance: this.formatChainBalance(item.balance_value.hex, item.decimals),
+          decimals: item.decimals,
         },
       ); // Set balance first so that it will not be overwritten
       _.set(this.chainWalletBalance, `Cid_${chainId}.${item.wallet_name}`, {
@@ -160,6 +161,15 @@ class ChainBalance {
       );
       console.log(JSON.stringify(this.chainWalletBalance[key]));
     }
+  }
+
+  private formatChainBalance(hexBalance: string, decimals: number | undefined): number {
+    if (!decimals) {
+      logger.error('The balance unit is incorrect');
+      return 0;
+    }
+    const balance = getNumberFrom16(hexBalance, decimals);
+    return balance;
   }
 
   /**
