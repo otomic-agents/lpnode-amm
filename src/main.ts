@@ -8,28 +8,28 @@ if (envFile) {
 }
 
 // process.exit();
-import {App} from "./app";
+import { App } from "./app";
 
-import {logger} from "./sys_lib/logger";
+import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
 
-import {appEnv} from "./app_env"; // 这个要在最前边
+import { appEnv } from "./app_env"; // 这个要在最前边
 appEnv.initConfig(); // 初始化基本配置
-import {dataConfig} from "./data_config";
-import {Mdb} from "./module/database/mdb";
-import {orderbook} from "./module/orderbook";
-import {eventProcess} from "./event_process";
-import {TimeSleepForever, TimeSleepMs} from "./utils/utils";
-import {quotation} from "./module/quotation";
-import {httpServer} from "./httpd/server";
+import { dataConfig } from "./data_config";
+import { Mdb } from "./module/database/mdb";
+import { orderbook } from "./module/orderbook";
+import { eventProcess } from "./event_process";
+import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
+import { quotation } from "./module/quotation";
+import { httpServer } from "./httpd/server";
 // @ts-ignore
 const cTable = require("console.table"); //  替换console table
 
-import {chainBalance} from "./module/chain_balance";
+import { chainBalance } from "./module/chain_balance";
 
-import {hedgeManager} from "./module/hedge_manager";
-import {systemRedisBus} from "./system_redis_bus";
-import {statusReport} from "./status_report";
+import { hedgeManager } from "./module/hedge_manager";
+import { systemRedisBus } from "./system_redis_bus";
+import { statusReport } from "./status_report";
 
 class Main extends App {
   public constructor() {
@@ -39,9 +39,9 @@ class Main extends App {
   public async main() {
     try {
       Mdb.getInstance()
-          .getMongoDb("main"); // 初始化数据库链接
+        .getMongoDb("main"); // 初始化数据库链接
       await Mdb.getInstance()
-          .awaitDbConn("main");
+        .awaitDbConn("main");
       logger.debug(`database connection ready...`, "..");
     } catch (e) {
       logger.error("Error initializing database connection", e);
@@ -98,10 +98,10 @@ class Main extends App {
 
 const mainIns: Main = new Main();
 mainIns
-    .main()
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    .then(() => {
-    })
-    .catch((e: any) => {
-      logger.error("main process error", _.get(e, "message", "message"));
-    });
+  .main()
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  .then(() => {
+  })
+  .catch((e: any) => {
+    logger.error("main process error", _.get(e, "message", "message"));
+  });

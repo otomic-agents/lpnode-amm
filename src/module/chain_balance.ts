@@ -10,8 +10,10 @@ import { getNumberFrom16 } from "../utils/ethjs_unit";
 const cTable = require("console.table");
 import { AsyncEach } from "../sys_lib/async_each";
 import { eventBus } from "../sys_lib/event.bus";
+import { IBridgeTokenConfigItem } from "../interface/interface";
+import { systemRedisBus } from "../system_redis_bus";
 
-const var_dump = require("var_dump");
+// const var_dump = require("var_dump");
 
 interface IChainListItem {
   chainId: number;
@@ -19,7 +21,7 @@ interface IChainListItem {
 }
 
 class ChainBalance {
-  private reporting = false;
+  private bridgeItemList: IBridgeTokenConfigItem[] = [];
   // @ts-ignore
   private chainWalletBalance: {
     [key: string]: {
@@ -29,13 +31,26 @@ class ChainBalance {
         wallet_name: string;
         address: string;
         balance: {
-          [key: string]: { source: string; balance: number; decimals: number };
+          [key: string]: { token: string, source: string; balance: number; decimals: number };
         }; // {tokenaddress:value}
       };
     };
   } = {};
 
   public init() {
+    this.bridgeItemList = dataConfig.getBridgeTokenList();
+    systemRedisBus.on("bridgeUpdate", async () => {
+      await dataConfig.syncBridgeConfigFromLocalDatabase();
+      this.bridgeItemList = dataConfig.getBridgeTokenList();
+      logger.info(`更新chainBalance中的bridge列表`, this.bridgeItemList.length);
+    });
+    this.intervalSyncBalance();
+    setInterval(() => {
+      this.reportBalanceInfo();
+    }, 1000 * 10);
+  }
+
+  private intervalSyncBalance() {
     logger.debug(`sync dex account balance`, "🟥");
     const chainList: IChainListItem[] = this.uniqDstChain();
     this.getChainWalletInfo(chainList)
@@ -45,14 +60,8 @@ class ChainBalance {
         eventBus.emit("balance:load:complete");
       });
     setTimeout(() => {
-      this.init();
-    }, 1000 * 60 * 10);
-    if (!this.reporting) {
-      // 仅仅是第一次设置一个定时器，之后重复进入逻辑后，不再处理
-      setInterval(() => {
-        this.reportBalanceInfo();
-      }, 1000 * 60);
-    }
+      this.intervalSyncBalance();
+    }, 1000 * 10);
   }
 
   // 获取连上的钱包情况
@@ -90,7 +99,7 @@ class ChainBalance {
       }
     };
     await AsyncEach(chainList, eachFun);
-    var_dump(this.chainWalletBalance);
+    // var_dump(this.chainWalletBalance);
   }
 
   /**
@@ -105,7 +114,7 @@ class ChainBalance {
   public getBalance(chainId: number, walletName: string, token: string): any {
     const uniqToken = dataConfig.convertAddressToUniq(token, chainId);
     const findKey = `Cid_${chainId}.${walletName}.balance.${uniqToken}.balance`;
-    logger.debug(`Get Balance:Find Key ${findKey}`);
+    logger.debug(`Get Balance:Find Key ${findKey},tokenInfo ${token}`);
     const balance = Number(_.get(this.chainWalletBalance, findKey, 0));
     if (!_.isFinite(balance)) {
       logger.error(`balance is not a number`);
@@ -133,6 +142,7 @@ class ChainBalance {
         this.chainWalletBalance,
         `Cid_${chainId}.${item.wallet_name}.balance.${uniqToken}`,
         {
+          token: item.token,
           source: item.balance_value.hex,
           balance: this.formatChainBalance(item.balance_value.hex, item.decimals),
           decimals: item.decimals,
@@ -152,15 +162,33 @@ class ChainBalance {
 
   // @ts-ignore
   private reportBalanceInfo() {
-    this.reporting = true;
-    logger.debug("\r\n", "BalanceData:", "\r\n");
-    for (const key in this.chainWalletBalance) {
-      console.log(
-        key,
-        "___________________________________________________________________________________________",
-      );
-      console.log(JSON.stringify(this.chainWalletBalance[key]));
-    }
+    const balanceList: {
+      chainId: string,
+      walletName: string,
+      token: string,
+      balance: number,
+      balanceRaw: string
+      decimals: number | undefined
+    }[] = [];
+    // eslint-disable-next-line array-callback-return
+    Object.keys(this.chainWalletBalance).map(chainId => {
+      // eslint-disable-next-line array-callback-return
+      Object.keys(this.chainWalletBalance[chainId]).map(walletName => {
+        // eslint-disable-next-line array-callback-return
+        Object.keys(this.chainWalletBalance[chainId][walletName]["balance"]).map(balanceId => {
+          const item = this.chainWalletBalance[chainId][walletName]["balance"][balanceId];
+          balanceList.push({
+            chainId,
+            walletName,
+            token: _.get(item, "token", ""),
+            balance: _.get(item, "balance", 0),
+            balanceRaw: _.get(item, "source", ""),
+            decimals: _.get(item, "decimals", undefined)
+          });
+        });
+      });
+    });
+    console.table(balanceList);
   }
 
   private formatChainBalance(hexBalance: string, decimals: number | undefined): number {
@@ -180,7 +208,7 @@ class ChainBalance {
    * @returns {*} ""
    */
   private uniqDstChain(): { chainId: number; clientUri: string }[] {
-    const tokenList = dataConfig.getBridgeTokenList();
+    const tokenList = this.bridgeItemList;
     const ret: { chainId: number; clientUri }[] = [];
     const cacheChainId: Map<number, boolean> = new Map();
     for (const item of tokenList) {
