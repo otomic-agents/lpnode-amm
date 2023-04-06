@@ -1,12 +1,13 @@
-import {dataConfig} from "./data_config";
-import {IEVENT_LOCK_QUOTE, IEVENT_NAME} from "./interface/event";
-import {IBridgeTokenConfigItem} from "./interface/interface";
-import {business} from "./module/business";
-import {lockEventQueue} from "./module/event_process/lock_queue";
-import {redisSub} from "./redis_bus";
-import {logger} from "./sys_lib/logger";
+import { dataConfig } from "./data_config";
+import { IEVENT_LOCK_QUOTE, IEVENT_NAME } from "./interface/event";
+import { IBridgeTokenConfigItem } from "./interface/interface";
+import { business } from "./module/business";
+import { lockEventQueue } from "./module/event_process/lock_queue";
+import { redisSub } from "./redis_bus";
+import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
-import {systemRedisBus} from "./system_redis_bus";
+import { systemRedisBus } from "./system_redis_bus";
+import { channelMessageModule } from "./mongo_module/channel_message";
 
 class EventProcess {
   public async process() {
@@ -30,11 +31,24 @@ class EventProcess {
     redisSub.on("message", async (channel: string, message: string) => {
       try {
         await this.onMessage(message, channel);
+        this.saveMessage(message, channel).then(() => {
+          //
+        }).catch(() => {
+          logger.error("写入message到数据库发生了错误");
+        });
       } catch (e) {
         logger.error(`处理来自Redis 的消息发生了错误`, e);
       }
     });
   }
+
+  private async saveMessage(msg: string, channel: string) {
+    await channelMessageModule.create({
+      channelName: channel,
+      message: JSON.parse(msg)
+    });
+  }
+
 
   private async relistenEvent(): Promise<void> {
     logger.warn(`重新订阅事件,bridgeUpdate 事件已经发生`);
@@ -52,7 +66,7 @@ class EventProcess {
     const itemList: IBridgeTokenConfigItem[] = dataConfig.getBridgeTokenList();
     for (const item of itemList) {
       logger.debug(
-          `subscribe bridgeItem channel ${item.msmq_name} ${item.srcToken}/${item.dstToken}`,
+        `subscribe bridgeItem channel ${item.msmq_name} ${item.srcToken}/${item.dstToken}`,
       );
       await redisSub.subscribe(item.msmq_name);
       subList.push(item.msmq_name);
@@ -90,10 +104,10 @@ class EventProcess {
     ];
     if (processCmdList.includes(msg.cmd)) {
       logger.debug(
-          "🟩<--",
-          `【${msg.cmd}】`,
-          JSON.stringify(msg)
-              .substring(0, 100),
+        "🟩<--",
+        `【${msg.cmd}】`,
+        JSON.stringify(msg)
+          .substring(0, 100),
       );
     }
     // 处理Cmd的主要逻辑
@@ -130,4 +144,4 @@ class EventProcess {
 
 const eventProcess: EventProcess = new EventProcess();
 
-export {eventProcess};
+export { eventProcess };
