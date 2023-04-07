@@ -29,6 +29,7 @@
     "never"
   ],
   "exclude": [
+    "node_modules",
     "app/public",
     "app/views",
     "node_modules*"

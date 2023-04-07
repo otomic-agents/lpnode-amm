@@ -124,9 +124,13 @@ class EventProcessLock extends BaseEventProcess {
       },
       {
         $set: {
+          step: 1, // 标记已经处于lock状态
           systemOrder,
           "lockInfo.time": new Date().getTime(),
           "lockInfo.price": ammContext.quoteInfo.origPrice,
+          "lockInfo.nativeTokenPrice": ammContext.quoteInfo.native_token_usdt_price,
+          "lockInfo.dstTokenPrice": ammContext.quoteInfo.usd_price,
+          "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price
         },
       },
     );

@@ -1,4 +1,5 @@
 interface AmmContext {
+  step: number; // 当前处于第几步
   systemInfo: {
     msmqName: string;
   };
@@ -9,6 +10,14 @@ interface AmmContext {
     cid: string;
   };
   baseInfo: {
+    srcChain: {
+      id: number,
+      tokenName: string
+    }
+    dstChain: {
+      id: number,
+      tokenName: string
+    }
     srcToken: {
       precision: number;
       cexPrecision: number;
@@ -43,13 +52,19 @@ interface AmmContext {
     dstChainPayNativeTokenAmountNumber: number
   },
   quoteInfo: {
+    usd_price: string;
     quote_hash: string;
     mode: string;
     origPrice: string;
     price: string; // 1 的报价
+    native_token_usdt_price: string
+    src_usd_price: string // 左侧币对的U价
   };
   lockInfo: {
-    price: string;
+    dstTokenPrice: string // 目标币的U价格
+    price: string; // 原始报价 换币价格
+    srcTokenPrice: string; // 起始链 token usdt价格
+    nativeTokenPrice: string; // 原生币的买价，lock时需要产生
     time: number;
   };
   askTime: number;

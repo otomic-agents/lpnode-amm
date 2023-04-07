@@ -275,7 +275,7 @@ class BinanceSpot implements IStdExchangeSpot {
       entries.push(value);
     });
 
-    console.log(JSON.stringify(entries));
+    // console.log(JSON.stringify(entries));
     const info = this.spotSymbolsInfo.get(stdSymbol);
     if (!info) {
       return null;

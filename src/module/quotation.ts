@@ -81,6 +81,7 @@ class Quotation {
         gas: `0`, // Gas 需要消耗多少个目标币，目前有Amount了，这里要重新算一下
         capacity: `0x${(50000000000000000000000).toString(16)}`, // 根据对冲配置，计算出来的最大量
         native_token_price: `0`, // 假设 ETH-USDT  BSC-AVAX  则价格为 ETH/AVAX
+        native_token_usdt_price: `0`, // 目标链原生币的买价，orderbook卖5价
         native_token_max: `1`, // native_token_min * 10
         native_token_min: `0.1`, // 根据链配置的Gas币 最少Usd 单位，计算出的最小token币的兑换个数
         timestamp: new Date().getTime(),
@@ -94,6 +95,8 @@ class Quotation {
         await hedgeManager.getHedgeIns(dataConfig.getHedgeConfig().hedgeType).checkSwapAmount(ammContext);
       }
       await this.price(ammContext, quoteInfo);
+      await this.priceNativeToken(ammContext, quoteInfo);
+      await this.priceSrcToken(ammContext, quoteInfo);
       await this.amountCheck(ammContext);
       await this.min_amount(ammContext, quoteInfo);
       await this.renderInfo(ammContext, quoteInfo);
@@ -130,6 +133,7 @@ class Quotation {
       cmd: ILpCmd.CMD_UPDATE_QUOTE,
       quote_data: {
         usd_price: "",
+        src_usd_price: "",
         price: "",
         origPrice: "",
         min_amount: "",
@@ -170,7 +174,7 @@ class Quotation {
       ammContext.baseInfo.dstToken.chainId,
     );
     let quoteType = "bid";
-    const gasSymbol = dataConfig.getDstChainTokenName(
+    const gasSymbol = dataConfig.getChainTokenName(
       ammContext.baseInfo.dstToken.chainId,
     );
     if (!gasSymbol) {
@@ -252,7 +256,9 @@ class Quotation {
       .catch((e: any) => {
         logger.debug(`报价产生了错误`, e);
       });
+    const mode = _.clone(ammContext.quoteInfo.mode);
     ammContext.quoteInfo = quoteInfo.quote_data;
+    ammContext.quoteInfo.mode = mode;
     await ammContextModule.create(ammContext);
     await this.storeQuoteHistory(quoteHash, quoteInfo.quote_data);
   }
@@ -320,6 +326,34 @@ class Quotation {
       origPrice,
       price: bTargetPrice.toString(),
       usd_price: usdPrice, // 目标币的U价格  如 ETH-USDT   则 1  ETH-AVAX  则显示  Avax/Usdt的价格
+    });
+  }
+
+  private priceNativeToken(ammContext: AmmContext, sourceObject: any) {
+    const { asks: nativeTokenAsks } = this.quotationPrice.getCoinUsdtOrderbookByCoinName(ammContext.baseInfo.dstChain.tokenName);
+    const [[usdPrice]] = nativeTokenAsks;
+
+    if (usdPrice === 0) {
+      logger.warn(`没有获取到目标链，原生币的报价`);
+      throw new Error(`没有获取到dstToken/USDT,无法进行报价`);
+    }
+
+    Object.assign(sourceObject.quote_data, {
+      native_token_usdt_price: new BigNumber(usdPrice).toString(),
+    });
+  }
+
+  private priceSrcToken(ammContext: AmmContext, sourceObject: any) {
+    const { asks: srcTokenAsks } = this.quotationPrice.getCoinUsdtOrderbookByCoinName(ammContext.baseInfo.srcToken.symbol);
+    const [[usdPrice]] = srcTokenAsks;
+
+    if (usdPrice === 0) {
+      logger.warn(`没有获得源链，币的Usdt报价`);
+      throw new Error(`没有获得源链，币的Usdt报价`);
+    }
+
+    Object.assign(sourceObject.quote_data, {
+      src_usd_price: new BigNumber(usdPrice).toString(),
     });
   }
 

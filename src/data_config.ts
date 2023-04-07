@@ -504,8 +504,13 @@ class DataConfig {
    * @param {string} chainId chainId
    * @returns {*} ""
    */
-  public getDstChainTokenName(chainId: number) {
-    return this.chainTokenMap.get(chainId);
+  public getChainTokenName(chainId: number) {
+    const tokenName = this.chainTokenMap.get(chainId);
+    if (!tokenName) {
+      logger.error("没有找到基础连的配置数据");
+      throw new Error("没有找到对应链的基础配置");
+    }
+    return tokenName;
   }
 
   public getBridgeTokenList(): IBridgeTokenConfigItem[] {

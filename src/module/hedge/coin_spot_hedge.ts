@@ -1,7 +1,7 @@
 /* eslint-disable arrow-parens */
 import _ from "lodash";
 import { dataConfig } from "../../data_config";
-import { ICexCoinConfig, ICoinType, IHedgeClass, IHedgeType, ISpotHedgeInfo, } from "../../interface/interface";
+import { ICoinType, IHedgeClass, IHedgeType, ISpotHedgeInfo, } from "../../interface/interface";
 import { logger } from "../../sys_lib/logger";
 import { chainBalance } from "../chain_balance";
 import { accountManager } from "../exchange/account_manager";
@@ -12,8 +12,8 @@ import { quotationPrice } from "../quotation/quotation_price";
 import { getNumberFrom16 } from "../../utils/ethjs_unit";
 import { AmmContext } from "../../interface/context";
 import { balanceLockModule } from "../../mongo_module/balance_lock";
-import { ammContextModule } from "../../mongo_module/amm_context";
-import { createOrderId } from "../exchange/utils";
+import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
+import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
 
 const { ethers } = require("ethers");
 const redisConfig = getRedisConfig();
@@ -24,11 +24,13 @@ const hedgeQueue = new Bull("SYSTEM_HEDGE_QUEUE", {
 /**
  * coin spot Hedged
  */
-class CoinSpotHedge implements IHedgeClass {
+class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   // @ts-ignore
   // private accountStatus = 0;
+  private worker: CoinSpotHedgeWorker = new CoinSpotHedgeWorker();
 
   public constructor() {
+    super();
     logger.info("CoinSpotHedge loaded.. ");
   }
 
@@ -37,7 +39,7 @@ class CoinSpotHedge implements IHedgeClass {
     // Start processing the hedge queue
     hedgeQueue.process(async (job, done) => {
       try {
-        await this.worker(job.data);
+        await this.worker.worker(job.data);
       } catch (e) {
         logger.error(`An error occurred while processing the queue`, e);
       } finally {
@@ -88,86 +90,6 @@ class CoinSpotHedge implements IHedgeClass {
 
   public async getSwapMax(): Promise<BigNumber> {
     return new BigNumber(0);
-  }
-
-  private async worker(call: { orderId: number; ammContext: AmmContext }) {
-    await this.freeBalanceLock(call);
-    const side = this.getSide(call.ammContext);
-    const coinInfo: any = [
-      call.ammContext.baseInfo.srcToken,
-      call.ammContext.baseInfo.dstToken,
-    ];
-    const stdSymbol = this.getStdSymbol(coinInfo);
-    const accountIns = await accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
-    );
-    try {
-      if (!accountIns) {
-        throw new Error(
-          `No instance of hedging account was found.AccountId:${
-            dataConfig.getHedgeConfig().hedgeAccount
-          }`
-        );
-      }
-      const storeData: any = {};
-      try {
-        let execFun = "spotBuy";
-        if (side === "SELL") {
-          execFun = "spotSell";
-        }
-        logger.debug(`exec hedge, Action [${execFun}]`);
-        console.log(
-          "spot",
-          stdSymbol,
-          side,
-          this.getCexAmount(call.ammContext, side)
-        );
-        storeData.orderInfo = await accountIns.order[execFun](
-          createOrderId("spot", 1, Number(new BigNumber("1000"))),
-          stdSymbol,
-          this.getCexAmount(call.ammContext, side)
-        );
-      } catch (e) {
-        const err: any = e;
-        storeData.orderInfo = {};
-        storeData.status = 0;
-        storeData.errorMessage = err.toString();
-        throw e;
-      } finally {
-        await ammContextModule.findOneAndUpdate(
-          {
-            "systemOrder.orderId": call.ammContext.systemOrder.orderId,
-          },
-          {
-            $set: {
-              "systemOrder.cexResult": storeData,
-            },
-          }
-        );
-      }
-    } catch (e) {
-      logger.error(
-        `An error occurred when placing an order, and hedging failed..${e}`
-      );
-    }
-  }
-
-  private getCexAmount(ammContext: AmmContext, side: string): number {
-    if (side === "BUY") {
-      const amount = ammContext.swapInfo.dstAmountNumber;
-      if (!_.isFinite(amount)) {
-        throw "Miscalculation of hedging amount";
-      }
-      return amount;
-    }
-    if (side === "SELL") {
-      const amount = ammContext.swapInfo.srcAmountNumber;
-      if (!_.isFinite(amount)) {
-        throw "Miscalculation of hedging amount";
-      }
-      return amount;
-    }
-    throw new Error("Unknown side");
   }
 
   public async getMinUsdAmount(): Promise<number> {
@@ -234,19 +156,6 @@ class CoinSpotHedge implements IHedgeClass {
     return balanceLockedId;
   }
 
-  public async freeBalanceLock(call: {
-    orderId: number;
-    ammContext: AmmContext;
-  }) {
-    logger.warn(call.ammContext.systemOrder.balanceLockedId, "💘💘💘💘💘💘");
-    // 删除本次报价的锁定余额
-    const freeRet = await balanceLockModule
-      .deleteOne({
-        quoteHash: call.ammContext.quoteInfo.quote_hash,
-      })
-      .lean();
-    logger.info(freeRet, "🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓");
-  }
 
   /**
    * Description swap amount，left
@@ -428,12 +337,7 @@ class CoinSpotHedge implements IHedgeClass {
 
   private async calculateCapacity_sb(ammContext: AmmContext) {
     // usdt-eth
-    const tokenInfo = dataConfig.getCexStdSymbolInfoByToken(
-      ammContext.baseInfo.srcToken.address,
-      ammContext.baseInfo.dstToken.address,
-      ammContext.baseInfo.srcToken.chainId,
-      ammContext.baseInfo.dstToken.chainId
-    );
+    const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
     const srcTokenCexBalance = accountManager
       .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
       ?.balance.getSpotBalance(tokenInfo[0].symbol);
@@ -474,12 +378,7 @@ class CoinSpotHedge implements IHedgeClass {
 
   public async calculateCapacity_bs(ammContext: AmmContext): Promise<number> {
     // ETH-USDT
-    const tokenInfo = dataConfig.getCexStdSymbolInfoByToken(
-      ammContext.baseInfo.srcToken.address,
-      ammContext.baseInfo.dstToken.address,
-      ammContext.baseInfo.srcToken.chainId,
-      ammContext.baseInfo.dstToken.chainId
-    );
+    const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
 
     const dstTokenBalance = chainBalance.getBalance(
       ammContext.baseInfo.dstToken.chainId,
@@ -537,12 +436,7 @@ class CoinSpotHedge implements IHedgeClass {
   }
 
   private async calculateCapacity_bb(ammContext: AmmContext): Promise<number> {
-    const tokenInfo = dataConfig.getCexStdSymbolInfoByToken(
-      ammContext.baseInfo.srcToken.address,
-      ammContext.baseInfo.dstToken.address,
-      ammContext.baseInfo.srcToken.chainId,
-      ammContext.baseInfo.dstToken.chainId
-    );
+    const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
 
     const dstTokenBalance = chainBalance.getBalance(
       ammContext.baseInfo.dstToken.chainId,
@@ -591,70 +485,11 @@ class CoinSpotHedge implements IHedgeClass {
   public async hedge(hedgeData: ISpotHedgeInfo) {
     const hedgeInfo: ISpotHedgeInfo = JSON.parse(JSON.stringify(hedgeData));
     console.log("Basic Information on Current Hedging");
-    console.log("========================");
-    logger.debug(hedgeInfo);
-    console.log("========================");
-    this.writeJob(hedgeInfo);
+    this.writeJob(hedgeInfo).then(() => {
+      logger.debug(`已经写入到对冲的队列`, hedgeData.orderId);
+    });
   }
 
-  private getStdSymbol(coinInfo: ICexCoinConfig[]) {
-    if (
-      coinInfo[0].coinType === ICoinType.Coin &&
-      coinInfo[1].coinType === ICoinType.StableCoin
-    ) {
-      return `${coinInfo[0].symbol}/USDT`;
-    }
-    if (
-      coinInfo[0].coinType === ICoinType.StableCoin &&
-      coinInfo[1].coinType === ICoinType.Coin
-    ) {
-      return `${coinInfo[1].symbol}/USDT`;
-    }
-    throw "The correct symbol information was not found";
-  }
-
-  /**
-   * Description Spot trading direction
-   * @date 2023/3/3 - 21:36:15
-   *
-   * @private
-   * @param {AmmContext} ammContext ""
-   * @returns {("SELL" | "BUY")} "buy or sell"
-   */
-  private getSide(ammContext: AmmContext) {
-    if (
-      ammContext.baseInfo.srcToken.coinType === ICoinType.Coin &&
-      ammContext.baseInfo.dstToken.coinType === ICoinType.StableCoin
-    ) {
-      return "SELL";
-    }
-    if (
-      ammContext.baseInfo.srcToken.coinType === ICoinType.StableCoin &&
-      ammContext.baseInfo.dstToken.coinType === ICoinType.Coin
-    ) {
-      return "BUY";
-    }
-    if (
-      ammContext.baseInfo.srcToken.coinType === ICoinType.Coin &&
-      ammContext.baseInfo.dstToken.coinType === ICoinType.Coin
-    ) {
-      if (
-        ammContext.baseInfo.srcToken.symbol !==
-        ammContext.baseInfo.dstToken.symbol
-      ) {
-        throw new Error(
-          `Temporarily does not support the swap between different currency pairs`
-        );
-      }
-    }
-    logger.error(
-      `Did not find the direction of buying and selling`,
-      JSON.stringify(ammContext.baseInfo)
-    );
-    throw new Error(
-      `Did not find the direction of buying and selling info:${ammContext.baseInfo.srcToken.symbol}/${ammContext.baseInfo.dstToken.symbol}`
-    );
-  }
 
   public async writeJob(hedgeInfo: ISpotHedgeInfo) {
     logger.info(`Write information to Job.....`);

@@ -8,6 +8,7 @@ import { getNumberFrom16 } from "../../utils/ethjs_unit";
 import { hedgeManager } from "../hedge_manager";
 import { BaseEventProcess } from "./base_event_process";
 import * as _ from "lodash";
+import { ammContextManager } from "../amm_context_manager/amm_context_manager";
 
 class EventProcessTransferOutConfirm extends BaseEventProcess {
   public async process(msg: IEVENT_TRANSFER_OUT_CONFIRM) {
@@ -52,6 +53,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
 
     ammContext.chainOptInfo.dstChainPayNativeTokenAmount = dstChainPayNativeTokenAmountRaw;
     ammContext.chainOptInfo.dstChainPayNativeTokenAmountNumber = dstChainPayNativeTokenAmountNumber;
+    await ammContextManager.appendContext(ammContext.systemOrder.orderId, "chainOptInfo", ammContext.chainOptInfo);
     logger.info(`debug line`);
   }
 

@@ -66,6 +66,7 @@ class Business {
       throw new Error("token not found");
     }
     const context: AmmContext = {
+      step: 0,
       systemOrder: {
         orderId: 0,
         balanceLockedId: "",
@@ -84,12 +85,23 @@ class Business {
       },
       lockInfo: {
         price: "0",
+        nativeTokenPrice: "",
         time: 0,
+        dstTokenPrice: "",
+        srcTokenPrice: "",
       },
       walletInfo: {
         walletName: item.wallet.name,
       },
       baseInfo: {
+        srcChain: {
+          id: token0.chainId,
+          tokenName: dataConfig.getChainTokenName(token0.chainId)
+        },
+        dstChain: {
+          id: token1.chainId,
+          tokenName: dataConfig.getChainTokenName(token1.chainId)
+        },
         srcToken: {
           precision: token0.precision,
           cexPrecision: 0,
@@ -119,10 +131,13 @@ class Business {
         dstAmountNumber: 0,
       },
       quoteInfo: {
+        src_usd_price: "",
+        usd_price: "",
         price: "",
         quote_hash: "",
         mode: "",
         origPrice: "",
+        native_token_usdt_price: ""
       },
       askTime: new Date().getTime(),
     };
