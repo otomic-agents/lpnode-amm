@@ -34,7 +34,6 @@ class StatusReport {
   public async pendingStatus(message: string) {
     _.set(this.store, "status", "pending");
     _.set(this.store, "pendingMessage", message);
-    this.store();
   }
 
   private async storeData() {

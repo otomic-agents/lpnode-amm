@@ -3,12 +3,10 @@ import _ from "lodash";
 import { dataConfig } from "../../data_config";
 import { ICoinType, IHedgeClass, IHedgeType, ISpotHedgeInfo, } from "../../interface/interface";
 import { logger } from "../../sys_lib/logger";
-import { chainBalance } from "../chain_balance";
 import { accountManager } from "../exchange/account_manager";
 import BigNumber from "bignumber.js";
 import { getRedisConfig } from "../../redis_bus";
 import Bull from "bull";
-import { quotationPrice } from "../quotation/quotation_price";
 import { getNumberFrom16 } from "../../utils/ethjs_unit";
 import { AmmContext } from "../../interface/context";
 import { balanceLockModule } from "../../mongo_module/balance_lock";
@@ -314,6 +312,9 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       throw new Error(`The correct symbol information was not found`);
     }
 
+    if (tokenInfo[0].coinType === ICoinType.StableCoin && tokenInfo[1].coinType === ICoinType.StableCoin) {
+      return this.calculateCapacity_ss(ammContext);
+    }
     if (tokenInfo[0].symbol === tokenInfo[1].symbol) {
       // 1:1
       return this.calculateCapacity_11(ammContext);
@@ -335,7 +336,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     return await this.calculateCapacity_bb(ammContext);
   }
 
-  private async calculateCapacity_sb(ammContext: AmmContext) {
+  private async calculateCapacity_sb(ammContext: AmmContext): Promise<number> {
     // usdt-eth
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
     const srcTokenCexBalance = accountManager
@@ -347,44 +348,12 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       );
       return 0;
     }
-    const dstTokenBalance = chainBalance.getBalance(
-      ammContext.baseInfo.dstToken.chainId,
-      ammContext.walletInfo.walletName,
-      ammContext.baseInfo.dstToken.address
-    );
-    const {
-      asks: [[price]],
-    } = quotationPrice.getCoinUsdtOrderbook(
-      ammContext.baseInfo.dstToken.address,
-      ammContext.baseInfo.dstToken.chainId
-    );
-    if (!_.isFinite(Number(price)) || Number(price) === 0) {
-      logger.error(`Did not get the correct orderbook price`);
-      return 0;
-    }
-    const maxCountBN = new BigNumber(srcTokenCexBalance.free) // 能买多少个目标币
-      .div(new BigNumber(price))
-      .toFixed(8)
-      .toString();
-    const maxCount = Number(maxCountBN);
-    if (!_.isFinite(maxCount) || maxCount === 0) {
-      logger.error(`MaxCount calculation failed`);
-      return 0;
-    }
-    // Cex UHow many target coins can be purchased and the minimum balance of target coins
-    const retMaxCount = _.min([maxCount, dstTokenBalance]);
-    return retMaxCount;
+    return Number(srcTokenCexBalance.free);
   }
 
   public async calculateCapacity_bs(ammContext: AmmContext): Promise<number> {
     // ETH-USDT
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
-
-    const dstTokenBalance = chainBalance.getBalance(
-      ammContext.baseInfo.dstToken.chainId,
-      ammContext.walletInfo.walletName,
-      ammContext.baseInfo.dstToken.address
-    );
     const srcTokenCexBalanceInfo = accountManager
       .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
       ?.balance.getSpotBalance(tokenInfo[0].symbol);
@@ -397,80 +366,33 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
     }
-    const {
-      asks: [[price]],
-    } = quotationPrice.getCoinUsdtOrderbook(
-      ammContext.baseInfo.srcToken.address,
-      ammContext.baseInfo.srcToken.chainId
-    );
-    const priceBn = new BigNumber(price); // ETH/USDT 价格
-    const dstTokenDexBalanceToSrcTokenCount = new BigNumber(dstTokenBalance)
-      .div(priceBn)
-      .toFixed(8)
-      .toString(); // 目标币的Dex 余额，能换多少个SrcToken
-    logger.info(`目标DstChain: [${ammContext.baseInfo.dstToken.chainId}] [${ammContext.baseInfo.dstToken.symbol}],余额可提供，SrcToken[${ammContext.baseInfo.srcToken.symbol}] Max Input:${dstTokenDexBalanceToSrcTokenCount}`);
-    const dstTokenDexBalanceToSrcTokenCountNumber = Number(
-      dstTokenDexBalanceToSrcTokenCount
-    );
-    logger.debug(srcTokenCexBalance, dstTokenDexBalanceToSrcTokenCountNumber);
     const minCount: any = _.min([
       srcTokenCexBalance,
-      dstTokenDexBalanceToSrcTokenCountNumber,
     ]);
     return minCount;
   }
 
   public async calculateCapacity_11(ammContext: AmmContext): Promise<number> {
-    const dstTokenBalance = chainBalance.getBalance(
-      ammContext.baseInfo.dstToken.chainId,
-      ammContext.walletInfo.walletName,
-      ammContext.baseInfo.dstToken.address
-    );
-    if (_.isFinite(Number(dstTokenBalance))) {
-      return dstTokenBalance;
-    }
-    logger.error(
-      `The balance of the target currency on the dex cannot be obtained, and the quotation fails`
-    );
-    return 0;
+    return -1;
+  }
+
+  private async calculateCapacity_ss(ammContext: AmmContext): Promise<number> {
+    return -1;
   }
 
   private async calculateCapacity_bb(ammContext: AmmContext): Promise<number> {
+    /**
+     * 只要左侧可以卖掉，右侧就一定能买足量的币，因此不用考虑右侧币的余额，以及USDT的余额
+     */
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
-
-    const dstTokenBalance = chainBalance.getBalance(
-      ammContext.baseInfo.dstToken.chainId,
-      ammContext.walletInfo.walletName,
-      ammContext.baseInfo.dstToken.address
-    );
     const srcTokenCexBalance = accountManager
       .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
       ?.balance.getSpotBalance(tokenInfo[0].symbol);
-    const usdtCexBalance = accountManager
-      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
-      ?.balance.getSpotBalance("USDT");
-    if (!usdtCexBalance) {
-      throw new Error("can't get cex cex USDT balance");
+    const srcBalanceCount = Number(srcTokenCexBalance?.free); // 这个是左侧可以卖的最大量
+    if (!srcBalanceCount || !_.isFinite(srcBalanceCount)) {
+      return 0;
     }
-    const {
-      asks: [[srcTokenPrice]],
-    } = quotationPrice.getCoinUsdtOrderbook(
-      ammContext.baseInfo.srcToken.address,
-      ammContext.baseInfo.srcToken.chainId
-    );
-    if (!_.isFinite(Number(srcTokenPrice))) {
-      logger.error(`no valid orderbook price`);
-      throw new Error("no valid orderbook price");
-    }
-
-    const dstMaxBuyCountBn = new BigNumber(usdtCexBalance.free).div(
-      new BigNumber(srcTokenPrice)
-    );
-
-    const dstMaxBuyCount = Number(dstMaxBuyCountBn.toFixed(8).toString());
-    const srcBalanceCount = Number(srcTokenCexBalance?.free);
-    const max = _.min([srcBalanceCount, dstMaxBuyCount, dstTokenBalance]);
-    return max;
+    return srcBalanceCount;
   }
 
   /**

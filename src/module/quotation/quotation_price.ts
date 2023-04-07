@@ -48,6 +48,7 @@ class QuotationPrice {
     }
     return { stdSymbol, asks: retAsks, bids: retBids };
   }
+
   public getCoinUsdtOrderbookByCoinName(stdCoinSymbol: string) {
     const stdSymbol = `${stdCoinSymbol}/USDT`;
     if (stdSymbol === "USDT/USDT") {
@@ -71,41 +72,6 @@ class QuotationPrice {
     });
     return { stdSymbol, asks: retAsks, bids: retBids };
   }
-  public getSrcDstPriceByToken(srcToken: string, dstToken: string): BigNumber {
-    throw new Error("暂时未使用的逻辑，先注释掉.");
-    // const { symbol: srcStdCoinSymbol } =
-    //   dataConfig.getStdCoinSymbolInfoByToken(srcToken);
-    // const { symbol: dstStdCoinSymbol } =
-    //   dataConfig.getStdCoinSymbolInfoByToken(dstToken);
-    // if (!srcStdCoinSymbol || !dstStdCoinSymbol) {
-    //   logger.error(
-    //     `获取Token对应的StdCoinSymbol失败,请检查基础配置${srcToken} ${dstToken}`
-    //   );
-    //   return new BigNumber(0);
-    // }
-    // if (srcStdCoinSymbol === dstStdCoinSymbol) {
-    //   return new BigNumber(1);
-    // }
-    // const srcStdSymbol = `${srcStdCoinSymbol}/USDT`;
-    // const dstStdSymbol = `${dstStdCoinSymbol}/USDT`;
-    // const srcTokenOrderbook = orderbook.getSpotOrderbook(srcStdSymbol);
-    // const dstTokenOrderbook = orderbook.getSpotOrderbook(dstStdSymbol);
-    // if (!srcTokenOrderbook || !dstTokenOrderbook) {
-    //   logger.error(`获取对应的Orderbook失败`, srcStdSymbol, dstStdSymbol);
-    //   return new BigNumber(0);
-    // }
-    // const {
-    //   bids: [[srcPrice]],
-    // } = srcTokenOrderbook;
-    // const {
-    //   bids: [[dstPrice]],
-    // } = dstTokenOrderbook;
-    // logger.debug(
-    //   `对照价格是`,
-    //   BigNumber(srcPrice).div(dstPrice).toFixed(5).toString()
-    // );
-    // return new BigNumber(srcPrice).div(dstPrice);
-  }
 
   public getABPrice(
     amount: BigNumber,
@@ -122,5 +88,6 @@ class QuotationPrice {
     return bnA.div(bnB);
   }
 }
+
 const quotationPrice: QuotationPrice = new QuotationPrice();
 export { QuotationPrice, quotationPrice };

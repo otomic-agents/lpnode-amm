@@ -12,11 +12,12 @@ import { dataConfig } from "../data_config";
 import * as _ from "lodash";
 import { quotationListHistory } from "./quotation/quotation_history";
 import { hedgeManager } from "./hedge_manager";
-import { QuotationPrice } from "./quotation/quotation_price";
+import { quotationPrice, QuotationPrice } from "./quotation/quotation_price";
 import { AmmContext } from "../interface/context";
 import { ammContextModule } from "../mongo_module/amm_context";
 import { systemRedisBus } from "../system_redis_bus";
 import { getNumberFrom16 } from "../utils/ethjs_unit";
+import { chainBalance } from "./chain_balance";
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -690,13 +691,22 @@ class Quotation {
     if (dataConfig.getHedgeConfig().hedgeType === IHedgeType.Null) {
       return;
     }
-    const capacity = await hedgeManager
+    const hedgeCapacity = await hedgeManager
       .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
       .calculateCapacity(ammContext);
-    // ETH-USDT // min(能卖出的最大对冲量,目标链钱包最大余额)
-    // USDT-ETH // min(目标链钱包的最大余额)
-    // USDT-USDT // min(目标链钱包的最大余额)
-    // ETH-ETH // min(目标链钱包的最大余额)
+    const dstBalanceMaxSwap = await this.dstBalanceMaxSwap(ammContext);
+    let capacity;
+    if (hedgeCapacity >= 0) {
+      capacity = _.min([hedgeCapacity, dstBalanceMaxSwap]);
+    } else {
+      capacity = _.min([dstBalanceMaxSwap]);
+    }
+    logger.debug(hedgeCapacity, dstBalanceMaxSwap, "⏩⏩⏩⏩⏩⏩⏩⏩⏩", capacity);
+    // ETH-USDT // ETH 能卖出的最大个数 bs 🤬     测试
+    // USDT-ETH // USDT的余额 sb  🤬 测试
+    // USDT-USDT // 不限制 ss 🤬测试
+    // ETH-ETH // 不限制 11 🤬
+    // ETH-BTC // ETH 能卖出的最大个数 bb      测试
     // const capacity16 = new BigNumber(capacity).toString(16);
     // const capacity16Str = `0x${capacity16}`;
     logger.debug(
@@ -714,6 +724,41 @@ class Quotation {
         .toString(),
       capacity: `0x${etherWei}`,
     });
+  }
+
+  /**
+   * 目标链余额swap的最大
+   * @param ammContext
+   * @private
+   */
+  private async dstBalanceMaxSwap(ammContext: AmmContext): Promise<number> {
+    const dstTokenBalance = chainBalance.getBalance(
+      ammContext.baseInfo.dstToken.chainId,
+      ammContext.walletInfo.walletName,
+      ammContext.baseInfo.dstToken.address
+    );
+    const {
+      asks: [[dstTokenPrice]],
+    } = quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId
+    );
+    const {
+      asks: [[srcTokenPrice]],
+    } = quotationPrice.getCoinUsdtOrderbook(
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.srcToken.chainId
+    );
+    const dstTokenUsdtPriceBN = new BigNumber(dstTokenPrice).times(new BigNumber(dstTokenBalance)); // dstToken USDT价值
+    const dstTokenDexBalanceToSrcTokenCount = dstTokenUsdtPriceBN
+      .div(srcTokenPrice)
+      .toFixed(8)
+      .toString(); // 目标币的Dex 余额，能换多少个SrcToken
+    logger.info(`目标DstChain: [${ammContext.baseInfo.dstToken.chainId}] [${ammContext.baseInfo.dstToken.symbol}],余额[${dstTokenBalance}]可提供，SrcToken[${ammContext.baseInfo.srcToken.symbol}] Max Input:${dstTokenDexBalanceToSrcTokenCount}`);
+    const dstTokenDexBalanceToSrcTokenCountNumber = Number(
+      dstTokenDexBalanceToSrcTokenCount
+    );
+    return dstTokenDexBalanceToSrcTokenCountNumber;
   }
 
   private async analysis(ammContext: AmmContext, sourceObject: any) {

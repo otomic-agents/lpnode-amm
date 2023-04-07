@@ -452,6 +452,7 @@ class DataConfig {
       process.exit(1);
     }
     const findOption = { ammName: appName };
+    logger.debug(`findOption`, findOption);
     const lpConfigList: {
       bridgeName: string;
       srcChainId: number;

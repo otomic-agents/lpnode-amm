@@ -47,7 +47,7 @@ class ChainBalance {
     this.intervalSyncBalance();
     setInterval(() => {
       this.reportBalanceInfo();
-    }, 1000 * 10);
+    }, 1000 * 60);
   }
 
   private intervalSyncBalance() {
