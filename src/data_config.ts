@@ -9,7 +9,6 @@ import * as _ from "lodash";
 import {
   IBridgeTokenConfigItem,
   ICexCoinConfig,
-  ICoinType,
   IHedgeConfig,
   IHedgeType,
 } from "./interface/interface";
@@ -23,6 +22,7 @@ import { bridgesModule } from "./mongo_module/bridge";
 import { dataRedis } from "./redis_bus";
 import { installModule } from "./mongo_module/install";
 import { statusReport } from "./status_report";
+import { extend_bridge_item } from "./data_config_bridge_extend";
 
 const Web3 = require("web3");
 const web3 = new Web3();
@@ -33,6 +33,8 @@ class DataConfig {
     hedgeAccount: "",
   };
   private chainTokenUsd: Map<number, number> = new Map();
+  // @ts-ignore
+  private chainMaxTokenUsd: Map<number, number> = new Map();
   private chainMap: Map<number, string> = new Map();
   private chainTokenMap: Map<number, string> = new Map(); // 链id 和Market Symbol之间的关系
   private tokenToSymbolMap: Map<string, ICexCoinConfig> = new Map();
@@ -150,19 +152,31 @@ class DataConfig {
 
   private async initBaseConfig(baseConfig: any) {
     console.log(baseConfig);
+    try {
+      this.checkBaseConfig(baseConfig);
+    } catch (e) {
+      logger.debug(e);
+      logger.error(`基础配置数据不正确`);
+      await TimeSleepForever("基础配置数据不正确,等待重新配置");
+    }
     const chainDataConfigList: {
       chainId: number;
-      config: { minSwapNativeTokenValue: string };
+      config: { minSwapNativeTokenValue: string, maxSwapNativeTokenValue: string };
     }[] = _.get(baseConfig, "chainDataConfig", []);
     for (const chainData of chainDataConfigList) {
       this.chainTokenUsd.set(
         chainData.chainId,
         Number(chainData.config.minSwapNativeTokenValue),
       );
+      this.chainMaxTokenUsd.set(
+        chainData.chainId,
+        Number(chainData.config.maxSwapNativeTokenValue)
+      );
       logger.debug(
         "set chain usd",
         chainData.chainId,
         Number(chainData.config.minSwapNativeTokenValue),
+        Number(chainData.config.maxSwapNativeTokenValue)
       );
     }
     let hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
@@ -180,6 +194,21 @@ class DataConfig {
     if (hedgeAccount.length <= 0) {
       logger.error(`基础配置数据不正确,请检查对冲账号设置`);
       await TimeSleepForever("基础配置数据不正确,等待重新配置");
+    }
+  }
+
+  private checkBaseConfig(baseConfig: any) {
+    const chainDataConfig: any[] = _.get(baseConfig, "chainDataConfig", []);
+    if (!_.isArray(chainDataConfig)) {
+      throw new Error(`chainDataConfig is incorrect `);
+    }
+    if (chainDataConfig.length <= 0) {
+      throw new Error(` chainDataConfig is empty`);
+    }
+    for (const item of chainDataConfig) {
+      if (!Object.keys(item["config"]).includes("minSwapNativeTokenValue") || !Object.keys(item["config"]).includes("maxSwapNativeTokenValue")) {
+        throw new Error(`chainDataConfig is missing a field`);
+      }
     }
   }
 
@@ -274,30 +303,6 @@ class DataConfig {
       .lean();
     // 同步的内容一定放在一起，保证同步币对，不会影响其它地方的报价
     this.tokenToSymbolMap = new Map();
-    this.tokenToSymbolMap.set("0x0", {
-      address: "0_0x0",
-      addressLower: "0_0x0",
-      chainId: 0,
-      coinType: ICoinType.StableCoin,
-      symbol: "USDT",
-      precision: 6,
-    });
-    this.tokenToSymbolMap.set("0x1", {
-      address: "0_0x1",
-      addressLower: "0_0x1",
-      chainId: 0,
-      coinType: ICoinType.StableCoin,
-      symbol: "USDC",
-      precision: 6,
-    });
-    this.tokenToSymbolMap.set("0x2", {
-      address: "0_0x2",
-      addressLower: "0_0x2",
-      chainId: 0,
-      coinType: ICoinType.StableCoin,
-      symbol: "BUSD",
-      precision: 6,
-    });
     tokenList.map((it) => {
       const uniqAddress = this.convertAddressToUniq(it.address, it.chainId);
       const key = `${it.chainId}_${uniqAddress}`;
@@ -434,7 +439,14 @@ class DataConfig {
   }
 
   public getChainGasTokenUsdMax(chainId: number): number {
-    return 0;
+    if (!_.isFinite(chainId)) {
+      return 0;
+    }
+    const usd = this.chainMaxTokenUsd.get(chainId);
+    if (!usd) {
+      return 0;
+    }
+    return usd;
   }
 
   /**
@@ -475,7 +487,7 @@ class DataConfig {
       process.exit(1);
     }
     for (const item of lpConfigList) {
-      const formatedItem = {
+      const formatedItem: any = {
         bridge_name: item.bridgeName,
         src_chain_id: item.srcChainId,
         dst_chain_id: item.dstChainId,
@@ -486,9 +498,12 @@ class DataConfig {
           name: item.walletName, // 把钱包地址也初始化，报价的时候要能够处理余额
           balance: {},
         },
-        dst_chain_client_uri: item.dstClientUri,
+        dst_chain_client_uri: item.dstClientUri
       };
-      this.bridgeTokenList.push(formatedItem);
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const context = this;
+      const proxyedFormatedItem: IBridgeTokenConfigItem = extend_bridge_item(formatedItem, context);
+      this.bridgeTokenList.push(proxyedFormatedItem);
     }
     console.table(this.bridgeTokenList);
   }

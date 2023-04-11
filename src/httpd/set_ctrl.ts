@@ -8,16 +8,19 @@ class SetCtrl {
     res.end();
     //
   }
+
   public async setHedgeConfig(req: any, res: any) {
     const key = "LP:CONFIG:hedge_config";
     dataRedis.set(key, JSON.stringify(req.body));
     res.end();
   }
+
   public async setChainName(req: any, res: any) {
     const key = "LP:CONFIG:chain_name";
     dataRedis.set(key, JSON.stringify(req.body));
     res.end();
   }
+
   public async eventTest(req: any, res: any) {
     // "bridge-B-C" ETH/USDT
     // "bridge-B-A" ETH/AVAX
@@ -38,20 +41,22 @@ class SetCtrl {
     //   JSON.stringify(req.body),
     //   "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x61D35C6B6a7568542acA42448B47690650C69bb9_9006_9006"
     // );
-   //usdt-usdt
-   //  eventProcess.onMessage(
-   //    JSON.stringify(req.body),
-   //    "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
-   //  );
+    //usdt-usdt
+    //  eventProcess.onMessage(
+    //    JSON.stringify(req.body),
+    //    "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
+    //  );
     // eth-eth
+    // eventProcess.onMessage(
+    //   JSON.stringify(req.body),
+    //   "0x61D35C6B6a7568542acA42448B47690650C69bb9/0x61D35C6B6a7568542acA42448B47690650C69bb9_9006_9006"
+    // );
+    
+    //T-USDT
     eventProcess.onMessage(
       JSON.stringify(req.body),
-      "0x61D35C6B6a7568542acA42448B47690650C69bb9/0x61D35C6B6a7568542acA42448B47690650C69bb9_9006_9006"
+      "0x7a5CEA1c44c27EfE3875e20d8a07F3B1441ba484/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
     );
-
-
-
-
 
 
     // eventProcess.onMessage(
@@ -76,5 +81,6 @@ class SetCtrl {
     res.end();
   }
 }
+
 const setCtrl: SetCtrl = new SetCtrl();
 export { SetCtrl, setCtrl };

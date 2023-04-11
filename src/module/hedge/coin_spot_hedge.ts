@@ -51,6 +51,10 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   }
 
+  // public async getMinAmount() {
+  //
+  // }
+
   private async initAccount() {
     try {
       await accountManager.init();
@@ -68,6 +72,9 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
    */
   public async checkSwapAmount(ammContext: AmmContext) {
     const symbol = ammContext.baseInfo.srcToken.symbol;
+    if (symbol === "T") {
+      return true;
+    }
     const balance = accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount)?.balance.getSpotBalance(symbol);
     if (!balance) {
       throw new Error(`获取余额失败`);

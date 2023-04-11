@@ -66,6 +66,7 @@ class Business {
       throw new Error("token not found");
     }
     const context: AmmContext = {
+      bridgeItem: item,
       step: 0,
       systemOrder: {
         orderId: 0,
@@ -94,6 +95,7 @@ class Business {
         walletName: item.wallet.name,
       },
       baseInfo: {
+        fee: item.fee_manager.getQuotationPriceFee(),
         srcChain: {
           id: token0.chainId,
           tokenName: dataConfig.getChainTokenName(token0.chainId)
@@ -137,6 +139,7 @@ class Business {
         quote_hash: "",
         mode: "",
         origPrice: "",
+        origTotalPrice: "",
         native_token_usdt_price: ""
       },
       askTime: new Date().getTime(),

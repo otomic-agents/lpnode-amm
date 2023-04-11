@@ -4,6 +4,7 @@ import BigNumber from "bignumber.js";
 import { dataConfig } from "../../data_config";
 import { logger } from "../../sys_lib/logger";
 import { orderbook } from "../orderbook";
+import * as _ from "lodash";
 
 class QuotationPrice {
   public getCoinUsdtOrderbook(
@@ -30,6 +31,13 @@ class QuotationPrice {
         asks: [[1, 100000000]],
       };
     }
+    if (stdSymbol === "T/USDT") {
+      return {
+        stdSymbol,
+        bids: [[1, 100000000]],
+        asks: [[1, 100000000]]
+      };
+    }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
       logger.error(`获取orderbook失败...`);
@@ -49,7 +57,7 @@ class QuotationPrice {
     return { stdSymbol, asks: retAsks, bids: retBids };
   }
 
-  public getCoinUsdtOrderbookByCoinName(stdCoinSymbol: string) {
+  public getCoinUsdtOrderbookByCoinName(stdCoinSymbol: string): { stdSymbol: string | null, bids: number[][], asks: number[][] } {
     const stdSymbol = `${stdCoinSymbol}/USDT`;
     if (stdSymbol === "USDT/USDT") {
       return {
@@ -60,7 +68,7 @@ class QuotationPrice {
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
-      logger.error(`获取orderbook失败...`);
+      logger.error(`获取orderbook失败...${stdSymbol}`);
       return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     }
     const { bids, asks } = orderbookItem;
@@ -86,6 +94,25 @@ class QuotationPrice {
     const bnA = new BigNumber(aPrice);
     const bnB = new BigNumber(bPrice);
     return bnA.div(bnB);
+  }
+
+  public getNativeTokenBidPrice(chainId: number) {
+    const gasSymbol = dataConfig.getChainTokenName(
+      chainId,
+    );
+    if (!gasSymbol) {
+      throw new Error(`No coins found for the target chain 【${chainId}】`);
+    }
+    const {
+      asks: [[tokenUsdtPrice]],
+    } = this.getCoinUsdtOrderbookByCoinName(gasSymbol);
+    if (!_.isFinite(tokenUsdtPrice) || tokenUsdtPrice === 0) {
+      logger.error(`没有找到U价，报价失败 ${gasSymbol}`);
+      throw new Error(
+        `目标链Gas币Usdt 价值获取失败，无法报价${gasSymbol}`,
+      );
+    }
+    return tokenUsdtPrice;
   }
 }
 

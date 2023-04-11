@@ -40,6 +40,7 @@
     "gulp": "^4.0.2",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-typescript": "^6.0.0-alpha.1",
+    "helpful-decorators": "^2.1.0",
     "internal-ip": "^7.0.0",
     "ioredis": "^4.28.5",
     "jsdoc": "^3.6.7",

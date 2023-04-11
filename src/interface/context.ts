@@ -1,4 +1,7 @@
+import { IBridgeTokenConfigItem } from "./interface";
+
 interface AmmContext {
+  bridgeItem: IBridgeTokenConfigItem
   step: number; // 当前处于第几步
   systemInfo: {
     msmqName: string;
@@ -10,6 +13,7 @@ interface AmmContext {
     cid: string;
   };
   baseInfo: {
+    fee: number,
     srcChain: {
       id: number,
       tokenName: string
@@ -56,6 +60,7 @@ interface AmmContext {
     quote_hash: string;
     mode: string;
     origPrice: string;
+    origTotalPrice: string
     price: string; // 1 的报价
     native_token_usdt_price: string
     src_usd_price: string // 左侧币对的U价

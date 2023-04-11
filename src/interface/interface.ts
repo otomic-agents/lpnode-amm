@@ -1,5 +1,7 @@
 import { AmmContext } from "./context";
 import BigNumber from "bignumber.js";
+import { FeeManager } from "../module/bridge_extend/fee_manager";
+import { StatusManager } from "../module/bridge_extend/status_manager";
 
 interface IBridgeTokenConfigItem {
   bridge_name: string; // tokenBridge的name
@@ -8,11 +10,14 @@ interface IBridgeTokenConfigItem {
   srcToken: string;
   dstToken: string;
   msmq_name: string;
+  std_symbol: string;
   wallet: {
     name: string; // 目标链使用的钱包地址
     balance: { [key: string]: number }; // 目标链钱包的余额
   };
   dst_chain_client_uri: string; // 目标链客户端的链接地址
+  fee_manager: FeeManager;
+  status_manager: StatusManager;
 }
 
 enum ICoinType {

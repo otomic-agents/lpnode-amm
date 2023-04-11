@@ -18,6 +18,8 @@ import { ammContextModule } from "../mongo_module/amm_context";
 import { systemRedisBus } from "../system_redis_bus";
 import { getNumberFrom16 } from "../utils/ethjs_unit";
 import { chainBalance } from "./chain_balance";
+import { measure, memo } from 'helpful-decorators';
+import { IQuoteData } from "../interface/quotation";
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -26,7 +28,6 @@ const Web3 = require("web3");
 const web3 = new Web3();
 // @ts-ignore
 const cTable = require("console.table");
-const var_dump = require("var_dump");
 
 class Quotation {
   private bridgeTokenList: IBridgeTokenConfigItem[] = []; // 桥跨链的报价
@@ -64,6 +65,24 @@ class Quotation {
     }, 1000 * 30);
   }
 
+  private getDefaultPriceStruct(): IQuoteData {
+    return {
+      origTotalPrice: "",
+      usd_price: "", // 目标币的U价
+      price: "", // return this.calculate(item, price);
+      origPrice: "", // 币的原始报价，用于 之后计算滑点
+      min_amount: "", // 如果想要够gas 消耗，最低的兑换数量,目前的算法是  假设设置消耗20Usd Gas ，那么 如果收取千三的手续费能满足Gas的情况下，最少需要多少个Atoken
+      gas: `0`, // Gas 需要消耗多少个目标币，目前有Amount了，这里要重新算一下
+      capacity: `0x${(50000000000000000000000).toString(16)}`, // 根据对冲配置，计算出来的最大量
+      native_token_price: `0`, // 假设 ETH-USDT  BSC-AVAX  则价格为 ETH/AVAX
+      native_token_usdt_price: `0`, // 目标链原生币的买价，orderbook卖5价
+      native_token_max: `1`, // native_token_min * 10
+      native_token_min: `0.1`, // 根据链配置的Gas币 最少Usd 单位，计算出的最小token币的兑换个数
+      timestamp: new Date().getTime(),
+      quote_hash: "",
+    };
+  }
+
   /**
    * 针对一行记录开始报价
    * @param ammContext
@@ -72,23 +91,11 @@ class Quotation {
     const quoteHash = crypto.createHash("sha1")
       .update(uuidv4())
       .digest("hex");
-    const quoteInfo = {
+    const quoteInfo: { cmd: string, quote_data: IQuoteData } = {
       cmd: ILpCmd.CMD_UPDATE_QUOTE,
-      quote_data: {
-        usd_price: "", // 目标币的U价
-        price: "", // return this.calculate(item, price);
-        origPrice: "", // 币的原始报价，用于 之后计算滑点
-        min_amount: "", // 如果想要够gas 消耗，最低的兑换数量,目前的算法是  假设设置消耗20Usd Gas ，那么 如果收取千三的手续费能满足Gas的情况下，最少需要多少个Atoken
-        gas: `0`, // Gas 需要消耗多少个目标币，目前有Amount了，这里要重新算一下
-        capacity: `0x${(50000000000000000000000).toString(16)}`, // 根据对冲配置，计算出来的最大量
-        native_token_price: `0`, // 假设 ETH-USDT  BSC-AVAX  则价格为 ETH/AVAX
-        native_token_usdt_price: `0`, // 目标链原生币的买价，orderbook卖5价
-        native_token_max: `1`, // native_token_min * 10
-        native_token_min: `0.1`, // 根据链配置的Gas币 最少Usd 单位，计算出的最小token币的兑换个数
-        timestamp: new Date().getTime(),
-        quote_hash: quoteHash,
-      },
+      quote_data: this.getDefaultPriceStruct(),
     };
+    quoteInfo.quote_data.quote_hash = quoteHash;
     try {
       this.prePrice(ammContext); // 前置检查,检查是否支持币对兑换，主要看是 币 和稳定币之间的关系
       ammContext.quoteInfo.mode = this.getSwapType(ammContext);
@@ -101,7 +108,8 @@ class Quotation {
       await this.amountCheck(ammContext);
       await this.min_amount(ammContext, quoteInfo);
       await this.renderInfo(ammContext, quoteInfo);
-      await this.priceDstGasToken(ammContext, quoteInfo); // 计算目标链的Gas币兑换量
+      await this.native_token_min(ammContext, quoteInfo); // 计算目标链的Gas币兑换量
+      await this.native_token_max(ammContext, quoteInfo);
       this.calculateGas(ammContext, quoteInfo); // 计算gas
       await this.calculateCapacity(ammContext, quoteInfo); // 计算最大量
       await this.analysis(ammContext, quoteInfo);
@@ -167,7 +175,7 @@ class Quotation {
    * @param {*} sourceObject 的
    * @returns {void} ""
    */
-  private async priceDstGasToken(ammContext: AmmContext, sourceObject: any) {
+  private async native_token_min(ammContext: AmmContext, sourceObject: any) {
     const [token0] = dataConfig.getCexStdSymbolInfoByToken(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.dstToken.address,
@@ -183,7 +191,6 @@ class Quotation {
         `没有找到目标链的Token Symbol${ammContext.baseInfo.dstToken.chainId}`,
       );
     }
-    const srcTokenSymbol = `${ammContext.baseInfo.srcToken.address}/0x0`;
     const { bids: bid, asks: ask } = this.quotationPrice.getCoinUsdtOrderbook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId,
@@ -196,7 +203,7 @@ class Quotation {
     const [[srcUprice]] = srcUPriceInfo;
     if (!_.isFinite(srcUprice) || srcUprice === 0) {
       logger.error(`没有找到U价报价失败`);
-      throw new Error(`没有找到U价，报价失败${srcTokenSymbol}`);
+      throw new Error(`没有找到U价，报价失败${ammContext.baseInfo.srcToken.symbol}/USDT`);
     }
 
     const {
@@ -205,7 +212,7 @@ class Quotation {
     if (!_.isFinite(tokenUPrice) || tokenUPrice === 0) {
       logger.error(`没有找到U价，报价失败 ${gasSymbol}`);
       throw new Error(
-        `目标链Gas币Usdt 价值获取失败，无法报价${srcTokenSymbol}`,
+        `目标链Gas币Usdt 价值获取失败，无法报价${gasSymbol}`,
       );
     }
     const targetPrice = new BigNumber(srcUprice)
@@ -236,12 +243,30 @@ class Quotation {
     });
   }
 
+  private async native_token_max(ammContext: AmmContext, sourceObject: any) {
+    const dstChainId = ammContext.baseInfo.dstToken.chainId;
+    const nativeTokenPrice = await this.quotationPrice.getNativeTokenBidPrice(dstChainId);
+    const dstChainMaxSwapUsd = dataConfig.getChainGasTokenUsdMax(dstChainId);
+    const maxCountBN = new BigNumber(dstChainMaxSwapUsd).div(new BigNumber(nativeTokenPrice));
+    if (!maxCountBN.isFinite()) {
+      throw `计算目标链token最大报价发生错误 !isFinite`;
+    }
+    const maxCount = Number(maxCountBN.toFixed(8).toString());
+    logger.info(maxCount);
+
+    Object.assign(sourceObject.quote_data, {
+      native_token_max: maxCountBN.toFixed(8).toString()
+    });
+  }
+
   public async queryRealtimeQuote(ammContext: AmmContext): Promise<string> {
     await orderbook.refreshOrderbook(); // 立即刷新一次最新的orderbook ，然后计算价格
     const [price] = this.calculatePrice(ammContext, { quote_data: {} });
     return price;
   }
 
+  @measure
+  @memo()
   public async asksQuote(ammContext: AmmContext) {
     const [quoteHash, quoteInfo] = await this.quotationItem(ammContext); // 使用问价模式报价
     if (!_.isString(quoteHash)) {
@@ -306,8 +331,6 @@ class Quotation {
    * @returns {*} ""
    */
   public price(ammContext: AmmContext, sourceObject: any) {
-    // 扣除千三的手续费，单价中
-    // 获取目标币的U价格
     const { bids: dstTokenBids } = this.quotationPrice.getCoinUsdtOrderbook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId,
@@ -318,7 +341,7 @@ class Quotation {
       logger.warn(`没有获取到dstToken/USDT,无法进行报价`);
       throw new Error(`没有获取到dstToken/USDT,无法进行报价`);
     }
-    const [bTargetPrice, origPrice] = this.calculatePrice(
+    const [bTargetPrice, origPrice, origTotalPrice] = this.calculatePrice(
       ammContext,
       sourceObject,
     );
@@ -326,6 +349,7 @@ class Quotation {
     Object.assign(sourceObject.quote_data, {
       origPrice,
       price: bTargetPrice.toString(),
+      origTotalPrice: origTotalPrice.toString(),
       usd_price: usdPrice, // 目标币的U价格  如 ETH-USDT   则 1  ETH-AVAX  则显示  Avax/Usdt的价格
     });
   }
@@ -398,7 +422,7 @@ class Quotation {
   private calculatePrice_bb(
     ammContext: AmmContext,
     sourceObject: any = undefined,
-  ): [string, string] {
+  ): [string, string, string] {
     // ETH/AVAX
     const srcTokenPrice = this.quotationPrice.getCoinUsdtOrderbook(
       ammContext.baseInfo.srcToken.address,
@@ -413,21 +437,22 @@ class Quotation {
       srcTokenPrice,
       dstTokenPrice,
     );
-    const targetPriceBN = priceBn.times(new BigNumber(0.997));
+    const withFee = 1 - ammContext.baseInfo.fee;
+    const targetPriceBN = priceBn.times(new BigNumber(withFee));
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: srcTokenPrice,
         B: dstTokenPrice,
       },
     });
-    var_dump(sourceObject.quote_data);
-    return [targetPriceBN.toString(), priceBn.toString()];
+    const totalOrigPrice = new BigNumber(ammContext.swapInfo.inputAmountNumber).times(new BigNumber(priceBn));
+    return [targetPriceBN.toString(), priceBn.toString(), totalOrigPrice.toString()];
   }
 
   private calculatePrice_bs(
     ammContext: AmmContext,
     sourceObject: any = undefined,
-  ): [string, string] {
+  ): [string, string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
     const { stdSymbol, bids, asks } = this.quotationPrice.getCoinUsdtOrderbook(
@@ -441,51 +466,53 @@ class Quotation {
     logger.info("get orderbook ", stdSymbol);
     const [[price]] = bids;
     const priceBn = new BigNumber(price);
-
-    const targetPriceBN = priceBn.times(new BigNumber(0.997));
+    const withFee = 1 - ammContext.baseInfo.fee;
+    const targetPriceBN = priceBn.times(new BigNumber(withFee));
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: { bids, asks },
         B: null,
       },
     });
-    var_dump(sourceObject.quote_data);
-    return [targetPriceBN.toString(), priceBn.toString()];
+    const totalOrigPrice = new BigNumber(ammContext.swapInfo.inputAmountNumber).times(new BigNumber(priceBn));
+    return [targetPriceBN.toString(), priceBn.toString(), totalOrigPrice.toString()];
   }
 
   private calculatePrice_ss(
     ammContext: AmmContext,
     sourceObject: any = undefined,
-  ): [string, string] {
+  ): [string, string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
 
     const priceBn = new BigNumber(1);
-    const targetPriceBN = priceBn.times(new BigNumber(0.997));
+    const withFee = 1 - ammContext.baseInfo.fee;
+    const targetPriceBN = priceBn.times(new BigNumber(withFee));
     Object.assign(sourceObject.quote_data, {
       orderbook: {},
     });
-    var_dump(sourceObject.quote_data);
-    return [targetPriceBN.toString(), priceBn.toString()];
+    const totalOrigPrice = new BigNumber(ammContext.swapInfo.inputAmountNumber).times(new BigNumber(priceBn));
+    return [targetPriceBN.toString(), priceBn.toString(), totalOrigPrice.toString()];
   }
 
   private calculatePrice_11(
     ammContext: AmmContext,
     sourceObject: any = undefined,
-  ): [string, string] {
+  ): [string, string, string] {
     const priceBn = new BigNumber(1);
-    const targetPriceBN = priceBn.times(new BigNumber(0.997));
+    const withFee = 1 - ammContext.baseInfo.fee;
+    const targetPriceBN = priceBn.times(new BigNumber(withFee));
     Object.assign(sourceObject.quote_data, {
       orderbook: {},
     });
-    var_dump(sourceObject.quote_data);
-    return [targetPriceBN.toString(), priceBn.toString()];
+    const totalOrigPrice = new BigNumber(ammContext.swapInfo.inputAmountNumber).times(new BigNumber(priceBn));
+    return [targetPriceBN.toString(), priceBn.toString(), totalOrigPrice.toString()];
   }
 
   private calculatePrice_sb(
     ammContext: AmmContext,
     sourceObject: any = undefined,
-  ): [string, string] {
+  ): [string, string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
     const { stdSymbol, bids, asks } = this.quotationPrice.getCoinUsdtOrderbook(
@@ -500,27 +527,28 @@ class Quotation {
     const [[price]] = asks;
     const dstTokenPriceBn = new BigNumber(price);
     const priceBn = new BigNumber(1).div(new BigNumber(price));
-
-    const targetPriceBN = priceBn.times(new BigNumber(0.997));
+    const withFee = 1 - ammContext.baseInfo.fee;
+    const targetPriceBN = priceBn.times(new BigNumber(withFee));
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: null,
         B: { bids, asks },
       },
     });
-    var_dump(sourceObject.quote_data);
+    const totalOrigPrice = new BigNumber(ammContext.swapInfo.inputAmountNumber).times(new BigNumber(priceBn));
     return [
       targetPriceBN.toFixed(8)
         .toString(),
       dstTokenPriceBn.toFixed(8)
         .toString(),
+      totalOrigPrice.toString()
     ];
   }
 
   private calculatePrice(
     ammContext: AmmContext,
     sourceObject: any = undefined,
-  ): [string, string] {
+  ): [string, string, string] {
     const swapType = this.getSwapType(ammContext);
     logger.info(`当前的swapType`, swapType);
     if (swapType === "bb") {
@@ -573,7 +601,7 @@ class Quotation {
     );
     let minCount = ``;
     if (coinCount.gt(new BigNumber(1))) {
-      minCount = coinCount.div("0.003")
+      minCount = coinCount.div(ammContext.baseInfo.fee)
         .times(tokenPrice)
         .toFixed(8)
         .toString();
