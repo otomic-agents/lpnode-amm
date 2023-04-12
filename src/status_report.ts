@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import { statusRedis } from "./redis_bus";
 import { logger } from "./sys_lib/logger";
 import { dataConfig } from "./data_config";
-
+const stringify = require('json-stringify-safe');
 class StatusReport {
   private store: any = {};
 
@@ -43,7 +43,7 @@ class StatusReport {
       return;
     }
     statusRedis
-      .set(statusKey, JSON.stringify(this.store))
+      .set(statusKey, stringify(this.store))
       .then(() => {
         //
       })

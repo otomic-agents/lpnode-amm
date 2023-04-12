@@ -69,7 +69,8 @@ class ChainBalance {
     const eachFun = async (item: IChainListItem) => {
       let reqUrl = `${item.clientUri}/lpnode/get_wallets`;
       if (_.get(process.env, "UseTestWalletsUrl", "false") === "true") {
-        reqUrl = _.get(process.env, "TestWalletsUrl", "");
+        const reqUrlHost = _.get(process.env, "TestWalletsHost", "");
+        reqUrl = `${reqUrlHost}/lpnode/get_wallets`;
         if (reqUrl === "") {
           logger.error("address empty ");
           return;

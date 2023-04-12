@@ -94,6 +94,29 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
+  public async spotTradeCheck(stdSymbol: string, value: number): Promise<boolean> {
+    if (stdSymbol === "T/USDT") {
+      return true;
+    }
+    const item = this.spotSymbolsInfo.get(stdSymbol);
+    if (!item) {
+      logger.warn(`No trading pair information found ${stdSymbol}`);
+      return false;
+    }
+    // logger.debug(item.filters);
+    const filterSet = _.find(item.filters, { filterType: "MIN_NOTIONAL" });
+    if (!filterSet || !_.get(filterSet, "minNotional", undefined)) {
+      logger.warn("filter not found");
+      return false;
+    }
+    const minNotional = Number(_.get(filterSet, "minNotional"));
+    if (value > minNotional) {
+      return true;
+    }
+    logger.warn(`The transaction volume does not meet the minimum order limit`, value, minNotional);
+    return false;
+  }
+
   private setExchangeSymbolInfo(symbols: ISpotSymbolItemBinance[]) {
     for (const item of symbols) {
       if (item.status === "TRADING") {

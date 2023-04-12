@@ -2,6 +2,7 @@ import { AmmContext } from "./context";
 import BigNumber from "bignumber.js";
 import { FeeManager } from "../module/bridge_extend/fee_manager";
 import { StatusManager } from "../module/bridge_extend/status_manager";
+import { LpWalletManager } from "../module/bridge_extend/lp_wallet_manager";
 
 interface IBridgeTokenConfigItem {
   bridge_name: string; // tokenBridge的name
@@ -18,6 +19,7 @@ interface IBridgeTokenConfigItem {
   dst_chain_client_uri: string; // 目标链客户端的链接地址
   fee_manager: FeeManager;
   status_manager: StatusManager;
+  lp_wallet_info: LpWalletManager;
 }
 
 enum ICoinType {
@@ -86,6 +88,8 @@ enum IHedgeType {
 }
 
 interface IHedgeClass {
+  checkMinHedge(ammContext: AmmContext, unitPrice: number): Promise<boolean>;
+
   checkSwapAmount(ammContext: AmmContext): Promise<boolean>;
 
   getHedgeAccountState(): Promise<number>;

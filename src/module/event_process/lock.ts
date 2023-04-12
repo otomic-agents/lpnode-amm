@@ -18,7 +18,10 @@ import { CreateRecord } from "./system_record";
 import { ammContextModule } from "../../mongo_module/amm_context";
 import { AmmContext } from "../../interface/context";
 import { orderIncModule } from "../../mongo_module/order_inc";
+import { EthUnit } from "../../utils/eth";
+import { evaluate } from "mathjs";
 
+const stringify = require('json-stringify-safe');
 const var_dump = require("var_dump");
 
 interface IVerificationEngineReulst {
@@ -74,16 +77,23 @@ class EventProcessLock extends BaseEventProcess {
       })
       .lean();
     if (!ammContext) {
+      throw new Error(`no context found`);
+    }
+    ammContext.bridgeItem = dataConfig.findItemByMsmqName(ammContext.systemInfo.msmqName);
+    if (!ammContext) {
       throw new Error(`No historical inquiry found`);
     }
     if (_.get(ammContext, "lockInfo.time", 0) > 0) {
       throw new Error("It is not possible to lock the same quote repeatedly");
     }
+    const [srcFee, dstFee] = this.getFeeInfoFromMsg(msg);
     ammContext.swapInfo.srcAmount = _.get(
       msg,
       "pre_business.swap_asset_information.amount",
       "",
     );
+    ammContext.swapInfo.systemSrcFee = srcFee;
+    ammContext.swapInfo.systemDstFee = dstFee;
     let systemOrder;
     let orderId;
     try {
@@ -91,6 +101,8 @@ class EventProcessLock extends BaseEventProcess {
       await this.verificationDexBalance(ammContext); // Check Des balance
       await this.verificationHistory(ammContext, msg); // Check history quote
       await this.checkSpread(ammContext, msg); // Check spread
+      await this.verificationLockValue(ammContext, msg);
+      ammContext.swapInfo.lpReceiveAmount = await ammContext.bridgeItem.lp_wallet_info.getReceivePrice(ammContext);
       await this.verificationHedge(ammContext, msg); // Verify that hedging is possible
       [orderId, systemOrder] = await this.createSystemOrder(ammContext, msg); // Create system order
       _.set(
@@ -124,8 +136,10 @@ class EventProcessLock extends BaseEventProcess {
       },
       {
         $set: {
+          swapInfo: ammContext.swapInfo,
           step: 1, // 标记已经处于lock状态
           systemOrder,
+          "lockInfo.fee": ammContext.lockInfo.fee,
           "lockInfo.time": new Date().getTime(),
           "lockInfo.price": ammContext.quoteInfo.origPrice,
           "lockInfo.nativeTokenPrice": ammContext.quoteInfo.native_token_usdt_price,
@@ -134,6 +148,58 @@ class EventProcessLock extends BaseEventProcess {
         },
       },
     );
+  }
+
+  private verificationLockValue(ammContext: AmmContext, msg: IEVENT_LOCK_QUOTE) {
+    const dstAmountRaw = _.get(msg, "pre_business.swap_asset_information.dst_amount", undefined);
+    if (!dstAmountRaw) {
+      throw new Error('dst_amount amount is empty');
+    }
+    const dstAmount = EthUnit.fromWei(
+      dstAmountRaw,
+      ammContext.baseInfo.dstToken.precision
+    );
+
+    const formula = `1/${ammContext.quoteInfo.origPrice}*${dstAmount}`;
+    logger.info("dstTokenValue calculate", formula);
+    const dstTokenToSrcTokenValue = evaluate(formula);
+    logger.info(`dstToken兑换量价值多少个srcToken？:`, dstTokenToSrcTokenValue);
+
+    const dstNativeAmountRaw = _.get(msg, "pre_business.swap_asset_information.dst_native_amount", undefined);
+    if (!dstNativeAmountRaw) {
+      throw new Error(`dst_native_amount amount is empty`);
+    }
+    const dstNativeAmount = EthUnit.fromWei(
+      dstNativeAmountRaw,
+      18
+    );
+    const formulaNative = `1/${ammContext.quoteInfo.native_token_price}*${dstNativeAmount}`;
+    logger.info("dstNativeTokenValue calculate", formulaNative);
+    const dstNativeTokenToSrcTokenValue = evaluate(formulaNative);
+    logger.info(`dstNativeToken兑换量价值多少个srcToken？:`, dstNativeTokenToSrcTokenValue);
+    const feeFormula = `1-(${dstTokenToSrcTokenValue}+${dstNativeTokenToSrcTokenValue})/${ammContext.swapInfo.inputAmountNumber}`;
+    logger.info("fee calculate", feeFormula);
+    const fee = evaluate(feeFormula);
+    logger.info("实际swap的Fee", fee);
+    ammContext.lockInfo.fee = fee.toString();
+    if (ammContext.bridgeItem.fee_manager.getQuotationPriceFee() - fee > 0.001) {
+      throw "实际swap的Fee不正确";
+    }
+  }
+
+  private getFeeInfoFromMsg(msg: IEVENT_LOCK_QUOTE): [number, number] {
+    const systemSrcFeeRaw = _.get(msg, "pre_business.swap_asset_information.system_fee_src", 0);
+    const systemDstFeeRaw = _.get(msg, "pre_business.swap_asset_information.system_fee_dst", 0);
+    let systemSrcFee = 0;
+    let systemDstFee = 0;
+    if (systemSrcFeeRaw > 0) {
+      systemSrcFee = systemSrcFeeRaw / 10000;
+    }
+    if (systemDstFeeRaw > 0) {
+      systemDstFee = systemDstFeeRaw / 10000;
+    }
+    return [systemSrcFee, systemDstFee];
+
   }
 
   /**
@@ -319,7 +385,7 @@ class EventProcessLock extends BaseEventProcess {
     );
     const systemOrder = CreateRecord();
     // Add basic information
-    systemOrder.bridgeConfig = config;
+    systemOrder.bridgeConfig = JSON.parse(stringify(config));
     systemOrder.balanceLockedId = _.get(
       msg,
       "pre_business.swap_asset_information.balance_lock_id",

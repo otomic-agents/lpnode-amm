@@ -18,7 +18,6 @@ import { eventProcessTransferOutConfirm } from "./event_process/transferout_conf
 import { quotation } from "./quotation";
 import { AmmContext } from "../interface/context";
 import { ammContextModule } from "../mongo_module/amm_context";
-import { getNumberFrom16 } from "../utils/ethjs_unit";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
@@ -85,6 +84,7 @@ class Business {
         msmqName: item.msmq_name,
       },
       lockInfo: {
+        fee: "",
         price: "0",
         nativeTokenPrice: "",
         time: 0,
@@ -126,7 +126,10 @@ class Business {
       },
       swapInfo: {
         inputAmount: _.get(msg, "amount", ""),
-        inputAmountNumber: getNumberFrom16(_.get(msg, "amount", ""), token0.precision),
+        inputAmountNumber: Number(_.get(msg, "amount", "0")),
+        systemSrcFee: 0,
+        systemDstFee: 0,
+        lpReceiveAmount: 0,
         srcAmount: "",
         dstAmount: "",
         srcAmountNumber: 0,
@@ -140,6 +143,7 @@ class Business {
         mode: "",
         origPrice: "",
         origTotalPrice: "",
+        native_token_price: "",
         native_token_usdt_price: ""
       },
       askTime: new Date().getTime(),

@@ -5,11 +5,13 @@ enum IEVENT_NAME {
   "EVENT_TRANSFER_OUT_CONFIRM" = "EVENT_TRANSFER_OUT_CONFIRM", // 如果用户在A链确认付款
   "EVENT_TRANSFER_OUT_REFUND" = "EVENT_TRANSFER_OUT_REFUND",
 }
+
 interface IEVENT_ASK_QUOTE {
   cmd: string;
   amount: string;
   cid: string;
 }
+
 interface IEVENT_LOCK_QUOTE {
   cmd: string;
   quote_data: any;
@@ -42,6 +44,8 @@ interface IEVENT_LOCK_QUOTE {
         quote_name: string;
         timestamp: number;
       };
+      system_fee_src: number
+      system_fee_dst: number
       append_information: string;
     };
     hash: string | null;
@@ -123,6 +127,7 @@ interface IEVENT_TRANSFER_OUT {
     event_transfer_in_refund: null;
   };
 }
+
 interface IEVENT_TRANSFER_OUT_CONFIRM {
   cmd: string;
   quote_data: any;

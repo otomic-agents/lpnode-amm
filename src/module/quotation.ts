@@ -100,6 +100,9 @@ class Quotation {
       this.prePrice(ammContext); // 前置检查,检查是否支持币对兑换，主要看是 币 和稳定币之间的关系
       ammContext.quoteInfo.mode = this.getSwapType(ammContext);
       if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+        const srcTokenPrice = quotationPrice.getSrcTokenBidPrice(ammContext);
+        await hedgeManager.getHedgeIns(dataConfig.getHedgeConfig().hedgeType).checkMinHedge(ammContext, srcTokenPrice);
+        logger.info(`The cex order limit has been met`);
         await hedgeManager.getHedgeIns(dataConfig.getHedgeConfig().hedgeType).checkSwapAmount(ammContext);
       }
       await this.price(ammContext, quoteInfo);
@@ -616,7 +619,7 @@ class Quotation {
     const minCountNumber = Number(minCount);
     const hedgeMinNumber = await this.min_amount_hedge(ammContext);
     const minAmount = _.max([minCountNumber, hedgeMinNumber]);
-    if (!minAmount) {
+    if (minAmount === undefined) {
       throw new Error("Minimum volume calculation error");
     }
     Object.assign(sourceObject.quote_data, {

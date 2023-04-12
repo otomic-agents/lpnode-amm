@@ -42,6 +42,9 @@ interface AmmContext {
   swapInfo: {
     inputAmount: string; //  前端输入的量
     inputAmountNumber: number;
+    systemSrcFee: number; // Lock 之后开始有值
+    systemDstFee: number; // Lock 之后开始有值
+    lpReceiveAmount: number; // Lp 实际收到的量
     srcAmount: string; // 实际收到的量
     srcAmountNumber: number;
     dstAmount: string; // 实际转出的量
@@ -61,11 +64,13 @@ interface AmmContext {
     mode: string;
     origPrice: string;
     origTotalPrice: string
+    native_token_price: string
     price: string; // 1 的报价
     native_token_usdt_price: string
     src_usd_price: string // 左侧币对的U价
   };
   lockInfo: {
+    fee: string
     dstTokenPrice: string // 目标币的U价格
     price: string; // 原始报价 换币价格
     srcTokenPrice: string; // 起始链 token usdt价格

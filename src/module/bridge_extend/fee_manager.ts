@@ -6,6 +6,7 @@ class FeeManager {
 
   constructor(item: IBridgeTokenConfigItem) {
     this.bridgeItem = item;
+
     this.keepLatestFee();
   }
 

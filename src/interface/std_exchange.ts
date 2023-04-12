@@ -17,6 +17,7 @@ interface IStdExchangeSpot {
   fetchBalance(): Promise<any>; // 获取现货余额
   withdrawApply(): Promise<any>; // 提款
   capitalAll(): Promise<any>; // 查询提款列表
+  spotTradeCheck(stdSymbol: string, amount: number): Promise<boolean>; // 检查现货交易条件是否满足
   createMarketOrder(
     orderId: string,
     stdSymbol: string,
@@ -25,10 +26,14 @@ interface IStdExchangeSpot {
   ): Promise<ISpotOrderResult>; // 简单市价单
   getBalance(): Map<string, ISpotBalanceItem>;
 }
+
 interface IStdExchangeUsdtFuture {
   initMarkets(): Promise<void>;
+
   fetchMarkets(): Map<string, IUsdtFutureSymbolItem>;
+
   fetchBalance(): Promise<any>;
+
   createMarketOrder(
     orderId: string,
     stdSymbol: string,
@@ -37,12 +42,17 @@ interface IStdExchangeUsdtFuture {
   ): Promise<ISpotOrderResult>; // 简单市价单
   getBalance(): Map<string, IUsdtFutureBalanceItem>;
 }
+
 interface IStdExchangeCoinFuture {
   initMarkets(): Promise<void>;
+
   fetchMarkets(): Map<string, ICoinFutureSymbolItem>;
+
   fetchBalance(): Promise<any>;
+
   getBalance(): Map<string, ICoinFutureBalanceItem>;
 }
+
 interface IStdExchange {
   exchangeSpot: IStdExchangeSpot;
   exchangeUsdtFuture: IStdExchangeUsdtFuture;

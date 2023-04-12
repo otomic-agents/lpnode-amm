@@ -11,7 +11,9 @@ interface ISpotSymbolItemBinance {
   orderTypes: string[];
   baseAssetPrecision: number;
   quoteAssetPrecision: number;
+  filters: any[];
 }
+
 // [
 //   // 订单类型
 //   "LIMIT", // 限价单
@@ -53,6 +55,7 @@ interface IUsdtFutureSymbolItemBinance {
   orderTypes: string[];
   timeInForce: string[];
 }
+
 // 币本位Symbol info
 interface ICoinFutureSymbolItemBinance {
   stdSymbol: string;
@@ -118,12 +121,14 @@ enum ITimeInForceBinance {
   "IOC" = "IOC", // 无法立即成交的部分就撤销 订单在失效前会尽量多的成交。
   "FOK" = "FOK", //	无法全部立即成交就撤销 如果无法全部成交，订单会失效。
 }
+
 // 现货余额的定义
 interface ISpotBalanceItemBinance {
   asset: string;
   free: string;
   locked: string;
 }
+
 // U本位余额的定义
 interface IUsdtFutureBalanceItemBinance {
   accountAlias: string; // "SgsR"; // 账户唯一识别码
@@ -136,6 +141,7 @@ interface IUsdtFutureBalanceItemBinance {
   marginAvailable: boolean; // true; // 是否可用作联合保证金
   updateTime: number; // 1617939110373;
 }
+
 // 币本位余额的定义
 interface ICoinFutureBalanceItemBinance {
   accountAlias: string; // "SgsR"; // 账户唯一识别码
@@ -147,6 +153,7 @@ interface ICoinFutureBalanceItemBinance {
   availableBalance: string; // "0.00241969"; // 可用下单余额
   updateTime: number; // 1592468353979;
 }
+
 enum ISideBinance {
   "Buy" = "BUY",
   "Sell" = "SELL",

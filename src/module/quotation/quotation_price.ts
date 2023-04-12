@@ -5,6 +5,7 @@ import { dataConfig } from "../../data_config";
 import { logger } from "../../sys_lib/logger";
 import { orderbook } from "../orderbook";
 import * as _ from "lodash";
+import { AmmContext } from "../../interface/context";
 
 class QuotationPrice {
   public getCoinUsdtOrderbook(
@@ -113,6 +114,18 @@ class QuotationPrice {
       );
     }
     return tokenUsdtPrice;
+  }
+
+  public getSrcTokenBidPrice(ammContext: AmmContext) {
+    const {
+      stdSymbol,
+      asks,
+    } = this.getCoinUsdtOrderbook(ammContext.baseInfo.srcToken.address, ammContext.baseInfo.srcToken.chainId);
+    if (stdSymbol === null) {
+      throw new Error(`no orderbook found,bridge ${ammContext.bridgeItem.msmq_name}`);
+    }
+    const [[price]] = asks;
+    return price;
   }
 }
 

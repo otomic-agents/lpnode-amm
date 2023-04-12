@@ -12,7 +12,8 @@ import { AmmContext } from "../../interface/context";
 import { balanceLockModule } from "../../mongo_module/balance_lock";
 import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
 import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
-
+import { evaluate } from "mathjs";
+const stringify = require('json-stringify-safe');
 const { ethers } = require("ethers");
 const redisConfig = getRedisConfig();
 const hedgeQueue = new Bull("SYSTEM_HEDGE_QUEUE", {
@@ -87,6 +88,24 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     logger.debug(`userBalance`, symbol, balance);
     logger.warn(`【${symbol}】not enough balance,User input:${inputAmount} `);
     throw new Error(`not enough balance`);
+  }
+
+  public async checkMinHedge(ammContext: AmmContext, unitPrice: number): Promise<boolean> {
+    const stdSymbol = ammContext.bridgeItem.std_symbol;
+    const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
+    const feeStr = new BigNumber(fee).toFixed(8).toString();
+    const formula = `(${ammContext.swapInfo.inputAmountNumber}* ${unitPrice}) - (${ammContext.swapInfo.inputAmountNumber}* ${unitPrice} * ${feeStr})`;
+    logger.info(`value calculation formula`, formula);
+    const val = evaluate(formula);
+    const accountIns = accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount);
+    if (!accountIns) {
+      throw new Error(`Account instance not found`);
+    }
+    logger.debug(`Enter total value`, val);
+    if (!await accountIns.order.spotTradeCheck(stdSymbol, val)) {
+      throw new Error("Execution condition not met");
+    }
+    return false;
   }
 
   public async getHedgeAccountState() {
@@ -412,7 +431,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
    * @returns {*} ""
    */
   public async hedge(hedgeData: ISpotHedgeInfo) {
-    const hedgeInfo: ISpotHedgeInfo = JSON.parse(JSON.stringify(hedgeData));
+    const hedgeInfo: ISpotHedgeInfo = JSON.parse(stringify(hedgeData));
     console.log("Basic Information on Current Hedging");
     this.writeJob(hedgeInfo).then(() => {
       logger.debug(`已经写入到对冲的队列`, hedgeData.orderId);

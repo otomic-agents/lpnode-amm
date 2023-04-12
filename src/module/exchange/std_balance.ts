@@ -18,12 +18,21 @@ class StdBalance {
   private spotBalance: Map<string, ISpotBalanceItem> = new Map();
   private usdtFutureBalance: Map<string, IUsdtFutureBalanceItem> = new Map();
   private coinFutureBalance: Map<string, ICoinFutureBalanceItem> = new Map();
+
   // private coinFutureBalance:Map<string ,IFutureUsdtBalanceItem> = new Map()
   public constructor(cexExchange: IStdExchange, accountInfo: ICexAccount) {
     this.stdExchange = cexExchange;
     this.accountInfo = accountInfo;
   }
+
   public getSpotBalance(symbol: string): ISpotBalanceItem {
+    if (symbol === "T") {
+      return {
+        free: "1000000",
+        asset: "T",
+        locked: "0",
+      };
+    }
     const balanceItem = this.spotBalance.get(symbol);
     if (!balanceItem) {
       return {
@@ -34,6 +43,7 @@ class StdBalance {
     }
     return balanceItem;
   }
+
   public getAllSpotBalance() {
     const itemList: { free: string; asset: string; locked: string }[] = [];
     this.spotBalance.forEach((value) => {
@@ -41,22 +51,27 @@ class StdBalance {
     });
     return itemList;
   }
+
   public getUsdtFutureBalance(
     symbol: string
   ): IUsdtFutureBalanceItem | undefined {
     return this.usdtFutureBalance.get(symbol);
   }
+
   public getCoinFutureBalance(symbol: string) {
     return this.coinFutureBalance.get(symbol);
   }
+
   public showSpotBalance() {
     this.spotBalance.forEach((item, k) => {
       console.log(k, JSON.stringify(item));
     });
   }
+
   public async withdrawApply() {
     return this.stdExchange.exchangeSpot.withdrawApply();
   }
+
   public async capitalAll() {
     return this.stdExchange.exchangeSpot.capitalAll();
   }
@@ -79,6 +94,7 @@ class StdBalance {
       this.syncSpotBalance();
     }, 1000 * 30);
   }
+
   /**
    * Description 同步U本位合约余额信息,并开启定时 ，并把数据适配为标准数据格式
    * @date 1/17/2023 - 9:04:34 PM
@@ -97,6 +113,7 @@ class StdBalance {
       this.syncUsdtFutureBalance();
     }, 1000 * 30);
   }
+
   public async syncCoinFutureBalance() {
     logger.debug(`syncCoinFutureBalance【${this.accountInfo.accountId}】`);
     await this.stdExchange.exchangeCoinFuture.fetchBalance();
@@ -108,4 +125,5 @@ class StdBalance {
     }, 1000 * 30);
   }
 }
+
 export { StdBalance };

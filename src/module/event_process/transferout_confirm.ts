@@ -9,6 +9,7 @@ import { hedgeManager } from "../hedge_manager";
 import { BaseEventProcess } from "./base_event_process";
 import * as _ from "lodash";
 import { ammContextManager } from "../amm_context_manager/amm_context_manager";
+import { EthUnit } from "../../utils/eth";
 
 class EventProcessTransferOutConfirm extends BaseEventProcess {
   public async process(msg: IEVENT_TRANSFER_OUT_CONFIRM) {
@@ -23,6 +24,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     if (_.get(ammContext, "systemOrder.cexResult", undefined)) {
       throw new Error("Confirm cannot be repeated");
     }
+    ammContext.bridgeItem = dataConfig.findItemByMsmqName(ammContext.systemInfo.msmqName);
     await this.setChainOptInfoData(ammContext, msg);
     const hedgeType = dataConfig.getHedgeConfig().hedgeType;
     logger.debug(`hedgeType:${hedgeType}`);
@@ -38,10 +40,12 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
   }
 
   private async setChainOptInfoData(ammContext: AmmContext, msg: IEVENT_TRANSFER_OUT_CONFIRM) {
-    const srcChainReceiveAmountRaw = _.get(msg, "business_full_data.event_transfer_out.amount", "");
-    const srcChainReceiveAmountNumber = getNumberFrom16(srcChainReceiveAmountRaw, ammContext.baseInfo.srcToken.precision);
-    ammContext.chainOptInfo.srcChainReceiveAmount = srcChainReceiveAmountRaw;
-    ammContext.chainOptInfo.srcChainReceiveAmountNumber = srcChainReceiveAmountNumber;
+    // const srcChainReceiveAmountRaw = _.get(msg, "business_full_data.event_transfer_out.amount", "");
+    // const srcChainReceiveAmountNumber = getNumberFrom16(srcChainReceiveAmountRaw, ammContext.baseInfo.srcToken.precision);
+    // ammContext.chainOptInfo.srcChainReceiveAmount = srcChainReceiveAmountRaw;
+    // ammContext.chainOptInfo.srcChainReceiveAmountNumber = srcChainReceiveAmountNumber;
+
+    ammContext = await this.setSrcChainOptInfo(ammContext); // 设置远链的数据，之后对冲用这个来卖
 
     const dstChainPayAmountRaw = _.get(msg, "business_full_data.event_transfer_in.token_amount", "");
     const dstChainPayAmountNumber = getNumberFrom16(dstChainPayAmountRaw, ammContext.baseInfo.dstToken.precision);
@@ -56,6 +60,15 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     await ammContextManager.appendContext(ammContext.systemOrder.orderId, "chainOptInfo", ammContext.chainOptInfo);
     logger.info(`debug line`);
   }
+
+  private async setSrcChainOptInfo(ammContext: AmmContext): Promise<AmmContext> {
+    const receive = await ammContext.bridgeItem.lp_wallet_info.getReceivePrice(ammContext);
+    const receiveStr = EthUnit.toWei(receive.toString(), ammContext.baseInfo.srcToken.precision);
+    ammContext.chainOptInfo.srcChainReceiveAmount = receiveStr;
+    ammContext.chainOptInfo.srcChainReceiveAmountNumber = receive;
+    return ammContext;
+  }
+
 
   private async processHedge(
     msg: IEVENT_TRANSFER_OUT_CONFIRM,

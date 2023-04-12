@@ -84,6 +84,12 @@ function getNumberFrom16(input: string, decimals = 18) {
   }
   return number;
 }
+
+function getNumber16Str(input: number, decimals = 18) {
+  decimals = decimals++;
+  return new BigNumber(input).times(new BigNumber(10).pow(decimals)).toString();
+}
+
 function numberToString(arg) {
   if (typeof arg === "string") {
     if (!arg.match(/^-?[0-9.]+$/)) {
@@ -201,6 +207,7 @@ function toWei(etherInput, unit) {
 }
 
 export {
+  getNumber16Str,
   unitMap,
   numberToString,
   getValueOfUnit,

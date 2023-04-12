@@ -44,6 +44,8 @@
     "internal-ip": "^7.0.0",
     "ioredis": "^4.28.5",
     "jsdoc": "^3.6.7",
+    "json-stringify-safe": "^5.0.1",
+    "mathjs": "^11.8.0",
     "mongoose": "^6.10.0",
     "number-to-bn": "^1.7.0",
     "rate-limiter-flexible": "^2.3.6",
