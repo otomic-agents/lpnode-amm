@@ -104,7 +104,7 @@ class BinanceSpot implements IStdExchangeSpot {
       return false;
     }
     // logger.debug(item.filters);
-    const filterSet = _.find(item.filters, { filterType: "MIN_NOTIONAL" });
+    const filterSet = _.find(item.filters, { filterType: "NOTIONAL" });
     if (!filterSet || !_.get(filterSet, "minNotional", undefined)) {
       logger.warn("filter not found");
       return false;

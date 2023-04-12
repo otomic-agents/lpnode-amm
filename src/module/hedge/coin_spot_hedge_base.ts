@@ -2,6 +2,7 @@ import { dataConfig } from "../../data_config";
 import { AmmContext } from "../../interface/context";
 import { ICexCoinConfig, ICoinType } from "../../interface/interface";
 import { hedgeOrderIncModule } from "../../mongo_module/hedge_order_inc";
+import * as _ from "lodash";
 
 class CoinSpotHedgeBase {
   protected getTokenInfoByAmmContext(ammContext: AmmContext) {
@@ -12,6 +13,26 @@ class CoinSpotHedgeBase {
       ammContext.baseInfo.dstToken.chainId
     );
     return tokenInfo;
+  }
+
+  protected getOptStdSymbol(ammContext: AmmContext) {
+    const mode = _.get(ammContext, "quoteInfo.mode", undefined);
+    if (mode === "11") {
+      return false;
+    }
+    if (mode === "ss") {
+      return false;
+    }
+    if (mode === "bs") {
+      return `${ammContext.baseInfo.srcToken.symbol}/USDT`;
+    }
+    if (mode === "sb") {
+      return `${ammContext.baseInfo.dstToken.symbol}/USDT`;
+    }
+    if (mode === "bb") {
+      return `${ammContext.baseInfo.srcToken.symbol}/USDT`;
+    }
+    throw new Error(`unknown type`);
   }
 
   protected getStdSymbol(coinInfo: ICexCoinConfig[]) {

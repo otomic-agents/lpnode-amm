@@ -13,6 +13,7 @@ import { balanceLockModule } from "../../mongo_module/balance_lock";
 import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
 import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
 import { evaluate } from "mathjs";
+
 const stringify = require('json-stringify-safe');
 const { ethers } = require("ethers");
 const redisConfig = getRedisConfig();
@@ -91,7 +92,11 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   }
 
   public async checkMinHedge(ammContext: AmmContext, unitPrice: number): Promise<boolean> {
-    const stdSymbol = ammContext.bridgeItem.std_symbol;
+    const stdSymbol = this.getOptStdSymbol(ammContext);
+    if (stdSymbol === false) {
+      logger.debug(ammContext.bridgeItem.std_symbol, "不需要进行对冲，不检查");
+      return true;
+    }
     const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
     const feeStr = new BigNumber(fee).toFixed(8).toString();
     const formula = `(${ammContext.swapInfo.inputAmountNumber}* ${unitPrice}) - (${ammContext.swapInfo.inputAmountNumber}* ${unitPrice} * ${feeStr})`;
