@@ -65,6 +65,12 @@ class Business {
       throw new Error("token not found");
     }
     const context: AmmContext = {
+      systemContext: {
+        lockStepInfo: {},
+        transferoutConfirmInfo: {},
+      },
+      tradeStatus: 0,
+      profitStatus: 0,
       bridgeItem: item,
       step: 0,
       systemOrder: {
@@ -98,11 +104,11 @@ class Business {
         fee: item.fee_manager.getQuotationPriceFee(),
         srcChain: {
           id: token0.chainId,
-          tokenName: dataConfig.getChainTokenName(token0.chainId)
+          tokenName: dataConfig.getChainTokenName(token0.chainId),
         },
         dstChain: {
           id: token1.chainId,
-          tokenName: dataConfig.getChainTokenName(token1.chainId)
+          tokenName: dataConfig.getChainTokenName(token1.chainId),
         },
         srcToken: {
           precision: token0.precision,
@@ -144,7 +150,7 @@ class Business {
         origPrice: "",
         origTotalPrice: "",
         native_token_price: "",
-        native_token_usdt_price: ""
+        native_token_usdt_price: "",
       },
       askTime: new Date().getTime(),
     };

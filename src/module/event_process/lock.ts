@@ -19,10 +19,11 @@ import { ammContextModule } from "../../mongo_module/amm_context";
 import { AmmContext } from "../../interface/context";
 import { orderIncModule } from "../../mongo_module/order_inc";
 import { EthUnit } from "../../utils/eth";
-import { evaluate } from "mathjs";
+import { ammContextManager } from "../amm_context_manager/amm_context_manager";
+import { SystemMath } from "../../utils/system_math";
 
-const stringify = require('json-stringify-safe');
-const var_dump = require("var_dump");
+
+const stringify = require("json-stringify-safe");
 
 interface IVerificationEngineReulst {
   ok: boolean;
@@ -67,19 +68,22 @@ class EventProcessLock extends BaseEventProcess {
   ];
 
   public async process(msg: IEVENT_LOCK_QUOTE): Promise<void> {
-    const ammContext: AmmContext = await ammContextModule
-      .findOne({
-        "quoteInfo.quote_hash": _.get(
-          msg,
-          "pre_business.swap_asset_information.quote.quote_base.quote_hash",
-          "",
-        ),
-      })
-      .lean();
+    const quoteHash = _.get(
+      msg,
+      "pre_business.swap_asset_information.quote.quote_base.quote_hash",
+      undefined
+    );
+    if (!quoteHash) {
+      throw new Error(`no quoteHash found`);
+    }
+    const ammContext: AmmContext =
+      await ammContextManager.getContextByQuoteHash(quoteHash);
     if (!ammContext) {
       throw new Error(`no context found`);
     }
-    ammContext.bridgeItem = dataConfig.findItemByMsmqName(ammContext.systemInfo.msmqName);
+    ammContext.bridgeItem = dataConfig.findItemByMsmqName(
+      ammContext.systemInfo.msmqName
+    );
     if (!ammContext) {
       throw new Error(`No historical inquiry found`);
     }
@@ -90,9 +94,11 @@ class EventProcessLock extends BaseEventProcess {
     ammContext.swapInfo.srcAmount = _.get(
       msg,
       "pre_business.swap_asset_information.amount",
-      "",
+      ""
     );
     ammContext.swapInfo.systemSrcFee = srcFee;
+    _.set(ammContext, "systemContext.lockStepInfo", msg);
+    ammContext.systemContext.lockStepInfo = msg;
     ammContext.swapInfo.systemDstFee = dstFee;
     let systemOrder;
     let orderId;
@@ -101,8 +107,9 @@ class EventProcessLock extends BaseEventProcess {
       await this.verificationDexBalance(ammContext); // Check Des balance
       await this.verificationHistory(ammContext, msg); // Check history quote
       await this.checkSpread(ammContext, msg); // Check spread
-      await this.verificationLockValue(ammContext, msg);
-      ammContext.swapInfo.lpReceiveAmount = await ammContext.bridgeItem.lp_wallet_info.getReceivePrice(ammContext);
+      await this.verificationLockValue(ammContext, msg); // Check the value of the operation lock
+      ammContext.swapInfo.lpReceiveAmount =
+        await ammContext.bridgeItem.lp_wallet_info.getReceivePrice(ammContext);
       await this.verificationHedge(ammContext, msg); // Verify that hedging is possible
       [orderId, systemOrder] = await this.createSystemOrder(ammContext, msg); // Create system order
       _.set(
@@ -110,7 +117,7 @@ class EventProcessLock extends BaseEventProcess {
         "pre_business.order_append_data",
         JSON.stringify({
           orderId,
-        }),
+        })
       ); // 把orderId返回
       _.set(msg, "pre_business.locked", true);
       _.set(msg, "pre_business.err_msg", "");
@@ -131,29 +138,38 @@ class EventProcessLock extends BaseEventProcess {
         "quoteInfo.quote_hash": _.get(
           msg,
           "pre_business.swap_asset_information.quote.quote_base.quote_hash",
-          "",
+          ""
         ),
       },
       {
         $set: {
+          systemContext: ammContext.systemContext,
           swapInfo: ammContext.swapInfo,
           step: 1, // 标记已经处于lock状态
           systemOrder,
           "lockInfo.fee": ammContext.lockInfo.fee,
           "lockInfo.time": new Date().getTime(),
           "lockInfo.price": ammContext.quoteInfo.origPrice,
-          "lockInfo.nativeTokenPrice": ammContext.quoteInfo.native_token_usdt_price,
+          "lockInfo.nativeTokenPrice":
+          ammContext.quoteInfo.native_token_usdt_price,
           "lockInfo.dstTokenPrice": ammContext.quoteInfo.usd_price,
-          "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price
+          "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price,
         },
-      },
+      }
     );
   }
 
-  private verificationLockValue(ammContext: AmmContext, msg: IEVENT_LOCK_QUOTE) {
-    const dstAmountRaw = _.get(msg, "pre_business.swap_asset_information.dst_amount", undefined);
+  private verificationLockValue(
+    ammContext: AmmContext,
+    msg: IEVENT_LOCK_QUOTE
+  ) {
+    const dstAmountRaw = _.get(
+      msg,
+      "pre_business.swap_asset_information.dst_amount",
+      undefined
+    );
     if (!dstAmountRaw) {
-      throw new Error('dst_amount amount is empty');
+      throw new Error("dst_amount amount is empty");
     }
     const dstAmount = EthUnit.fromWei(
       dstAmountRaw,
@@ -161,35 +177,47 @@ class EventProcessLock extends BaseEventProcess {
     );
 
     const formula = `1/${ammContext.quoteInfo.origPrice}*${dstAmount}`;
-    logger.info("dstTokenValue calculate", formula);
-    const dstTokenToSrcTokenValue = evaluate(formula);
+    const dstTokenToSrcTokenValue = SystemMath.exec(formula, "dstTokenValue calculate");
     logger.info(`dstToken兑换量价值多少个srcToken？:`, dstTokenToSrcTokenValue);
 
-    const dstNativeAmountRaw = _.get(msg, "pre_business.swap_asset_information.dst_native_amount", undefined);
+    const dstNativeAmountRaw = _.get(
+      msg,
+      "pre_business.swap_asset_information.dst_native_amount",
+      undefined
+    );
     if (!dstNativeAmountRaw) {
       throw new Error(`dst_native_amount amount is empty`);
     }
-    const dstNativeAmount = EthUnit.fromWei(
-      dstNativeAmountRaw,
-      18
-    );
+    const dstNativeAmount = EthUnit.fromWei(dstNativeAmountRaw, 18);
     const formulaNative = `1/${ammContext.quoteInfo.native_token_price}*${dstNativeAmount}`;
-    logger.info("dstNativeTokenValue calculate", formulaNative);
-    const dstNativeTokenToSrcTokenValue = evaluate(formulaNative);
-    logger.info(`dstNativeToken兑换量价值多少个srcToken？:`, dstNativeTokenToSrcTokenValue);
+    const dstNativeTokenToSrcTokenValue = SystemMath.exec(formulaNative, "dstNativeTokenValue calculate");
+    logger.info(
+      `dstNativeToken兑换量价值多少个srcToken？:`,
+      dstNativeTokenToSrcTokenValue
+    );
     const feeFormula = `1-(${dstTokenToSrcTokenValue}+${dstNativeTokenToSrcTokenValue})/${ammContext.swapInfo.inputAmountNumber}`;
-    logger.info("fee calculate", feeFormula);
-    const fee = evaluate(feeFormula);
+    const fee = SystemMath.exec(feeFormula, "fee calculate");
     logger.info("实际swap的Fee", fee);
     ammContext.lockInfo.fee = fee.toString();
-    if (ammContext.bridgeItem.fee_manager.getQuotationPriceFee() - fee > 0.001) {
+    if (
+      ammContext.bridgeItem.fee_manager.getQuotationPriceFee() - fee >
+      0.001
+    ) {
       throw "实际swap的Fee不正确";
     }
   }
 
   private getFeeInfoFromMsg(msg: IEVENT_LOCK_QUOTE): [number, number] {
-    const systemSrcFeeRaw = _.get(msg, "pre_business.swap_asset_information.system_fee_src", 0);
-    const systemDstFeeRaw = _.get(msg, "pre_business.swap_asset_information.system_fee_dst", 0);
+    const systemSrcFeeRaw = _.get(
+      msg,
+      "pre_business.swap_asset_information.system_fee_src",
+      0
+    );
+    const systemDstFeeRaw = _.get(
+      msg,
+      "pre_business.swap_asset_information.system_fee_dst",
+      0
+    );
     let systemSrcFee = 0;
     let systemDstFee = 0;
     if (systemSrcFeeRaw > 0) {
@@ -199,7 +227,6 @@ class EventProcessLock extends BaseEventProcess {
       systemDstFee = systemDstFeeRaw / 10000;
     }
     return [systemSrcFee, systemDstFee];
-
   }
 
   /**
@@ -217,12 +244,12 @@ class EventProcessLock extends BaseEventProcess {
     const historyPrice = _.get(
       msg,
       "pre_business.swap_asset_information.quote.quote_base.price",
-      undefined,
+      undefined
     );
     if (!historyPrice) {
       logger.warn(
         `An error occurred while obtaining the locked price,The original value is:`,
-        _.get(msg, "pre_business.swap_asset_information.quote.quote_base.price"),
+        _.get(msg, "pre_business.swap_asset_information.quote.quote_base.price")
       );
       throw new Error(`can't fand locked price`);
     }
@@ -248,7 +275,7 @@ class EventProcessLock extends BaseEventProcess {
    * @returns {Promise<IVerificationEngineReulst>} ""
    */
   public async runVerificationEngine(
-    msg: IEVENT_LOCK_QUOTE,
+    msg: IEVENT_LOCK_QUOTE
   ): Promise<IVerificationEngineReulst> {
     for (const rule of this.rules) {
       const v = _.get(msg, rule.path, undefined);
@@ -294,12 +321,12 @@ class EventProcessLock extends BaseEventProcess {
    */
   public async verificationHistory(
     ammContext: AmmContext,
-    msg: IEVENT_LOCK_QUOTE,
+    msg: IEVENT_LOCK_QUOTE
   ) {
     const quoteHash: string = _.get(
       msg,
       "pre_business.swap_asset_information.quote.quote_base.quote_hash",
-      "",
+      ""
     );
     if (quoteHash !== "") {
       const ret = await quotationListHistory.getHistory(quoteHash);
@@ -314,7 +341,7 @@ class EventProcessLock extends BaseEventProcess {
 
   public async verificationHedge(
     ammContext: AmmContext,
-    msg: IEVENT_LOCK_QUOTE,
+    msg: IEVENT_LOCK_QUOTE
   ): Promise<boolean> {
     const hedgeType = dataConfig.getHedgeConfig().hedgeType;
     const accountId = dataConfig.getHedgeConfig().hedgeAccount;
@@ -322,12 +349,11 @@ class EventProcessLock extends BaseEventProcess {
       return true;
     }
     if (
-      !(await hedgeManager.getHedgeIns(hedgeType)
-        .checkHedgeCond(ammContext))
+      !(await hedgeManager.getHedgeIns(hedgeType).checkHedgeCond(ammContext))
     ) {
       logger.error(`Hedging conditions are not met，Unable to lock price.`);
       throw new Error(
-        `Hedging conditions are not met，Unable to lock price，Insufficient hedging amount`,
+        `Hedging conditions are not met，Unable to lock price，Insufficient hedging amount`
       );
     }
     logger.info("create lock result ");
@@ -337,14 +363,14 @@ class EventProcessLock extends BaseEventProcess {
     _.set(
       msg,
       "pre_business.swap_asset_information.balance_lock_id",
-      balanceLockId,
+      balanceLockId
     );
     return true;
   }
 
   private async createSystemOrder(
     ammContext: AmmContext,
-    msg: IEVENT_LOCK_QUOTE,
+    msg: IEVENT_LOCK_QUOTE
   ): Promise<[number, any]> {
     const config = this.getBridgeConfig(ammContext);
     const quoteHash: string = ammContext.quoteInfo.quote_hash;
@@ -352,7 +378,7 @@ class EventProcessLock extends BaseEventProcess {
       throw new Error(`No historical quotes found,Hash:${quoteHash}`);
     }
     const historyQuoteData = await quotationListHistory.getHistoryData(
-      quoteHash,
+      quoteHash
     );
     if (!historyQuoteData) {
       throw new Error(`No historical quotes found,Hash${historyQuoteData}`);
@@ -370,18 +396,18 @@ class EventProcessLock extends BaseEventProcess {
     const srcChainName = _.get(
       { chainName: dataConfig.getChainName(srcChainId) },
       "chainName",
-      "",
+      ""
     );
     const dstChainName = _.get(
       { chainName: dataConfig.getChainName(dstChainId) },
       "chainName",
-      "",
+      ""
     );
     const [token0Info, token1Info] = dataConfig.getCexStdSymbolInfoByToken(
       token0,
       token1,
       srcChainId,
-      dstChainId,
+      dstChainId
     );
     const systemOrder = CreateRecord();
     // Add basic information
@@ -389,7 +415,7 @@ class EventProcessLock extends BaseEventProcess {
     systemOrder.balanceLockedId = _.get(
       msg,
       "pre_business.swap_asset_information.balance_lock_id",
-      0,
+      0
     );
     systemOrder.hash = quoteHash;
     systemOrder.baseInfo = {
@@ -419,14 +445,14 @@ class EventProcessLock extends BaseEventProcess {
       capacity: _.get(historyQuoteInfo, "capacity", ""),
       nativeTokenPrice: _.get(historyQuoteInfo, "native_token_price", ""),
     };
-    var_dump(systemOrder);
+    // var_dump(systemOrder);
     // const redisStore = new RedisStore("SYSTEM_ORDER");
     // const orderId = await redisStore.insertData(systemOrder, { hash: "1" });
     const idResult = await orderIncModule
       .findOneAndUpdate(
         {},
         { $inc: { inumber: 1 } },
-        { upsert: true, returnDocument: "after" },
+        { upsert: true, returnDocument: "after" }
       )
       .lean();
     return [idResult.inumber, systemOrder];
@@ -438,16 +464,16 @@ class EventProcessLock extends BaseEventProcess {
     if (srcToken === "" || dstToken === "") {
       throw new Error(`Exchange currency pair information not found`);
     }
-    const config: IBridgeTokenConfigItem =
-      dataConfig.findItemByMsmqName(ammContext.systemInfo.msmqName);
+    const config: IBridgeTokenConfigItem = dataConfig.findItemByMsmqName(
+      ammContext.systemInfo.msmqName
+    );
     if (!config) {
       throw new Error(
-        `No cross-chain configuration found ${srcToken}/${dstToken}`,
+        `No cross-chain configuration found ${srcToken}/${dstToken}`
       );
     }
     return config;
   }
-
 
   /**
    * Description Reply Response Event
@@ -461,19 +487,19 @@ class EventProcessLock extends BaseEventProcess {
    */
   public async response(
     msg: IEVENT_LOCK_QUOTE,
-    msmqName: string,
+    msmqName: string
   ): Promise<void> {
     logger.debug(
       `🟦--> `,
       ILpCmd.CALLBACK_LOCK_QUOTE,
-      _.get(msg, "pre_business.locked", "false"),
+      _.get(msg, "pre_business.locked", "false")
     );
     await redisPub.publish(
       msmqName,
       JSON.stringify({
         cmd: ILpCmd.CALLBACK_LOCK_QUOTE,
         pre_business: msg.pre_business,
-      }),
+      })
     );
   }
 }

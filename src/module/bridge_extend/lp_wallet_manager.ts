@@ -15,7 +15,6 @@ class LpWalletManager {
 
   public async getReceivePrice(ammContext: AmmContext): Promise<number> {
     const inputAmountBN = new BigNumber(ammContext.swapInfo.inputAmountNumber);
-    // const allFeeBn = new BigNumber(ammContext.baseInfo.fee);
     const systemSrcFee = new BigNumber(ammContext.swapInfo.systemSrcFee);
     const formula = `${inputAmountBN.toString()} - ( ${inputAmountBN.toString()} * ${systemSrcFee}) `;
     logger.info(formula);

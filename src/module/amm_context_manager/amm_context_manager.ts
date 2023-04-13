@@ -1,3 +1,4 @@
+import { AmmContext } from "../../interface/context";
 import { ammContextModule } from "../../mongo_module/amm_context";
 import { logger } from "../../sys_lib/logger";
 
@@ -19,9 +20,15 @@ class AmmContextManager {
       logger.error(e);
     }
   }
+  public async getContextByQuoteHash(hash: string) {
+    const ammContext: AmmContext = await ammContextModule
+      .findOne({
+        "quoteInfo.quote_hash": hash,
+      })
+      .lean();
+    return ammContext;
+  }
 }
 
 const ammContextManager: AmmContextManager = new AmmContextManager();
-export {
-  ammContextManager
-};
+export { ammContextManager };

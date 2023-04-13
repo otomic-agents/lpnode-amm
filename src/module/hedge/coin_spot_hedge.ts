@@ -1,20 +1,25 @@
 /* eslint-disable arrow-parens */
 import _ from "lodash";
 import { dataConfig } from "../../data_config";
-import { ICoinType, IHedgeClass, IHedgeType, ISpotHedgeInfo, } from "../../interface/interface";
+import {
+  ICoinType,
+  IHedgeClass,
+  IHedgeType,
+  ISpotHedgeInfo,
+} from "../../interface/interface";
 import { logger } from "../../sys_lib/logger";
 import { accountManager } from "../exchange/account_manager";
 import BigNumber from "bignumber.js";
 import { getRedisConfig } from "../../redis_bus";
 import Bull from "bull";
-import { getNumberFrom16 } from "../../utils/ethjs_unit";
 import { AmmContext } from "../../interface/context";
 import { balanceLockModule } from "../../mongo_module/balance_lock";
 import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
 import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
-import { evaluate } from "mathjs";
+import { SystemMath } from "../../utils/system_math";
+import { EthUnit } from "../../utils/eth";
 
-const stringify = require('json-stringify-safe');
+const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
 const redisConfig = getRedisConfig();
 const hedgeQueue = new Bull("SYSTEM_HEDGE_QUEUE", {
@@ -46,11 +51,13 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
         done();
       }
     });
-    if (dataConfig.getHedgeConfig().hedgeType === IHedgeType.CoinSpotHedge && dataConfig.getHedgeConfig().hedgeAccount !== "") {
+    if (
+      dataConfig.getHedgeConfig().hedgeType === IHedgeType.CoinSpotHedge &&
+      dataConfig.getHedgeConfig().hedgeAccount !== ""
+    ) {
       logger.info(`开始初始化账户，因为配置了对冲..`);
       await this.initAccount();
     }
-
   }
 
   // public async getMinAmount() {
@@ -65,7 +72,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     } catch (e) {
       logger.error(e);
     }
-
   }
 
   /**
@@ -77,12 +83,14 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     if (symbol === "T") {
       return true;
     }
-    const balance = accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount)?.balance.getSpotBalance(symbol);
+    const balance = accountManager
+      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
+      ?.balance.getSpotBalance(symbol);
     if (!balance) {
       throw new Error(`获取余额失败`);
     }
     const free = Number(balance.free);
-    const inputAmount = getNumberFrom16(ammContext.swapInfo.inputAmount, ammContext.baseInfo.srcToken.precision);
+    const inputAmount = ammContext.swapInfo.inputAmountNumber;
     if (free > inputAmount) {
       return true;
     }
@@ -91,7 +99,10 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     throw new Error(`not enough balance`);
   }
 
-  public async checkMinHedge(ammContext: AmmContext, unitPrice: number): Promise<boolean> {
+  public async checkMinHedge(
+    ammContext: AmmContext,
+    unitPrice: number
+  ): Promise<boolean> {
     const stdSymbol = this.getOptStdSymbol(ammContext);
     if (stdSymbol === false) {
       logger.debug(ammContext.bridgeItem.std_symbol, "不需要进行对冲，不检查");
@@ -100,14 +111,20 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
     const feeStr = new BigNumber(fee).toFixed(8).toString();
     const formula = `(${ammContext.swapInfo.inputAmountNumber}* ${unitPrice}) - (${ammContext.swapInfo.inputAmountNumber}* ${unitPrice} * ${feeStr})`;
-    logger.info(`value calculation formula`, formula);
-    const val = evaluate(formula);
-    const accountIns = accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount);
+    const val = SystemMath.exec(formula, "value calculation formula");
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
     if (!accountIns) {
       throw new Error(`Account instance not found`);
     }
     logger.debug(`Enter total value`, val);
-    if (!await accountIns.order.spotTradeCheck(stdSymbol, val)) {
+    if (
+      !(await accountIns.order.spotTradeCheck(
+        stdSymbol,
+        Number(val.toFixed(8).toString())
+      ))
+    ) {
       throw new Error("Execution condition not met");
     }
     return false;
@@ -185,7 +202,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     return balanceLockedId;
   }
 
-
   /**
    * Description swap amount，left
    * @date 2023/2/10 - 14:22:08
@@ -205,7 +221,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
 
     const lockCount = Number(
-      new BigNumber(getNumberFrom16(amountStr, precision)).toFixed(8).toString()
+      new BigNumber(EthUnit.fromWei(amountStr, precision)).toFixed(8).toString()
     );
     if (!_.isFinite(lockCount)) {
       throw new Error("lock balance number error");
@@ -234,7 +250,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     });
     return insertData._id.toHexString();
   }
-
 
   /**
    * DescriptionWhen checking whether there are enough conditions to complete the hedging Lock lock, for example, if the hedging is configured, but there are not enough coins, it should stop
@@ -287,7 +302,9 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       );
       //  if cex balance lt swap amount  return false
       logger.warn(
-        `symbol:[${cexSymbol[0].symbol}] Insufficient balance for hedging Cex:${cexBalanceBn
+        `symbol:[${
+          cexSymbol[0].symbol
+        }] Insufficient balance for hedging Cex:${cexBalanceBn
           .toFixed(8)
           .toString()} amount:${srcTokenCountBn.toFixed(8).toString()}`
       );
@@ -343,7 +360,10 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       throw new Error(`The correct symbol information was not found`);
     }
 
-    if (tokenInfo[0].coinType === ICoinType.StableCoin && tokenInfo[1].coinType === ICoinType.StableCoin) {
+    if (
+      tokenInfo[0].coinType === ICoinType.StableCoin &&
+      tokenInfo[1].coinType === ICoinType.StableCoin
+    ) {
       return this.calculateCapacity_ss(ammContext);
     }
     if (tokenInfo[0].symbol === tokenInfo[1].symbol) {
@@ -397,9 +417,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
     }
-    const minCount: any = _.min([
-      srcTokenCexBalance,
-    ]);
+    const minCount: any = _.min([srcTokenCexBalance]);
     return minCount;
   }
 
@@ -442,7 +460,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.debug(`已经写入到对冲的队列`, hedgeData.orderId);
     });
   }
-
 
   public async writeJob(hedgeInfo: ISpotHedgeInfo) {
     logger.info(`Write information to Job.....`);

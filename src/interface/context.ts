@@ -1,7 +1,7 @@
 import { IBridgeTokenConfigItem } from "./interface";
 
 interface AmmContext {
-  bridgeItem: IBridgeTokenConfigItem
+  bridgeItem: IBridgeTokenConfigItem;
   step: number; // 当前处于第几步
   systemInfo: {
     msmqName: string;
@@ -13,15 +13,15 @@ interface AmmContext {
     cid: string;
   };
   baseInfo: {
-    fee: number,
+    fee: number;
     srcChain: {
-      id: number,
-      tokenName: string
-    }
+      id: number;
+      tokenName: string;
+    };
     dstChain: {
-      id: number,
-      tokenName: string
-    }
+      id: number;
+      tokenName: string;
+    };
     srcToken: {
       precision: number;
       cexPrecision: number;
@@ -51,27 +51,27 @@ interface AmmContext {
     dstAmountNumber: number;
   };
   chainOptInfo: {
-    srcChainReceiveAmount: string // A 链实际 tr in 的量
-    srcChainReceiveAmountNumber: number // A 链实际 tr in 的量
-    dstChainPayAmount: string // B 链实际付款金额
-    dstChainPayAmountNumber: number // B链实际付款的number
-    dstChainPayNativeTokenAmount: string
-    dstChainPayNativeTokenAmountNumber: number
-  },
+    srcChainReceiveAmount: string; // A 链实际 tr in 的量
+    srcChainReceiveAmountNumber: number; // A 链实际 tr in 的量
+    dstChainPayAmount: string; // B 链实际付款金额
+    dstChainPayAmountNumber: number; // B链实际付款的number
+    dstChainPayNativeTokenAmount: string;
+    dstChainPayNativeTokenAmountNumber: number;
+  };
   quoteInfo: {
     usd_price: string;
     quote_hash: string;
     mode: string;
     origPrice: string;
-    origTotalPrice: string
-    native_token_price: string
+    origTotalPrice: string;
+    native_token_price: string;
     price: string; // 1 的报价
-    native_token_usdt_price: string
-    src_usd_price: string // 左侧币对的U价
+    native_token_usdt_price: string;
+    src_usd_price: string; // 左侧币对的U价
   };
   lockInfo: {
-    fee: string
-    dstTokenPrice: string // 目标币的U价格
+    fee: string;
+    dstTokenPrice: string; // 目标币的U价格
     price: string; // 原始报价 换币价格
     srcTokenPrice: string; // 起始链 token usdt价格
     nativeTokenPrice: string; // 原生币的买价，lock时需要产生
@@ -82,6 +82,12 @@ interface AmmContext {
     orderId: number;
     balanceLockedId: string; // 锁的mongoid
     bridgeConfig: any;
+  };
+  tradeStatus: number;
+  profitStatus: number;
+  systemContext: {
+    lockStepInfo: any;
+    transferoutConfirmInfo: any;
   };
 }
 

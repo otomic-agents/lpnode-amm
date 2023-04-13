@@ -5,6 +5,7 @@ import * as _ from "lodash";
 const dbKey = "main"; // model 链接的数据库
 const mongoConn = Mdb.getInstance().getMongoDb(dbKey);
 const ammContextSchema = new Schema({
+  systemContext: Object,
   chainOptInfo: Object,
   systemInfo: Object,
   walletInfo: Object,
@@ -15,10 +16,13 @@ const ammContextSchema = new Schema({
   askTime: Object,
   systemOrder: Object,
   lockInfo: Object,
+  tradeStatus: Number,
+  profitStatus: Number,
 });
 
 ammContextSchema.index({ "systemOrder.id": 1, type: -1 });
-ammContextSchema.index({ "quoteInfo.quote_hash": 1, type: -1 });
+ammContextSchema.index({ tradeStatus: 1, type: -1 });
+ammContextSchema.index({ profitStatus: 1, type: -1 });
 
 export const ammContextModule = mongoConn.model(
   "ammContextModule",
