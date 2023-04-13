@@ -1,3 +1,4 @@
+/* eslint-disable arrow-parens */
 /**
  *报价的第一版服务，还在填充逻辑中
  * **/
@@ -25,12 +26,10 @@ import { systemRedisBus } from "../system_redis_bus";
 import { chainBalance } from "./chain_balance";
 import { measure, memo } from "helpful-decorators";
 import { IQuoteData } from "../interface/quotation";
+import { EthUnit } from "../utils/eth";
 
 const { v4: uuidv4 } = require("uuid");
 
-const Web3 = require("web3");
-
-const web3 = new Web3();
 // @ts-ignore
 const cTable = require("console.table");
 
@@ -129,7 +128,21 @@ class Quotation {
       logger.error(e);
       return [undefined, undefined];
     }
-    return [quoteHash, quoteInfo];
+    return [quoteHash, this.formatQuoteInfo(quoteInfo)];
+  }
+
+  private formatQuoteInfo(quoteInfo) {
+    // eslint-disable-next-line array-callback-return
+    Object.keys(quoteInfo.quote_data).map((key) => {
+      if (typeof quoteInfo.quote_data[key] === "object") {
+        _.set(
+          quoteInfo,
+          `quote_data.${key}`,
+          JSON.stringify(quoteInfo.quote_data[key])
+        );
+      }
+    });
+    return quoteInfo;
   }
 
   /**
@@ -264,9 +277,8 @@ class Quotation {
 
   private async native_token_max(ammContext: AmmContext, sourceObject: any) {
     const dstChainId = ammContext.baseInfo.dstToken.chainId;
-    const nativeTokenPrice = await this.quotationPrice.getNativeTokenBidPrice(
-      dstChainId
-    );
+    const nativeTokenPrice =
+      this.quotationPrice.getNativeTokenBidPrice(dstChainId);
     const dstChainMaxSwapUsd = dataConfig.getChainGasTokenUsdMax(dstChainId);
     const maxCountBN = new BigNumber(dstChainMaxSwapUsd).div(
       new BigNumber(nativeTokenPrice)
@@ -580,10 +592,11 @@ class Quotation {
   ): [string, string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
-    const { stdSymbol, bids, asks, timestamp } = this.quotationPrice.getCoinUsdtOrderbook(
-      ammContext.baseInfo.dstToken.address,
-      ammContext.baseInfo.dstToken.chainId
-    );
+    const { stdSymbol, bids, asks, timestamp } =
+      this.quotationPrice.getCoinUsdtOrderbook(
+        ammContext.baseInfo.dstToken.address,
+        ammContext.baseInfo.dstToken.chainId
+      );
     if (stdSymbol === null) {
       logger.error(`获取orderbook失败无法计算价格`, "calculatePrice_bs");
       throw "获取orderbook失败无法计算价格";
@@ -808,9 +821,9 @@ class Quotation {
       `最大价格应该报价为`,
       new BigNumber(capacity).toFixed(8).toString()
     );
-    const etherWei = web3.utils.toWei(
-      new BigNumber(capacity).toFixed(8).toString(),
-      "ether"
+    const etherWei = EthUnit.toWei(
+      capacity.toString(),
+      ammContext.baseInfo.srcToken.precision
     );
     _.assign(sourceObject.quote_data, {
       capacity_num: new BigNumber(capacity).toFixed(8).toString(),

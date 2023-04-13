@@ -74,6 +74,8 @@ class Business {
       bridgeItem: item,
       step: 0,
       systemOrder: {
+        hedgePlan: [],
+        hedgeResult: [],
         orderId: 0,
         balanceLockedId: "",
         bridgeConfig: {},
@@ -244,7 +246,11 @@ class Business {
       ammContext.systemInfo.msmqName,
       cmdMsg
     );
-    redisPub.publish(ammContext.systemInfo.msmqName, cmdMsg);
+    redisPub.publish(ammContext.systemInfo.msmqName, cmdMsg).then(() => {
+      //
+    }).catch((e: any) => {
+      logger.error(`回复消息到Lp发生错误`, e);
+    });
   }
 }
 

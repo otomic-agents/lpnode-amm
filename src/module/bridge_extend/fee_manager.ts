@@ -1,7 +1,8 @@
 import { IBridgeTokenConfigItem } from "../../interface/interface";
-import { logger } from "../../sys_lib/logger";
+// import { logger } from "../../sys_lib/logger";
 
 class FeeManager {
+  // @ts-ignore
   private bridgeItem: IBridgeTokenConfigItem;
 
   constructor(item: IBridgeTokenConfigItem) {
@@ -10,16 +11,13 @@ class FeeManager {
     this.keepLatestFee();
   }
 
-
   getQuotationPriceFee(): number {
     return 0.004;
   }
 
   private keepLatestFee() {
-    logger.debug(this.bridgeItem);
+    // logger.debug(this.bridgeItem);
   }
 }
 
-export {
-  FeeManager
-};
+export { FeeManager };

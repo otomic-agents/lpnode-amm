@@ -82,6 +82,8 @@ interface AmmContext {
     orderId: number;
     balanceLockedId: string; // 锁的mongoid
     bridgeConfig: any;
+    hedgePlan: any[]
+    hedgeResult: any[]
   };
   tradeStatus: number;
   profitStatus: number;

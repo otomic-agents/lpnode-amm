@@ -32,6 +32,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         }`
       );
     }
+    const cexExePlan = optOrderList;
     const cexExeResult: any[] = [];
     for (const order of optOrderList) {
       const actionSide = order.side;
@@ -50,6 +51,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
       const cexResult = await accountIns.order[executeFun](order.orderId, order.symbol, new BigNumber(order.amountNumber).toString());
       cexExeResult.push(cexResult);
     }
+    await ammContextManager.appendContext(call.ammContext.systemOrder.orderId, "systemOrder.hedgePlan", cexExePlan);
     await ammContextManager.appendContext(call.ammContext.systemOrder.orderId, "systemOrder.hedgeResult", cexExeResult);
   }
 

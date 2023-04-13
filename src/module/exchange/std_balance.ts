@@ -87,12 +87,21 @@ class StdBalance {
   public async syncSpotBalance() {
     logger.debug(`syncSpotBalance【${this.accountInfo.accountId}】`);
     await this.stdExchange.exchangeSpot.fetchBalance();
+    await this.reportSpotBalance();
     this.stdExchange.exchangeSpot.getBalance().forEach((v, k) => {
       this.spotBalance.set(k, v);
     });
     setTimeout(() => {
       this.syncSpotBalance();
     }, 1000 * 30);
+  }
+  private async reportSpotBalance() {
+    console.log(`cex account info:`);
+    const balanceList: any[] = [];
+    await this.stdExchange.exchangeSpot.getBalance().forEach((item, key) => {
+      balanceList.push(item);
+    });
+    console.table(balanceList);
   }
 
   /**
