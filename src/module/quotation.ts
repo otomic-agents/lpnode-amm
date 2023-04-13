@@ -91,7 +91,8 @@ class Quotation {
 
   /**
    * 针对一行记录开始报价
-   * @param ammContext
+   * @param {AmmContext} ammContext "对一个币对进行报价"
+   * @returns {*} ""
    */
   public async quotationItem(ammContext: AmmContext): Promise<any> {
     const quoteHash = crypto.createHash("sha1").update(uuidv4()).digest("hex");
@@ -134,7 +135,12 @@ class Quotation {
   /**
    * 根据换的量，检查是否可报价，如果 Dex 余额不足则不报价
    * 如果对冲条件不满足，也不在报价,比如无法有余额去对冲
-   * @param ammContext
+   * @date 2023/4/13 - 15:29:24
+   *
+   * @public
+   * @async
+   * @param {AmmContext} ammContext "context"
+   * @returns {*} "输入量是否合法的检查"
    */
   public async amountCheck(ammContext: AmmContext) {
     const inputNumberBN = new BigNumber(ammContext.swapInfo.inputAmountNumber)
@@ -297,7 +303,7 @@ class Quotation {
     redisPub
       .publish(ammContext.systemInfo.msmqName, quoteCmd)
       .catch((e: any) => {
-        logger.debug(`报价产生了错误`, e);
+        logger.debug(`Publishing an offer message produced an error`, e);
       });
     const mode = _.clone(ammContext.quoteInfo.mode);
     ammContext.quoteInfo = quoteInfo.quote_data;
@@ -478,16 +484,28 @@ class Quotation {
     ];
   }
 
+  /**
+   * Description placeholder
+   * @date 2023/4/13 - 16:29:37
+   * ETH-USDT
+   * 报左侧的卖价 orderbook eth-usdt bids 均价
+   * @private
+   * @param {AmmContext} ammContext "context"
+   * @param {*} [sourceObject=undefined] "需要assign的对象"
+   * @returns {[string, string, string]} ""
+   */
   private calculatePrice_bs(
     ammContext: AmmContext,
     sourceObject: any = undefined
   ): [string, string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
-    const { stdSymbol, bids, asks } = this.quotationPrice.getCoinUsdtOrderbook(
-      ammContext.baseInfo.srcToken.address,
-      ammContext.baseInfo.srcToken.chainId
-    );
+    const { stdSymbol, bids, asks } =
+      this.quotationPrice.getCoinUsdtExecuteOrderbook(
+        ammContext.baseInfo.srcToken.address,
+        ammContext.baseInfo.srcToken.chainId,
+        ammContext.swapInfo.inputAmountNumber
+      );
     if (stdSymbol === null) {
       logger.error(`获取orderbook失败无法计算价格`, "calculatePrice_bs");
       throw "获取orderbook失败无法计算价格";

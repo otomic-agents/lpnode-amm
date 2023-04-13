@@ -84,12 +84,12 @@ class Orderbook {
       const orderbookServiceHost = _.get(
         process,
         "_sys_config.lp_market_host",
-        undefined,
+        undefined
       );
       const orderbookServicePort = _.get(
         process,
         "_sys_config.lp_market_port",
-        undefined,
+        undefined
       );
       if (!orderbookServiceHost) {
         throw "Unable to obtain orderbook service address";
@@ -111,7 +111,7 @@ class Orderbook {
       const error: any = e;
       logger.error(
         `An error occurred while obtaining the orderbook....`,
-        error.toString(),
+        error.toString()
       );
       throw e;
     }

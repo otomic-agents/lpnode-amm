@@ -13,6 +13,17 @@ class SystemMath {
     );
     return mathIns.evaluate(formula);
   }
+  static execNumber(formula: string, title = "", debug = true): number {
+    if (debug === true) {
+      console.log(`${title}_____________:`);
+      console.log("             ", formula);
+      console.log(
+        "________________________________________________________________________"
+      );
+    }
+
+    return Number(mathIns.evaluate(formula).toFixed(8));
+  }
 
   static getExecContext(): mathlib.Parser {
     const parser = mathIns.parser();

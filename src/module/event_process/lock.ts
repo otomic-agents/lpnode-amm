@@ -22,7 +22,6 @@ import { EthUnit } from "../../utils/eth";
 import { ammContextManager } from "../amm_context_manager/amm_context_manager";
 import { SystemMath } from "../../utils/system_math";
 
-
 const stringify = require("json-stringify-safe");
 
 interface IVerificationEngineReulst {
@@ -151,7 +150,7 @@ class EventProcessLock extends BaseEventProcess {
           "lockInfo.time": new Date().getTime(),
           "lockInfo.price": ammContext.quoteInfo.origPrice,
           "lockInfo.nativeTokenPrice":
-          ammContext.quoteInfo.native_token_usdt_price,
+            ammContext.quoteInfo.native_token_usdt_price,
           "lockInfo.dstTokenPrice": ammContext.quoteInfo.usd_price,
           "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price,
         },
@@ -177,7 +176,10 @@ class EventProcessLock extends BaseEventProcess {
     );
 
     const formula = `1/${ammContext.quoteInfo.origPrice}*${dstAmount}`;
-    const dstTokenToSrcTokenValue = SystemMath.exec(formula, "dstTokenValue calculate");
+    const dstTokenToSrcTokenValue = SystemMath.exec(
+      formula,
+      "dstTokenValue calculate"
+    );
     logger.info(`dstToken兑换量价值多少个srcToken？:`, dstTokenToSrcTokenValue);
 
     const dstNativeAmountRaw = _.get(
@@ -190,13 +192,16 @@ class EventProcessLock extends BaseEventProcess {
     }
     const dstNativeAmount = EthUnit.fromWei(dstNativeAmountRaw, 18);
     const formulaNative = `1/${ammContext.quoteInfo.native_token_price}*${dstNativeAmount}`;
-    const dstNativeTokenToSrcTokenValue = SystemMath.exec(formulaNative, "dstNativeTokenValue calculate");
+    const dstNativeTokenToSrcTokenValue = SystemMath.exec(
+      formulaNative,
+      "dstNativeTokenValue calculate"
+    );
     logger.info(
       `dstNativeToken兑换量价值多少个srcToken？:`,
       dstNativeTokenToSrcTokenValue
     );
     const feeFormula = `1-(${dstTokenToSrcTokenValue}+${dstNativeTokenToSrcTokenValue})/${ammContext.swapInfo.inputAmountNumber}`;
-    const fee = SystemMath.exec(feeFormula, "fee calculate");
+    const fee = SystemMath.execNumber(feeFormula, "fee calculate");
     logger.info("实际swap的Fee", fee);
     ammContext.lockInfo.fee = fee.toString();
     if (

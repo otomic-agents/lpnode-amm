@@ -27,10 +27,10 @@ class SetCtrl {
     // bs 这里的最大量还没有测试 ETH/USDT
 
     // eth-usdt
-    // eventProcess.onMessage(
-    //   JSON.stringify(req.body),
-    //   "0x61D35C6B6a7568542acA42448B47690650C69bb9/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
-    // );
+    eventProcess.onMessage(
+      JSON.stringify(req.body),
+      "0x61D35C6B6a7568542acA42448B47690650C69bb9/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
+    );
     // eth-btc
     // eventProcess.onMessage(
     //   JSON.stringify(req.body),
@@ -53,10 +53,10 @@ class SetCtrl {
     // );
 
     // T - USDT;
-    eventProcess.onMessage(
-      JSON.stringify(req.body),
-      "0x7a5CEA1c44c27EfE3875e20d8a07F3B1441ba484/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
-    );
+    // eventProcess.onMessage(
+    //   JSON.stringify(req.body),
+    //   "0x7a5CEA1c44c27EfE3875e20d8a07F3B1441ba484/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
+    // );
 
     // eventProcess.onMessage(
     //   JSON.stringify(req.body),

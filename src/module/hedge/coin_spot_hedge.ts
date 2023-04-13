@@ -75,10 +75,25 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   }
 
   /**
-   * 检查左侧的币是否有余额
-   * @param ammContext
+   * Description 检查左侧的币是否有余额
+   * @date 2023/4/13 - 15:04:07
+   *
+   * @public
+   * @async
+   * @param {AmmContext} ammContext "系统上下文"
+   * eth-usdt  cex 要有足额的eth 卖掉
+   * usdt-eth  cex 要有足额的usdt 买eth
+   * eth-avax  cex 要有足额的eth 卖掉
+   * eth-eth   不限制
+   * usdt-usdt 不限制
+   * @returns {*} bool or throw
    */
   public async checkSwapAmount(ammContext: AmmContext) {
+    const skipMode = ["11", "ss"];
+    if (skipMode.includes(ammContext.quoteInfo.mode)) {
+      logger.debug(`不进行swapAmount检查，mode:${ammContext.quoteInfo.mode}`);
+      return true;
+    }
     const symbol = ammContext.baseInfo.srcToken.symbol;
     if (symbol === "T") {
       return true;
