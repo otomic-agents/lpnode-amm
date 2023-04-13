@@ -20,12 +20,12 @@ class StdOrder {
     );
   }
 
-  public async spotTradeCheck(stdSymbol: string, amount: number): Promise<boolean> {
-    if (!_.isFinite(amount)) {
-      logger.error(`输入的量有问题.`, amount);
+  public async spotTradeCheck(stdSymbol: string, value: number): Promise<boolean> {
+    if (!_.isFinite(value)) {
+      logger.error(`输入的量有问题.`, value);
       return false;
     }
-    return this.stdExchange.exchangeSpot.spotTradeCheck(stdSymbol, amount);
+    return this.stdExchange.exchangeSpot.spotTradeCheck(stdSymbol, value);
   }
 
   public async spotSell(orderId: string, stdSymbol: string, amount: string) {
