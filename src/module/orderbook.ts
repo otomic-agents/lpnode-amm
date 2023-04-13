@@ -19,7 +19,19 @@ class Orderbook {
   // public cumulativeErrorCount = 0;
 
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
-    return this.spotOrderbook.get(stdSymbol);
+    const orderbookItem = this.spotOrderbook.get(stdSymbol);
+    if (orderbookItem) {
+      const timeNow = new Date().getTime();
+      if (timeNow - orderbookItem.timestamp > 1000 * 30) {
+        logger.warn(
+          `order book 过期.`,
+          (timeNow - orderbookItem.timestamp) / 1000
+        );
+        return undefined;
+      }
+      return orderbookItem;
+    }
+    return undefined;
   }
 
   public async init(): Promise<void> {

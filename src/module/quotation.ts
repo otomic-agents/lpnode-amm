@@ -500,7 +500,7 @@ class Quotation {
   ): [string, string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
-    const { stdSymbol, bids, asks } =
+    const { stdSymbol, bids, asks, timestamp } =
       this.quotationPrice.getCoinUsdtExecuteOrderbook(
         ammContext.baseInfo.srcToken.address,
         ammContext.baseInfo.srcToken.chainId,
@@ -517,7 +517,7 @@ class Quotation {
     const targetPriceBN = priceBn.times(new BigNumber(withFee));
     Object.assign(sourceObject.quote_data, {
       orderbook: {
-        A: { bids, asks },
+        A: { bids, asks, timestamp },
         B: null,
       },
     });
@@ -580,7 +580,7 @@ class Quotation {
   ): [string, string, string] {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
-    const { stdSymbol, bids, asks } = this.quotationPrice.getCoinUsdtOrderbook(
+    const { stdSymbol, bids, asks, timestamp } = this.quotationPrice.getCoinUsdtOrderbook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
@@ -597,7 +597,7 @@ class Quotation {
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: null,
-        B: { bids, asks },
+        B: { bids, asks, timestamp },
       },
     });
     const totalOrigPrice = new BigNumber(

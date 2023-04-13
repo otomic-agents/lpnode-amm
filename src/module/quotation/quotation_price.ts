@@ -8,6 +8,7 @@ import { orderbook } from "../orderbook";
 import * as _ from "lodash";
 import { AmmContext } from "../../interface/context";
 import { SystemMath } from "../../utils/system_math";
+
 class QuotationPrice {
   public getCoinUsdtOrderbook(
     token: string,
@@ -16,6 +17,7 @@ class QuotationPrice {
     stdSymbol: string | null;
     bids: number[][];
     asks: number[][];
+    timestamp: number
   } {
     const { symbol: stdCoinSymbol } = dataConfig.getStdCoinSymbolInfoByToken(
       token,
@@ -23,7 +25,7 @@ class QuotationPrice {
     );
     if (!stdCoinSymbol) {
       logger.error(`获取Token对应的StdCoinSymbol失败，请检查基础配置${token}`);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
+      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
     }
     const stdSymbol = `${stdCoinSymbol}/USDT`;
     if (stdSymbol === "USDT/USDT" || stdSymbol === "USDC/USDT") {
@@ -31,6 +33,7 @@ class QuotationPrice {
         stdSymbol,
         bids: [[1, 100000000]],
         asks: [[1, 100000000]],
+        timestamp: new Date().getTime()
       };
     }
     if (stdSymbol === "T/USDT") {
@@ -38,12 +41,13 @@ class QuotationPrice {
         stdSymbol,
         bids: [[1, 100000000]],
         asks: [[1, 100000000]],
+        timestamp: new Date().getTime()
       };
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
       logger.error(`获取orderbook失败...`);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
+      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
     }
     const { bids, asks } = orderbookItem;
     const retBids = bids.map((it) => {
@@ -54,22 +58,23 @@ class QuotationPrice {
     });
     if (retBids.length <= 2 || retAsks.length <= 2) {
       logger.debug(`orderbook的深度不够`, stdSymbol);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
+      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
     }
-    return { stdSymbol, asks: retAsks, bids: retBids };
+    return { stdSymbol, asks: retAsks, bids: retBids, timestamp: orderbookItem.timestamp };
   }
+
   public getCoinUsdtExecuteOrderbook(
     token: string,
     chainId: number,
     amount: number
-  ): { stdSymbol: string | null; bids: number[][]; asks: number[][] } {
+  ): { stdSymbol: string | null; bids: number[][]; asks: number[][], timestamp: number } {
     const { symbol: stdCoinSymbol } = dataConfig.getStdCoinSymbolInfoByToken(
       token,
       chainId
     );
     if (!stdCoinSymbol) {
       logger.error(`获取Token对应的StdCoinSymbol失败，请检查基础配置${token}`);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
+      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
     }
     const stdSymbol = `${stdCoinSymbol}/USDT`;
     if (stdSymbol === "USDT/USDT" || stdSymbol === "USDC/USDT") {
@@ -77,6 +82,7 @@ class QuotationPrice {
         stdSymbol,
         bids: [[1, 100000000]],
         asks: [[1, 100000000]],
+        timestamp: new Date().getTime()
       };
     }
     if (stdSymbol === "T/USDT") {
@@ -84,12 +90,13 @@ class QuotationPrice {
         stdSymbol,
         bids: [[1, 100000000]],
         asks: [[1, 100000000]],
+        timestamp: new Date().getTime()
       };
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
       logger.error(`获取orderbook失败...`);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
+      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
     }
     const { bids: orderbook_bids, asks: orderbook_asks } = orderbookItem;
     const level_1_asks = (inputAmount: number): number[][] => {
@@ -119,7 +126,7 @@ class QuotationPrice {
           false
         );
       });
-      console.log(execResult, orderbook_asks);
+      // console.log(execResult, orderbook_asks);
       if (left_amount > 0) {
         throw "orderbook 无法满足报价";
       }
@@ -157,7 +164,7 @@ class QuotationPrice {
           false
         );
       });
-      console.log(execResult, orderbook_bids);
+      // console.log(execResult, orderbook_bids);
       if (left_amount > 0) {
         throw "orderbook 无法满足报价";
       }
@@ -172,6 +179,7 @@ class QuotationPrice {
       stdSymbol,
       asks: level_1_asks(amount),
       bids: level_1_bids(amount),
+      timestamp: orderbookItem.timestamp
     };
   }
 
