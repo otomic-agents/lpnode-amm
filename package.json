@@ -51,6 +51,7 @@
     "number-to-bn": "^1.7.0",
     "rate-limiter-flexible": "^2.3.6",
     "redis": "^4.0.3",
+    "replaceall": "^0.1.6",
     "socket.io-client": "^4.4.1",
     "socks-proxy-agent": "^6.1.1",
     "superagent": "^7.1.1",

@@ -254,6 +254,20 @@ class QuotationPrice {
     const [[price]] = asks;
     return price;
   }
+
+  public getDstTokenBidPrice(ammContext: AmmContext) {
+    const { stdSymbol, asks } = this.getCoinUsdtOrderbook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId
+    );
+    if (stdSymbol === null) {
+      throw new Error(
+        `no orderbook found,bridge ${ammContext.bridgeItem.msmq_name}`
+      );
+    }
+    const [[price]] = asks;
+    return price;
+  }
 }
 
 const quotationPrice: QuotationPrice = new QuotationPrice();

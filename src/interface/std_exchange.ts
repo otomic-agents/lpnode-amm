@@ -17,7 +17,7 @@ interface IStdExchangeSpot {
   fetchBalance(): Promise<any>; // 获取现货余额
   withdrawApply(): Promise<any>; // 提款
   capitalAll(): Promise<any>; // 查询提款列表
-  spotTradeCheck(stdSymbol: string, amount: number): Promise<boolean>; // 检查现货交易条件是否满足
+  spotTradeCheck(stdSymbol: string, value: number, amount: number): Promise<boolean>; // 检查现货交易条件是否满足
   createMarketOrder(
     orderId: string,
     stdSymbol: string,

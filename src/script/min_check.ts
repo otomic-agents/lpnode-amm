@@ -19,7 +19,7 @@ async function main() {
   setTimeout(async () => {
     const result = await accountManager
       .getAccount("a001")
-      ?.order.spotTradeCheck("ETH/USDT", 10);
+      ?.order.spotTradeCheck("ETH/USDT", 10, 0.005);
     logger.debug(result);
   }, 10000);
 }

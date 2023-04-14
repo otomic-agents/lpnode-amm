@@ -94,7 +94,7 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
-  public async spotTradeCheck(stdSymbol: string, value: number): Promise<boolean> {
+  public async spotTradeCheck(stdSymbol: string, value: number, amount: number): Promise<boolean> {
     if (stdSymbol === "T/USDT") {
       return true;
     }
@@ -103,18 +103,47 @@ class BinanceSpot implements IStdExchangeSpot {
       logger.warn(`No trading pair information found ${stdSymbol}`);
       return false;
     }
-    // logger.debug(item.filters);
+    try {
+      logger.info(`filters_NOTIONAL`);
+      this.filters_NOTIONAL(item, value);
+      logger.info(`filters_LOT_SIZE`);
+      this.filters_LOT_SIZE(item, amount);
+      return true;
+    } catch (e) {
+      logger.error(e);
+      return false;
+    }
+  }
+
+  private filters_NOTIONAL(item: ISpotSymbolItemBinance, value: number) {
     const filterSet = _.find(item.filters, { filterType: "NOTIONAL" });
     if (!filterSet || !_.get(filterSet, "minNotional", undefined)) {
       logger.warn("filter not found", item.filters);
-      return true;
+      return;
     }
+
     const minNotional = Number(_.get(filterSet, "minNotional"));
     if (value > minNotional) {
-      return true;
+      return;
     }
     logger.warn(`The transaction volume does not meet the minimum order limit`, value, minNotional);
-    return false;
+    throw new Error(`The transaction volume does not meet the minimum order limit input:${value} ${minNotional}`);
+  }
+
+  private filters_LOT_SIZE(item: ISpotSymbolItemBinance, value: number) {
+    const filterSet = _.find(item.filters, { filterType: "LOT_SIZE" });
+    if (!filterSet || !_.get(filterSet, "minQty", undefined)) {
+      logger.warn("filter not found", item.filters);
+      return;
+    }
+
+    const min = Number(_.get(filterSet, "minQty"));
+    const max = Number(_.get(filterSet, "maxQty"));
+    if (value >= min && value <= max) {
+      return;
+    }
+    logger.warn(`The transaction amount error LOT_SIZE`, value, min, max);
+    throw new Error(`The transaction amount error LOT_SIZE value [${value}] , filter [${min}] [${max}]`);
   }
 
   private setExchangeSymbolInfo(symbols: ISpotSymbolItemBinance[]) {

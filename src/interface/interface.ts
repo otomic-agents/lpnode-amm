@@ -93,7 +93,7 @@ enum IHedgeType {
 }
 
 interface IHedgeClass {
-  checkMinHedge(ammContext: AmmContext, unitPrice: number): Promise<boolean>;
+  checkMinHedge(ammContext: AmmContext, unitPrice: number, dstUnitPrice: number): Promise<boolean>;
 
   checkSwapAmount(ammContext: AmmContext): Promise<boolean>;
 

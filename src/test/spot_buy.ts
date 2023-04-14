@@ -24,7 +24,7 @@ async function main() {
   await accountManager.init();
   await TimeSleepMs(1000 * 10);
   logger.debug('execute');
-  accountManager.getAccount("a001")?.order.spotTradeCheck("ETH/USDT", 0.0001);
+  accountManager.getAccount("a001")?.order.spotTradeCheck("ETH/USDT", 0.0001, 0.334);
 }
 
 main().then().catch((e: any) => {

@@ -3,6 +3,7 @@ import { AmmContext } from "../../interface/context";
 import { ICexCoinConfig, ICoinType } from "../../interface/interface";
 import { hedgeOrderIncModule } from "../../mongo_module/hedge_order_inc";
 import * as _ from "lodash";
+import { SystemMath } from "../../utils/system_math";
 
 class CoinSpotHedgeBase {
   protected getTokenInfoByAmmContext(ammContext: AmmContext) {
@@ -33,6 +34,62 @@ class CoinSpotHedgeBase {
       return `${ammContext.baseInfo.srcToken.symbol}/USDT`;
     }
     throw new Error(`unknown type`);
+  }
+
+  protected getOptAmountAndValue(ammContext: AmmContext, srcUnitPrice: number, dstUnitPrice: number): [number, number] {
+    const mode = _.get(ammContext, "quoteInfo.mode", undefined);
+    if (mode === "11") {
+      return this.optAmountValue_11(ammContext);
+    }
+    if (mode === "ss") {
+      return this.optAmountValue_ss(ammContext);
+    }
+    if (mode === "bs") {
+      return this.optAmountValue_bs(ammContext, srcUnitPrice, dstUnitPrice);
+    }
+    if (mode === "sb") {
+      return this.optAmountValue_sb(ammContext, srcUnitPrice, dstUnitPrice);
+    }
+    if (mode === "bb") {
+      return this.optAmountValue_bb(ammContext, srcUnitPrice, dstUnitPrice);
+    }
+    throw new Error(`unknown type`);
+  }
+
+  private optAmountValue_11(ammContext: AmmContext): [number, number] {
+    return [-1, -1];
+  }
+
+  private optAmountValue_ss(ammContext: AmmContext): [number, number] {
+    return [-1, -1];
+  }
+
+  private optAmountValue_bs(ammContext: AmmContext, srcUnitPrice: number, dstUnitPrice: number): [number, number] {
+    const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
+    const value = SystemMath.exec(`${ammContext.swapInfo.inputAmountNumber} * ${srcUnitPrice} * (1-${fee})`);
+    const amount = ammContext.swapInfo.inputAmountNumber;
+    return [amount, Number(value.toString())];
+  }
+
+  private optAmountValue_sb(ammContext: AmmContext, srcUnitPrice: number, dstUnitPrice: number): [number, number] {
+    const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
+    const value = SystemMath.exec(`
+      ${ammContext.swapInfo.inputAmountNumber} * 
+      (1-${fee})
+    `);
+    const amount = SystemMath.exec(`
+      ${ammContext.swapInfo.inputAmountNumber} * 
+      (1-${fee}) /
+      ${dstUnitPrice}`
+    );
+    return [Number(amount.toString()), Number(value.toString())];
+  }
+
+  private optAmountValue_bb(ammContext: AmmContext, srcUnitPrice: number, dstUnitPrice: number): [number, number] {
+    const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
+    const value = SystemMath.exec(`${ammContext.swapInfo.inputAmountNumber} * ${srcUnitPrice} * (1-${fee})`);
+    const amount = ammContext.swapInfo.inputAmountNumber;
+    return [amount, Number(value.toString())];
   }
 
   protected getStdSymbol(coinInfo: ICexCoinConfig[]) {

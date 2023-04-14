@@ -106,9 +106,10 @@ class Quotation {
       ammContext.quoteInfo.mode = this.getSwapType(ammContext);
       if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
         const srcTokenPrice = quotationPrice.getSrcTokenBidPrice(ammContext);
+        const dstTokenPrice = quotationPrice.getDstTokenBidPrice(ammContext);
         await hedgeManager
           .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
-          .checkMinHedge(ammContext, srcTokenPrice);
+          .checkMinHedge(ammContext, srcTokenPrice, dstTokenPrice); // 初步的hedge检查
         logger.info(`The cex order limit has been met`);
         await hedgeManager
           .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)

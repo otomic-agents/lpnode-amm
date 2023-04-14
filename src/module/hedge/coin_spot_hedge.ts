@@ -16,7 +16,6 @@ import { AmmContext } from "../../interface/context";
 import { balanceLockModule } from "../../mongo_module/balance_lock";
 import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
 import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
-import { SystemMath } from "../../utils/system_math";
 import { EthUnit } from "../../utils/eth";
 
 const stringify = require("json-stringify-safe");
@@ -116,34 +115,38 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   public async checkMinHedge(
     ammContext: AmmContext,
-    unitPrice: number
+    srcUnitPrice: number,
+    dstUnitPrice: number
   ): Promise<boolean> {
     const stdSymbol = this.getOptStdSymbol(ammContext);
     if (stdSymbol === false) {
       logger.debug(ammContext.bridgeItem.std_symbol, "不需要进行对冲，不检查");
       return true;
     }
-    const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
-    const feeStr = new BigNumber(fee).toFixed(8).toString();
-    const formula = `(${ammContext.swapInfo.inputAmountNumber}* ${unitPrice}) - (${ammContext.swapInfo.inputAmountNumber}* ${unitPrice} * ${feeStr})`;
-    const val = SystemMath.exec(formula, "value calculation formula");
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
       throw new Error(`Account instance not found`);
     }
-    logger.debug(`Enter total value`, val);
+    const [amount, value] = this.getOptAmountAndValue(ammContext, srcUnitPrice, dstUnitPrice);
+    logger.debug(`Enter total value ,amount [${amount}] value [${value}] `);
+    if (amount === -1 && value === -1) {
+      logger.warn(`mode no hedging condition check required`);
+      return true;
+    }
     if (
       !(await accountIns.order.spotTradeCheck(
         stdSymbol,
-        Number(val.toFixed(8).toString())
+        value,
+        amount
       ))
     ) {
       throw new Error("Execution condition not met");
     }
     return false;
   }
+
 
   public async getHedgeAccountState() {
     return 0;
