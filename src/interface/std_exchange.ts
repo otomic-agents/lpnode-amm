@@ -21,7 +21,8 @@ interface IStdExchangeSpot {
   createMarketOrder(
     orderId: string,
     stdSymbol: string,
-    amount: BigNumber,
+    amount: BigNumber | undefined,
+    quoteOrderQty: BigNumber | undefined,
     side: ISide
   ): Promise<ISpotOrderResult>; // 简单市价单
   getBalance(): Map<string, ISpotBalanceItem>;

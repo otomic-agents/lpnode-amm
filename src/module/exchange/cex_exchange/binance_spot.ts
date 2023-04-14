@@ -170,13 +170,15 @@ class BinanceSpot implements IStdExchangeSpot {
    * @param {string} orderId "001"
    * @param {string} stdSymbol "ETH/USDT"
    * @param {BigNumber} amount "new Bignumber(0.005)"
+   * @param {BigNumber} quoteOrderQty "new Bignumber(0.005)"
    * @param {ISide} side "Iside"
    * @returns {Promise<ISpotOrderResult>} ISpotOrderResult
    */
   public async createMarketOrder(
     orderId: string,
     stdSymbol: string,
-    amount: BigNumber,
+    amount: BigNumber | undefined,
+    quoteOrderQty: BigNumber | undefined,
     side: ISide
   ): Promise<ISpotOrderResult> {
     const symbol = this.getSymbolByStdSymbol(stdSymbol);
@@ -191,10 +193,10 @@ class BinanceSpot implements IStdExchangeSpot {
       type: IOrderTypeBinance.Market, //  市价单
       // timeInForce: ITimeInForceBinance.FOK, // 立即成交或者拒绝
       recvWindow: 5000,
-      quantity: Number(this.formatBigNumberPrecision(stdSymbol, amount)),
       newClientOrderId: orderId,
       timestamp: new Date().getTime(),
     };
+    this.setAmountOrQty(stdSymbol, amount, quoteOrderQty, orderData);
     logger.debug(`用户 【${this.apiKey}】下单:`);
     console.table(orderData);
     const postStr = signatureObject(orderData, this.apiSecret);
@@ -225,6 +227,15 @@ class BinanceSpot implements IStdExchangeSpot {
         throw new Error(errMsg);
       }
       throw e;
+    }
+  }
+
+  private setAmountOrQty(stdSymbol: string, amount: BigNumber | undefined, qty: BigNumber | undefined, struct: any) {
+    if (amount !== undefined) {
+      _.set(struct, "quantity", Number(this.formatBigNumberPrecision(stdSymbol, amount)));
+    }
+    if (qty !== undefined) {
+      _.set(struct, "quoteOrderQty", Number(this.formatBigNumberPrecision(stdSymbol, qty)));
     }
   }
 

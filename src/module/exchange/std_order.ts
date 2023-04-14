@@ -10,12 +10,23 @@ class StdOrder {
     this.stdExchange = cexExchange;
   }
 
-  public async spotBuy(orderId: string, stdSymbol: string, amount: string) {
+  public async spotBuy(orderId: string, stdSymbol: string, amount: string | undefined, qty: string | undefined) {
     logger.debug(`spotBuy`, stdSymbol);
     return this.stdExchange.exchangeSpot.createMarketOrder(
       orderId,
       stdSymbol,
-      new BigNumber(`${amount}`),
+      (() => {
+        if (amount) {
+          return new BigNumber(`${amount}`);
+        }
+        return undefined;
+      })(),
+      (() => {
+        if (qty) {
+          return new BigNumber(`${qty}`);
+        }
+        return undefined;
+      })(),
       ISide.BUY
     );
   }
@@ -28,11 +39,22 @@ class StdOrder {
     return this.stdExchange.exchangeSpot.spotTradeCheck(stdSymbol, value, amount);
   }
 
-  public async spotSell(orderId: string, stdSymbol: string, amount: string) {
+  public async spotSell(orderId: string, stdSymbol: string, amount: string | undefined, qty: string | undefined) {
     return this.stdExchange.exchangeSpot.createMarketOrder(
       orderId,
       stdSymbol,
-      new BigNumber(`${amount}`),
+      (() => {
+        if (amount) {
+          return new BigNumber(`${amount}`);
+        }
+        return undefined;
+      })(),
+      (() => {
+        if (qty) {
+          return new BigNumber(`${qty}`);
+        }
+        return undefined;
+      })(),
       ISide.SELL
     );
   }

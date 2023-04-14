@@ -17,11 +17,17 @@ appEnv.initConfig(); // 初始化基本配置
 async function main() {
   await dataConfig.prepareConfigResource(); // 提前创建配置
   await accountManager.init();
+  // setTimeout(async () => {
+  //   const result = await accountManager
+  //     .getAccount("a001")
+  //     ?.order.spotSell("C020983", "ETH/USDT", new BigNumber(0.01).toString(), undefined);
+  //   logger.debug(result);
+  // }, 10000);
+
   setTimeout(async () => {
-    logger.info("开始Buy___NEAR/USDT");
     const result = await accountManager
       .getAccount("a001")
-      ?.order.spotSell("C020983", "ETH/USDT", new BigNumber(1).toString());
+      ?.order.spotBuy("C020983", "ETH/USDT", undefined, new BigNumber(20).toString());
     logger.debug(result);
   }, 10000);
 }
