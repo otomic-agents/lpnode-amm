@@ -27,6 +27,7 @@ import { chainBalance } from "./chain_balance";
 import { measure, memo } from "helpful-decorators";
 import { IQuoteData } from "../interface/quotation";
 import { EthUnit } from "../utils/eth";
+import { SystemMath } from "../utils/system_math";
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -315,7 +316,7 @@ class Quotation {
     redisPub
       .publish(ammContext.systemInfo.msmqName, quoteCmd)
       .catch((e: any) => {
-        logger.debug(`Publishing an offer message produced an error`, e);
+        logger.debug(`publishing an offer message produced an error`, e);
       });
     const mode = _.clone(ammContext.quoteInfo.mode);
     ammContext.quoteInfo = quoteInfo.quote_data;
@@ -603,7 +604,6 @@ class Quotation {
     }
 
     const [[price]] = asks;
-    const dstTokenPriceBn = new BigNumber(price);
     const priceBn = new BigNumber(1).div(new BigNumber(price));
     const withFee = 1 - ammContext.baseInfo.fee;
     const targetPriceBN = priceBn.times(new BigNumber(withFee));
@@ -618,7 +618,7 @@ class Quotation {
     ).times(new BigNumber(priceBn));
     return [
       targetPriceBN.toFixed(8).toString(),
-      dstTokenPriceBn.toFixed(8).toString(),
+      SystemMath.exec(`1/${price}`).toFixed(8).toString(),
       totalOrigPrice.toString(),
     ];
   }

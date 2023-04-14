@@ -1,6 +1,7 @@
 import { IBridgeTokenConfigItem } from "./interface";
 
 interface AmmContext {
+  summary: string;
   bridgeItem: IBridgeTokenConfigItem;
   step: number; // 当前处于第几步
   systemInfo: {

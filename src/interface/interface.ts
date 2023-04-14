@@ -22,6 +22,11 @@ interface IBridgeTokenConfigItem {
   lp_wallet_info: LpWalletManager;
 }
 
+enum ISwapStep {
+  ASK = "ASK",
+  LOCK = "LOCK"
+}
+
 enum ICoinType {
   Coin = "coin",
   StableCoin = "stable_coin",
@@ -145,4 +150,5 @@ export {
   ICexCoinConfig,
   ICoinType,
   IBalanceLock,
+  ISwapStep
 };

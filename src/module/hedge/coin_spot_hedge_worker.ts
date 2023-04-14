@@ -48,8 +48,18 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         continue;
       }
       logger.debug(executeFun, order.orderId, order.symbol, new BigNumber(order.amountNumber).toString());
-      const cexResult = await accountIns.order[executeFun](order.orderId, order.symbol, new BigNumber(order.amountNumber).toString());
-      cexExeResult.push(cexResult);
+      const execRow = {
+        plan: order,
+        result: {},
+        error: "",
+      };
+      try {
+        execRow.result = await accountIns.order[executeFun](order.orderId, order.symbol, new BigNumber(order.amountNumber).toString());
+      } catch (e: any) {
+        execRow.error = e.toString();
+      } finally {
+        cexExeResult.push(execRow);
+      }
     }
     await ammContextManager.appendContext(call.ammContext.systemOrder.orderId, "systemOrder.hedgePlan", cexExePlan);
     await ammContextManager.appendContext(call.ammContext.systemOrder.orderId, "systemOrder.hedgeResult", cexExeResult);

@@ -5,6 +5,7 @@ import * as _ from "lodash";
 const dbKey = "main"; // model 链接的数据库
 const mongoConn = Mdb.getInstance().getMongoDb(dbKey);
 const ammContextSchema = new Schema({
+  summary: String,
   systemContext: Object,
   chainOptInfo: Object,
   systemInfo: Object,

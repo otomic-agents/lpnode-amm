@@ -65,6 +65,7 @@ class Business {
       throw new Error("token not found");
     }
     const context: AmmContext = {
+      summary: `chainInfo: ${token0.chainId}-${token1.chainId} ,swapInfo: ${token0.symbol}-${token1.symbol}`,
       systemContext: {
         lockStepInfo: {},
         transferoutConfirmInfo: {},
