@@ -18,7 +18,7 @@ import { dataConfig } from "../data_config";
 import * as _ from "lodash";
 import { quotationListHistory } from "./quotation/quotation_history";
 import { hedgeManager } from "./hedge_manager";
-import { quotationPrice, QuotationPrice } from "./quotation/quotation_price";
+import { quotationPrice, QuotationPrice } from "./quotation/quotation_price_usdt";
 import { AmmContext } from "../interface/context";
 import { ammContextModule } from "../mongo_module/amm_context";
 import { systemRedisBus } from "../system_redis_bus";
@@ -225,7 +225,7 @@ class Quotation {
         `没有找到目标链的Token Symbol${ammContext.baseInfo.dstToken.chainId}`
       );
     }
-    const { bids: bid, asks: ask } = this.quotationPrice.getCoinUsdtOrderbook(
+    const { bids: bid, asks: ask } = this.quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );
@@ -244,7 +244,7 @@ class Quotation {
 
     const {
       asks: [[tokenUPrice]],
-    } = this.quotationPrice.getCoinUsdtOrderbookByCoinName(gasSymbol);
+    } = this.quotationPrice.getCoinStableCoinOrderBookByCoinName(gasSymbol);
     if (!_.isFinite(tokenUPrice) || tokenUPrice === 0) {
       logger.error(`没有找到U价，报价失败 ${gasSymbol}`);
       throw new Error(`目标链Gas币Usdt 价值获取失败，无法报价${gasSymbol}`);
@@ -368,7 +368,7 @@ class Quotation {
    * @returns {*} ""
    */
   public price(ammContext: AmmContext, sourceObject: any) {
-    const { bids: dstTokenBids } = this.quotationPrice.getCoinUsdtOrderbook(
+    const { bids: dstTokenBids } = this.quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
@@ -393,7 +393,7 @@ class Quotation {
 
   private priceNativeToken(ammContext: AmmContext, sourceObject: any) {
     const { asks: nativeTokenAsks } =
-      this.quotationPrice.getCoinUsdtOrderbookByCoinName(
+      this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
         ammContext.baseInfo.dstChain.tokenName
       );
     const [[usdPrice]] = nativeTokenAsks;
@@ -410,7 +410,7 @@ class Quotation {
 
   private priceSrcToken(ammContext: AmmContext, sourceObject: any) {
     const { asks: srcTokenAsks } =
-      this.quotationPrice.getCoinUsdtOrderbookByCoinName(
+      this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
         ammContext.baseInfo.srcToken.symbol
       );
     const [[usdPrice]] = srcTokenAsks;
@@ -467,11 +467,11 @@ class Quotation {
     sourceObject: any = undefined
   ): [string, string, string] {
     // ETH/AVAX
-    const srcTokenPrice = this.quotationPrice.getCoinUsdtOrderbook(
+    const srcTokenPrice = this.quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );
-    const dstTokenPrice = this.quotationPrice.getCoinUsdtOrderbook(
+    const dstTokenPrice = this.quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
@@ -595,7 +595,7 @@ class Quotation {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
     const { stdSymbol, bids, asks, timestamp } =
-      this.quotationPrice.getCoinUsdtOrderbook(
+      this.quotationPrice.getCoinStableCoinOrderBook(
         ammContext.baseInfo.dstToken.address,
         ammContext.baseInfo.dstToken.chainId
       );
@@ -658,11 +658,11 @@ class Quotation {
   private async min_amount(ammContext: AmmContext, sourceObject: any) {
     // 获取目标币的U价格
 
-    const { bids: bid } = this.quotationPrice.getCoinUsdtOrderbook(
+    const { bids: bid } = this.quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
-    const { bids: sbid } = this.quotationPrice.getCoinUsdtOrderbook(
+    const { bids: sbid } = this.quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );
@@ -713,7 +713,7 @@ class Quotation {
     if (minUsd === 0) {
       return -1;
     }
-    const { stdSymbol, bids } = this.quotationPrice.getCoinUsdtOrderbook(
+    const { stdSymbol, bids } = this.quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );
@@ -746,7 +746,7 @@ class Quotation {
    */
   private calculateGas(ammContext: AmmContext, sourceObject: any) {
     // 获取目标币的U价格
-    const { bids: bid } = this.quotationPrice.getCoinUsdtOrderbook(
+    const { bids: bid } = this.quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
@@ -845,13 +845,13 @@ class Quotation {
     );
     const {
       asks: [[dstTokenPrice]],
-    } = quotationPrice.getCoinUsdtOrderbook(
+    } = quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
     const {
       asks: [[srcTokenPrice]],
-    } = quotationPrice.getCoinUsdtOrderbook(
+    } = quotationPrice.getCoinStableCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );

@@ -10,7 +10,7 @@ import { AmmContext } from "../../interface/context";
 import { SystemMath } from "../../utils/system_math";
 
 class QuotationPrice {
-  public getCoinUsdtOrderbook(
+  public getCoinStableCoinOrderBook(
     token: string,
     chainId: number
   ): {
@@ -183,7 +183,7 @@ class QuotationPrice {
     };
   }
 
-  public getCoinUsdtOrderbookByCoinName(stdCoinSymbol: string): {
+  public getCoinStableCoinOrderBookByCoinName(stdCoinSymbol: string): {
     stdSymbol: string | null;
     bids: number[][];
     asks: number[][];
@@ -233,7 +233,7 @@ class QuotationPrice {
     }
     const {
       asks: [[tokenUsdtPrice]],
-    } = this.getCoinUsdtOrderbookByCoinName(gasSymbol);
+    } = this.getCoinStableCoinOrderBookByCoinName(gasSymbol);
     if (!_.isFinite(tokenUsdtPrice) || tokenUsdtPrice === 0) {
       logger.error(`没有找到U价，报价失败 ${gasSymbol}`);
       throw new Error(`目标链Gas币Usdt 价值获取失败，无法报价${gasSymbol}`);
@@ -242,7 +242,7 @@ class QuotationPrice {
   }
 
   public getSrcTokenBidPrice(ammContext: AmmContext) {
-    const { stdSymbol, asks } = this.getCoinUsdtOrderbook(
+    const { stdSymbol, asks } = this.getCoinStableCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );
@@ -256,7 +256,7 @@ class QuotationPrice {
   }
 
   public getDstTokenBidPrice(ammContext: AmmContext) {
-    const { stdSymbol, asks } = this.getCoinUsdtOrderbook(
+    const { stdSymbol, asks } = this.getCoinStableCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
