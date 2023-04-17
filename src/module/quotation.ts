@@ -110,8 +110,15 @@ class Quotation {
         await hedgeManager
           .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
           .checkSwapAmount(ammContext); // 余额和对冲额检查
-
+        const gasTokenPrice = quotationPrice.getNativeTokenBidPrice(ammContext.baseInfo.dstChain.id);
+        const {
+          min,
+          gasTokenMin
+        } = await hedgeManager.getHedgeIns(dataConfig.getHedgeConfig().hedgeType).getMinHedgeAmount(ammContext, srcTokenPrice, dstTokenPrice, gasTokenPrice);
+        _.set(quoteInfo.quote_data, "expand_min_input", min);
+        _.set(quoteInfo.quote_data, "expand_min_with_native_input", gasTokenMin);
       }
+
       await this.price(ammContext, quoteInfo); //       origPrice price origTotalPrice usd_price mode
       await this.priceNativeToken(ammContext, quoteInfo); // native_token_usdt_price
       await this.priceSrcToken(ammContext, quoteInfo); // src_usd_price
@@ -261,7 +268,7 @@ class Quotation {
       native_token_orig_price: targetPrice.toString(),
       native_token_symbol: `${gasSymbol}/USDT`,
       native_token_min_usd: minGasUsed.toString(),
-      native_token_min_count: new BigNumber(minCount).toString(),
+      // native_token_min_count: new BigNumber(minCount).toString(),
       native_token_min: new BigNumber(minCount).toString(),
     });
   }

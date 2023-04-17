@@ -17,6 +17,7 @@ import { balanceLockModule } from "../../mongo_module/balance_lock";
 import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
 import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
 import { EthUnit } from "../../utils/eth";
+import { SystemMath } from "../../utils/system_math";
 
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
@@ -142,6 +143,58 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
     return false;
   }
+
+  public async getMinHedgeAmount(ammContext: AmmContext, srcPrice: number, dstPrice: number, gasTokenPrice: number): Promise<{
+    min: number,
+    gasTokenMin: number
+  }> {
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      throw new Error(`Account instance not found`);
+    }
+    let ret = { min: 0, gasTokenMin: 0 };
+    const gasTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(`${ammContext.baseInfo.dstChain.tokenName}/USDT`);
+    const srcTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(`${ammContext.baseInfo.srcToken.symbol}/USDT`);
+    const dstTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(`${ammContext.baseInfo.dstToken.symbol}/USDT`);
+    if (ammContext.quoteInfo.mode === "11") {
+      ret = {
+        min: 0,
+        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}`)
+      };
+    }
+    if (ammContext.quoteInfo.mode === "ss") {
+      ret = {
+        min: 0,
+        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}*100.3%`)
+      };
+    }
+    if (ammContext.quoteInfo.mode === "bs") {
+      ret = {
+        min: SystemMath.execNumber(`${srcTokenMinNotional}/${srcPrice}*100.3%`),
+        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}*100.3%`)
+      };
+    }
+    if (ammContext.quoteInfo.mode === "sb") {
+      ret = {
+        min: SystemMath.execNumber(`${dstTokenMinNotional}/${srcPrice}*100.3%`),
+        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}*100.3%`)
+      };
+    }
+    if (ammContext.quoteInfo.mode === "bb") {
+      ret = {
+        min: ((): any => {
+          const a = SystemMath.execNumber(`${dstTokenMinNotional}/${srcPrice}*100.3%`);
+          const b = SystemMath.execNumber(`${srcTokenMinNotional}/${srcPrice}*100.3%`);
+          return _.max([a, b]);
+        })(),
+        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}`)
+      };
+    }
+    return ret;
+  }
+
 
   public async getHedgeAccountState() {
     return 0;

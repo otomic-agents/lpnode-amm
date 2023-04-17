@@ -135,6 +135,25 @@ class BinanceSpot implements IStdExchangeSpot {
     return [SystemMath.execNumber(`${minNotional}/${price}`), Number.MAX_VALUE];
   }
 
+  public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
+    if (stdSymbol === "T/USDT") {
+      return 0;
+    }
+    const item = this.spotSymbolsInfo.get(stdSymbol);
+    if (!item) {
+      logger.warn(`No trading pair information found ${stdSymbol}`);
+      return 0;
+    }
+
+    const filterSet = _.find(item.filters, { filterType: "NOTIONAL" });
+    if (!filterSet || !_.get(filterSet, "minNotional", undefined)) {
+      logger.warn("filter not found", item.filters);
+      return 0;
+    }
+    const minNotional = _.get(filterSet, "minNotional");
+    return Number(minNotional);
+  }
+
   private filters_NOTIONAL(item: ISpotSymbolItemBinance, value: number) {
     const filterSet = _.find(item.filters, { filterType: "NOTIONAL" });
     if (!filterSet || !_.get(filterSet, "minNotional", undefined)) {

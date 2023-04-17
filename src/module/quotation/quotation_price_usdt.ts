@@ -241,6 +241,7 @@ class QuotationPrice {
     return tokenUsdtPrice;
   }
 
+
   public getSrcTokenBidPrice(ammContext: AmmContext) {
     const { stdSymbol, asks } = this.getCoinStableCoinOrderBook(
       ammContext.baseInfo.srcToken.address,

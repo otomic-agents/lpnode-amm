@@ -20,6 +20,8 @@ interface IStdExchangeSpot {
   spotTradeCheck(stdSymbol: string, value: number, amount: number): Promise<boolean>; // 检查现货交易条件是否满足
   spotGetTradeMinMax(stdSymbol: string, price: number): Promise<[number, number]>;
 
+  spotGetTradeMinNotional(stdSymbol: string): Promise<number>;
+
   createMarketOrder(
     orderId: string,
     stdSymbol: string,
