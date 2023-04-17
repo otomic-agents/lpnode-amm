@@ -19,6 +19,7 @@ import BigNumber from "bignumber.js";
 import { IStdExchangeSpot } from "../../../interface/std_exchange";
 import { binanceConfig } from "./binance_config";
 import { BinanceSpotRequest } from "./binance_spot_request";
+import { SystemMath } from "../../../utils/system_math";
 
 class BinanceSpot implements IStdExchangeSpot {
   private apiKey: string;
@@ -72,6 +73,7 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
+
   public async initMarkets() {
     const url = `${this.apiBaseUrl}/api/v3/exchangeInfo`;
     try {
@@ -113,6 +115,24 @@ class BinanceSpot implements IStdExchangeSpot {
       logger.error(e);
       return false;
     }
+  }
+
+  public async spotGetTradeMinMax(stdSymbol: string, price: number): Promise<[number, number]> {
+    if (stdSymbol === "T/USDT") {
+      return [0, Number.MAX_VALUE];
+    }
+    const item = this.spotSymbolsInfo.get(stdSymbol);
+    if (!item) {
+      logger.warn(`No trading pair information found ${stdSymbol}`);
+      return [0, Number.MAX_VALUE];
+    }
+    const filterSet = _.find(item.filters, { filterType: "NOTIONAL" });
+    if (!filterSet || !_.get(filterSet, "minNotional", undefined)) {
+      logger.warn("filter not found", item.filters);
+      return [0, Number.MAX_VALUE];
+    }
+    const minNotional = _.get(filterSet, "minNotional");
+    return [SystemMath.execNumber(`${minNotional}/${price}`), Number.MAX_VALUE];
   }
 
   private filters_NOTIONAL(item: ISpotSymbolItemBinance, value: number) {
@@ -210,6 +230,7 @@ class BinanceSpot implements IStdExchangeSpot {
           "X-MBX-APIKEY": this.apiKey,
         },
         data: postStr,
+        httpsAgent: httpsKeepAliveAgent
       });
       _.set(result, "data.stdSymbol", stdSymbol); // 结果中设置Stdsymbol
       logger.debug("下单完成", "下单返回的信息:");

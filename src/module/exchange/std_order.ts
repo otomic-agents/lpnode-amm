@@ -39,6 +39,10 @@ class StdOrder {
     return this.stdExchange.exchangeSpot.spotTradeCheck(stdSymbol, value, amount);
   }
 
+  public async getSpotTradeMinMax(stdSymbol: string, price: number) {
+    return this.stdExchange.exchangeSpot.spotGetTradeMinMax(stdSymbol, price);
+  }
+
   public async spotSell(orderId: string, stdSymbol: string, amount: string | undefined, qty: string | undefined) {
     return this.stdExchange.exchangeSpot.createMarketOrder(
       orderId,

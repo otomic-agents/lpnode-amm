@@ -2,12 +2,7 @@
 /**
  *报价的第一版服务，还在填充逻辑中
  * **/
-import {
-  IBridgeTokenConfigItem,
-  ICoinType,
-  IHedgeType,
-  ILpCmd,
-} from "../interface/interface";
+import { IBridgeTokenConfigItem, ICoinType, IHedgeType, ILpCmd, } from "../interface/interface";
 import { redisPub } from "../redis_bus";
 import { logger } from "../sys_lib/logger";
 import { orderbook } from "./orderbook";
@@ -28,6 +23,7 @@ import { measure, memo } from "helpful-decorators";
 import { IQuoteData } from "../interface/quotation";
 import { EthUnit } from "../utils/eth";
 import { SystemMath } from "../utils/system_math";
+import { accountManager } from "./exchange/account_manager";
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -109,43 +105,31 @@ class Quotation {
         const dstTokenPrice = quotationPrice.getDstTokenBidPrice(ammContext);
         await hedgeManager
           .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
-          .checkMinHedge(ammContext, srcTokenPrice, dstTokenPrice); // 初步的hedge检查
+          .checkMinHedge(ammContext, srcTokenPrice, dstTokenPrice); // 初步的hedge检查 , 检查不换gas币的情况下，能否通过
         logger.info(`The cex order limit has been met`);
         await hedgeManager
           .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
-          .checkSwapAmount(ammContext);
+          .checkSwapAmount(ammContext); // 余额和对冲额检查
+
       }
-      await this.price(ammContext, quoteInfo);
-      await this.priceNativeToken(ammContext, quoteInfo);
-      await this.priceSrcToken(ammContext, quoteInfo);
-      await this.amountCheck(ammContext);
-      await this.min_amount(ammContext, quoteInfo);
-      await this.renderInfo(ammContext, quoteInfo);
+      await this.price(ammContext, quoteInfo); //       origPrice price origTotalPrice usd_price mode
+      await this.priceNativeToken(ammContext, quoteInfo); // native_token_usdt_price
+      await this.priceSrcToken(ammContext, quoteInfo); // src_usd_price
+      await this.amountCheck(ammContext); // format check
+      await this.min_amount(ammContext, quoteInfo); // min gas + min hedge check
+      await this.renderInfo(ammContext, quoteInfo); // assetName assetTokenName assetChainInfo
       await this.native_token_min(ammContext, quoteInfo); // 计算目标链的Gas币兑换量
-      await this.native_token_max(ammContext, quoteInfo);
-      this.calculateGas(ammContext, quoteInfo); // 计算gas
+      await this.native_token_max(ammContext, quoteInfo); // native_token_max  目前是配置的，比如bsc上10笔交易Gas需要消耗的量
+      this.calculateGas(ammContext, quoteInfo); // 计算gas ，目前配置的最小交易量
       await this.calculateCapacity(ammContext, quoteInfo); // 计算最大量
       await this.analysis(ammContext, quoteInfo);
     } catch (e) {
       logger.error(e);
       return [undefined, undefined];
     }
-    return [quoteHash, this.formatQuoteInfo(quoteInfo)];
+    return [quoteHash, quoteInfo];
   }
 
-  private formatQuoteInfo(quoteInfo) {
-    // eslint-disable-next-line array-callback-return
-    Object.keys(quoteInfo.quote_data).map((key) => {
-      if (typeof quoteInfo.quote_data[key] === "object") {
-        _.set(
-          quoteInfo,
-          `quote_data.${key}`,
-          JSON.stringify(quoteInfo.quote_data[key])
-        );
-      }
-    });
-    return quoteInfo;
-  }
 
   /**
    * 根据换的量，检查是否可报价，如果 Dex 余额不足则不报价
@@ -198,7 +182,7 @@ class Quotation {
   }
 
   public async quotationPremise() {
-    if (orderbook.spotOrderbookOnceLoaded === true) {
+    if (orderbook.spotOrderbookOnceLoaded) {
       return true;
     }
     return false;
@@ -249,31 +233,36 @@ class Quotation {
       logger.error(`没有找到U价，报价失败 ${gasSymbol}`);
       throw new Error(`目标链Gas币Usdt 价值获取失败，无法报价${gasSymbol}`);
     }
-    const targetPrice = new BigNumber(srcUprice)
-      .div(new BigNumber(tokenUPrice))
-      .toFixed(8)
-      .toString();
+    const targetPrice = SystemMath.exec(`${srcUprice}/${tokenUPrice}`);
+    const targetPriceWithFee = SystemMath.exec(`${srcUprice}*(1-${ammContext.baseInfo.fee})/${tokenUPrice}`);
     const minGasUsed = dataConfig.getChainGasTokenUsd(
       ammContext.baseInfo.dstToken.chainId
     ); // usd 单位 ,兑换多少U的 nToken
     // 至少需要换多少个目标Token
-    const minGasTokenCount = new BigNumber(minGasUsed)
-      .div(new BigNumber(tokenUPrice))
-      .toFixed(8)
-      .toString();
+    const minGasTokenCount = SystemMath.exec(`${minGasUsed}/${tokenUPrice}`).toFixed(8).toString();
     logger.debug(minGasTokenCount);
+    let minHedgeCount = 0;
+    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+      const accountIns = await accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount);
+      if (accountIns) {
+        [minHedgeCount] = await accountIns.order.getSpotTradeMinMax(`${gasSymbol}/USDT`, tokenUPrice);
+        minHedgeCount = SystemMath.execNumber(`${minHedgeCount} * 110%`); // 向上浮动10% ，保证最小量
+      }
+    }
+    let minCount: number | undefined = 0;
+    minCount = _.max([Number(minGasTokenCount), minHedgeCount]);
+    if (!minCount) {
+      minCount = 0;
+    }
 
     Object.assign(sourceObject.quote_data, {
       quote_orderbook_type: quoteType,
-      native_token_price: targetPrice, // ETH-USDT 到BSC  则是 ETH/BNB的价格
+      native_token_price: targetPriceWithFee.toString(), // ETH-USDT 到BSC  则是 ETH/BNB的价格
+      native_token_orig_price: targetPrice.toString(),
       native_token_symbol: `${gasSymbol}/USDT`,
-      native_token_max: new BigNumber(minGasTokenCount)
-        .times(new BigNumber(10))
-        .toFixed(8)
-        .toString(),
       native_token_min_usd: minGasUsed.toString(),
-      native_token_min_count: minGasTokenCount,
-      native_token_min: minGasTokenCount,
+      native_token_min_count: new BigNumber(minCount).toString(),
+      native_token_min: new BigNumber(minCount).toString(),
     });
   }
 
@@ -281,18 +270,30 @@ class Quotation {
     const dstChainId = ammContext.baseInfo.dstToken.chainId;
     const nativeTokenPrice =
       this.quotationPrice.getNativeTokenBidPrice(dstChainId);
+    const tokenSymbol = dataConfig.getChainTokenName(ammContext.baseInfo.dstToken.chainId);
+    const tokenStdSymbol = `${tokenSymbol}/USDT`;
+    let minHedgeCount = 0;
+    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+      const accountIns = await accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount);
+      if (accountIns) {
+        [minHedgeCount] = await accountIns.order.getSpotTradeMinMax(tokenStdSymbol, nativeTokenPrice);
+        minHedgeCount = SystemMath.execNumber(`${minHedgeCount} * 110%`); // 向上浮动10% ，保证最小量
+      }
+    }
     const dstChainMaxSwapUsd = dataConfig.getChainGasTokenUsdMax(dstChainId);
-    const maxCountBN = new BigNumber(dstChainMaxSwapUsd).div(
-      new BigNumber(nativeTokenPrice)
-    );
+    const maxCountBN = SystemMath.exec(`${dstChainMaxSwapUsd} / ${nativeTokenPrice}`);
     if (!maxCountBN.isFinite()) {
       throw `计算目标链token最大报价发生错误 !isFinite`;
     }
     const maxCount = Number(maxCountBN.toFixed(8).toString());
-    logger.info(maxCount);
-
+    let nativeTokenMax = _.max([maxCount, minHedgeCount]);
+    if (!nativeTokenMax) {
+      logger.error(`Error in calculating the maximum amount of tokens`);
+      nativeTokenMax = 0;
+    }
     Object.assign(sourceObject.quote_data, {
-      native_token_max: maxCountBN.toFixed(8).toString(),
+      native_token_max: new BigNumber(nativeTokenMax).toFixed(8).toString(),
+      native_token_max_number: Number(nativeTokenMax)
     });
   }
 
@@ -312,7 +313,7 @@ class Quotation {
     _.set(quoteInfo, "cid", ammContext.AskInfo.cid);
     _.set(quoteInfo, "cmd", ILpCmd.EVENT_ASK_REPLY);
     const quoteCmd = JSON.stringify(quoteInfo);
-    console.table(quoteInfo.quote_data);
+    console.dir(quoteInfo.quote_data, { depth: null });
     logger.info(`send Message`, ammContext.systemInfo.msmqName, quoteInfo.cmd);
     redisPub
       .publish(ammContext.systemInfo.msmqName, quoteCmd)

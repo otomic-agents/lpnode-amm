@@ -145,15 +145,16 @@ class Business {
         dstAmountNumber: 0,
       },
       quoteInfo: {
-        src_usd_price: "",
-        usd_price: "",
-        price: "",
+        src_usd_price: "", // srcToken/USDT
+        usd_price: "", // dstToken/USDT
+        price: "", // srcToken/dstToken * 0.003
         quote_hash: "",
         mode: "",
-        origPrice: "",
-        origTotalPrice: "",
-        native_token_price: "",
-        native_token_usdt_price: "",
+        origPrice: "", // srcToken/dstToken
+        origTotalPrice: "", // srcToken/dstToken * input Amount
+        native_token_price: "", // srcToken/GasToken 价格
+        native_token_usdt_price: "", // 目标链原生币的udst价格
+        native_token_orig_price: "", // srcToken/GasToken 价格
       },
       askTime: new Date().getTime(),
     };

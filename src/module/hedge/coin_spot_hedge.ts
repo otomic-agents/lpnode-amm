@@ -59,10 +59,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
   }
 
-  // public async getMinAmount() {
-  //
-  // }
-
   private async initAccount() {
     try {
       await accountManager.init();
@@ -146,7 +142,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
     return false;
   }
-
 
   public async getHedgeAccountState() {
     return 0;

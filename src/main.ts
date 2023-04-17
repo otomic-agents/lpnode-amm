@@ -23,7 +23,7 @@ import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
 import { quotation } from "./module/quotation";
 import { httpServer } from "./httpd/server";
 // @ts-ignore
-const cTable = require("console.table"); //  替换console table
+// const cTable = require("console.table"); //  替换console table
 
 import { chainBalance } from "./module/chain_balance";
 

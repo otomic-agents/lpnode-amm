@@ -66,6 +66,7 @@ interface AmmContext {
     origPrice: string;
     origTotalPrice: string;
     native_token_price: string;
+    native_token_orig_price: string;// 未扣除fee的原价
     price: string; // 1 的报价
     native_token_usdt_price: string;
     src_usd_price: string; // 左侧币对的U价
