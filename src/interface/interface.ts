@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import { FeeManager } from "../module/bridge_extend/fee_manager";
 import { StatusManager } from "../module/bridge_extend/status_manager";
 import { LpWalletManager } from "../module/bridge_extend/lp_wallet_manager";
+import { SymbolManager } from "../module/bridge_extend/symbol_manager";
 
 interface IBridgeTokenConfigItem {
   bridge_name: string; // tokenBridge的name
@@ -20,11 +21,12 @@ interface IBridgeTokenConfigItem {
   fee_manager: FeeManager;
   status_manager: StatusManager;
   lp_wallet_info: LpWalletManager;
+  symbol_info: SymbolManager;
 }
 
 enum ISwapStep {
   ASK = "ASK",
-  LOCK = "LOCK"
+  LOCK = "LOCK",
 }
 
 enum ICoinType {
@@ -93,9 +95,18 @@ enum IHedgeType {
 }
 
 interface IHedgeClass {
-  checkMinHedge(ammContext: AmmContext, unitPrice: number, dstUnitPrice: number): Promise<boolean>;
+  checkMinHedge(
+    ammContext: AmmContext,
+    unitPrice: number,
+    dstUnitPrice: number
+  ): Promise<boolean>;
 
-  getMinHedgeAmount(ammContext: AmmContext, srcPrice: number, dstPrice: number, gasTokenPrice: number): Promise<number>; // 输入多少的左侧量，才能保证基本的对冲量限制
+  getMinHedgeAmount(
+    ammContext: AmmContext,
+    srcPrice: number,
+    dstPrice: number,
+    gasTokenPrice: number
+  ): Promise<number>; // 输入多少的左侧量，才能保证基本的对冲量限制
 
   checkSwapAmount(ammContext: AmmContext): Promise<boolean>;
 
@@ -150,5 +161,5 @@ export {
   ICexCoinConfig,
   ICoinType,
   IBalanceLock,
-  ISwapStep
+  ISwapStep,
 };

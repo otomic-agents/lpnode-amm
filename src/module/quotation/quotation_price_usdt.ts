@@ -318,7 +318,7 @@ class QuotationPrice {
     timestamp: number;
   } {
     const stdSymbol = `${stdCoinSymbol}/USDT`;
-    if (stdSymbol === "USDT/USDT") {
+    if (stdSymbol === "USDT/USDT" || stdCoinSymbol === "USDC/USDC") {
       return {
         stdSymbol: "USDT/USDT",
         bids: 100000000,

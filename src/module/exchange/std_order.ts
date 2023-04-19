@@ -10,7 +10,12 @@ class StdOrder {
     this.stdExchange = cexExchange;
   }
 
-  public async spotBuy(orderId: string, stdSymbol: string, amount: string | undefined, qty: string | undefined) {
+  public async spotBuy(
+    orderId: string,
+    stdSymbol: string,
+    amount: string | undefined,
+    qty: string | undefined
+  ) {
     logger.debug(`spotBuy`, stdSymbol);
     return this.stdExchange.exchangeSpot.createMarketOrder(
       orderId,
@@ -31,23 +36,39 @@ class StdOrder {
     );
   }
 
-  public async spotTradeCheck(stdSymbol: string, value: number, amount: number): Promise<boolean> {
+  public async spotTradeCheck(
+    stdSymbol: string,
+    value: number,
+    amount: number
+  ): Promise<boolean> {
     if (!_.isFinite(value)) {
       logger.error(`输入的量有问题.`, value);
       return false;
     }
-    return this.stdExchange.exchangeSpot.spotTradeCheck(stdSymbol, value, amount);
+    return this.stdExchange.exchangeSpot.spotTradeCheck(
+      stdSymbol,
+      value,
+      amount
+    );
   }
 
   public async getSpotTradeMinMax(stdSymbol: string, price: number) {
     return this.stdExchange.exchangeSpot.spotGetTradeMinMax(stdSymbol, price);
+  }
+  public async getSpotTradeMinMaxValue(stdSymbol: string) {
+    return this.stdExchange.exchangeSpot.spotGetTradeMinMaxValue(stdSymbol);
   }
 
   public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
     return this.stdExchange.exchangeSpot.spotGetTradeMinNotional(stdSymbol);
   }
 
-  public async spotSell(orderId: string, stdSymbol: string, amount: string | undefined, qty: string | undefined) {
+  public async spotSell(
+    orderId: string,
+    stdSymbol: string,
+    amount: string | undefined,
+    qty: string | undefined
+  ) {
     return this.stdExchange.exchangeSpot.createMarketOrder(
       orderId,
       stdSymbol,

@@ -17,9 +17,16 @@ interface IStdExchangeSpot {
   fetchBalance(): Promise<any>; // 获取现货余额
   withdrawApply(): Promise<any>; // 提款
   capitalAll(): Promise<any>; // 查询提款列表
-  spotTradeCheck(stdSymbol: string, value: number, amount: number): Promise<boolean>; // 检查现货交易条件是否满足
-  spotGetTradeMinMax(stdSymbol: string, price: number): Promise<[number, number]>;
-
+  spotTradeCheck(
+    stdSymbol: string,
+    value: number,
+    amount: number
+  ): Promise<boolean>; // 检查现货交易条件是否满足
+  spotGetTradeMinMax(
+    stdSymbol: string,
+    price: number
+  ): Promise<[number, number]>;
+  spotGetTradeMinMaxValue(stdSymbol: string): Promise<[number, number]>;
   spotGetTradeMinNotional(stdSymbol: string): Promise<number>;
 
   createMarketOrder(

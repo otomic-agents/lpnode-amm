@@ -397,8 +397,9 @@ class Quotation {
     );
     const nativeTokenPrice = quotationPrice.getGasTokenBuyPrice(ammContext);
     const srcTokenOrgPrice = _.get(sourceObject, "quote_data.origPrice", 0);
-    if (!_.isFinite(srcTokenOrgPrice)) {
+    if (!_.isFinite(Number(srcTokenOrgPrice))) {
       logger.warn(`原始币的价格获取的不正确`);
+      throw new Error(`原始币的价格获取的不正确`);
     }
     const targetPriceWithFee = SystemMath.exec(
       `${nativeTokenPrice}/${srcTokenOrgPrice}*(1-${ammContext.baseInfo.fee})`
@@ -430,6 +431,7 @@ class Quotation {
     Object.assign(sourceObject.quote_data, {
       src_usd_price: new BigNumber(usdPrice).toString(),
     });
+    ammContext.quoteInfo = sourceObject.quote_data;
   }
 
   private getSwapType(ammContext: AmmContext) {
@@ -830,7 +832,11 @@ class Quotation {
     );
     return dstTokenDexBalanceToSrcTokenCountNumber;
   }
-
+  /**
+   * 分析价格是否有效
+   * @param ammContext
+   * @param sourceObject
+   */
   private async analysis(ammContext: AmmContext, sourceObject: any) {
     const max = _.get(sourceObject, "quote_data.capacity_num", 0);
     const input = ammContext.swapInfo.inputAmountNumber;

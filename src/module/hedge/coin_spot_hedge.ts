@@ -167,7 +167,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     if (ammContext.quoteInfo.mode === "11") {
       ret = {
         min: SystemMath.execNumber(
-          `${srcTokenMinNotional}*2/${srcPrice}*100.3`
+          `${srcTokenMinNotional}*2/${srcPrice}*100.3%`
         ),
         swapGasTokenMin: SystemMath.execNumber(
           `${gasTokenMinNotional}/${srcPrice}`
@@ -472,25 +472,57 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   private async calculateCapacity_sb(ammContext: AmmContext): Promise<number> {
     // usdt-eth
+    const stdSymbol = `${ammContext.baseInfo.dstToken.symbol}/USDT`;
+    const gasSymbol =
+      ammContext.bridgeItem.symbol_info.getGasTokenStableStdSymbol(ammContext);
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
-    const srcTokenCexBalance = accountManager
-      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
-      ?.balance.getSpotBalance(tokenInfo[0].symbol);
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      logger.error(`没有完成account的初始化`);
+      return 0;
+    }
+    const [, coinMaxValue] = await accountIns.order.getSpotTradeMinMaxValue(
+      stdSymbol
+    );
+    const [, gasTokenCoinMaxValue] =
+      await accountIns.order.getSpotTradeMinMaxValue(gasSymbol);
+    const maxTradeValue = SystemMath.min([coinMaxValue, gasTokenCoinMaxValue]);
+    const maxTradeCount = SystemMath.execNumber(
+      `${maxTradeValue}/${ammContext.quoteInfo.src_usd_price}*99.7%`
+    );
+    const srcTokenCexBalance = accountIns.balance.getSpotBalance(
+      tokenInfo[0].symbol
+    );
     if (!srcTokenCexBalance) {
       logger.error(
         `not getting the correct price symbol ${tokenInfo[0].symbol}`
       );
       return 0;
     }
-    return Number(srcTokenCexBalance.free);
+    return SystemMath.min([Number(srcTokenCexBalance.free), maxTradeCount]);
   }
 
   public async calculateCapacity_bs(ammContext: AmmContext): Promise<number> {
     // ETH-USDT
+    const stdSymbol = `${ammContext.baseInfo.srcToken.symbol}/USDT`;
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
-    const srcTokenCexBalanceInfo = accountManager
-      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
-      ?.balance.getSpotBalance(tokenInfo[0].symbol);
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      logger.warn(`account ins init error`);
+      return 0;
+    }
+    let [, maxTradeCount] = await accountIns.order.getSpotTradeMinMax(
+      stdSymbol,
+      SystemMath.execNumber(`${ammContext.quoteInfo.src_usd_price} *1`)
+    );
+    maxTradeCount = SystemMath.execNumber(`${maxTradeCount} * 99.7%`);
+    const srcTokenCexBalanceInfo = accountIns.balance.getSpotBalance(
+      tokenInfo[0].symbol
+    );
     if (!srcTokenCexBalanceInfo || srcTokenCexBalanceInfo.free === "0") {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
@@ -500,15 +532,37 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
     }
-    const minCount: any = _.min([srcTokenCexBalance]);
+    const minCount: any = SystemMath.min([srcTokenCexBalance, maxTradeCount]);
+    logger.debug(`spot hedge 最大供应量 `, minCount);
     return minCount;
   }
 
   public async calculateCapacity_11(ammContext: AmmContext): Promise<number> {
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      logger.warn(`account ins 没有初始化`);
+      return 0;
+    }
+    const stdSymbol =
+      ammContext.bridgeItem.symbol_info.getSrcStableStdSymbol(ammContext);
+    const gasSymbol =
+      ammContext.bridgeItem.symbol_info.getGasTokenStableStdSymbol(ammContext);
+    const [, coinMaxValue] = await accountIns.order.getSpotTradeMinMaxValue(
+      stdSymbol
+    );
+    const [, gasTokenCoinMaxValue] =
+      await accountIns.order.getSpotTradeMinMaxValue(gasSymbol);
+    const maxTradeValue = SystemMath.min([coinMaxValue, gasTokenCoinMaxValue]);
+    const maxTradeCount = SystemMath.execNumber(
+      `${maxTradeValue}/${ammContext.quoteInfo.src_usd_price}*99.7%`
+    );
+
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
-    const srcTokenCexBalanceInfo = accountManager
-      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
-      ?.balance.getSpotBalance(tokenInfo[0].symbol);
+    const srcTokenCexBalanceInfo = accountIns.balance.getSpotBalance(
+      tokenInfo[0].symbol
+    );
     if (!srcTokenCexBalanceInfo || srcTokenCexBalanceInfo.free === "0") {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
@@ -518,15 +572,32 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
     }
-    const minCount: any = _.min([srcTokenCexBalance]);
+    const minCount: any = _.min([srcTokenCexBalance, maxTradeCount]);
     return minCount;
   }
 
   private async calculateCapacity_ss(ammContext: AmmContext): Promise<number> {
+    const gasSymbol =
+      ammContext.bridgeItem.symbol_info.getGasTokenStableStdSymbol(ammContext);
+
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
-    const srcTokenCexBalanceInfo = accountManager
-      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
-      ?.balance.getSpotBalance(tokenInfo[0].symbol);
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      logger.error(`没有完成account的初始化`);
+      return 0;
+    }
+    const [, gasTokenCoinMaxValue] =
+      await accountIns.order.getSpotTradeMinMaxValue(gasSymbol);
+    const maxTradeValue = SystemMath.min([gasTokenCoinMaxValue]);
+    const maxTradeCount = SystemMath.execNumber(
+      `${maxTradeValue}/${ammContext.quoteInfo.src_usd_price}*99.7%`
+    );
+
+    const srcTokenCexBalanceInfo = accountIns.balance.getSpotBalance(
+      tokenInfo[0].symbol
+    );
     if (!srcTokenCexBalanceInfo || srcTokenCexBalanceInfo.free === "0") {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
@@ -536,7 +607,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
     }
-    const minCount: any = _.min([srcTokenCexBalance]);
+    const minCount: any = SystemMath.min([srcTokenCexBalance, maxTradeCount]);
     return minCount;
   }
 
@@ -544,15 +615,44 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     /**
      * 只要左侧可以卖掉，右侧就一定能买足量的币，因此不用考虑右侧币的余额，以及USDT的余额
      */
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      logger.error(`没有完成account的初始化`);
+      return 0;
+    }
+    const aStdSymbol =
+      ammContext.bridgeItem.symbol_info.getSrcStableStdSymbol(ammContext);
+    const bStdSymbol =
+      ammContext.bridgeItem.symbol_info.getDstStableStdSymbol(ammContext);
+    const gasSymbol =
+      ammContext.bridgeItem.symbol_info.getGasTokenStableStdSymbol(ammContext);
+    const [, aCoinMaxValue] = await accountIns.order.getSpotTradeMinMaxValue(
+      aStdSymbol
+    );
+    const [, bCoinMaxValue] = await accountIns.order.getSpotTradeMinMaxValue(
+      bStdSymbol
+    );
+    const [, gasTokenCoinMaxValue] =
+      await accountIns.order.getSpotTradeMinMaxValue(gasSymbol);
+    const maxTradeValue = SystemMath.min([
+      aCoinMaxValue,
+      bCoinMaxValue,
+      gasTokenCoinMaxValue,
+    ]);
+    const maxTradeCount = SystemMath.execNumber(
+      `${maxTradeValue}/${ammContext.quoteInfo.src_usd_price}*99.7%`
+    );
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
-    const srcTokenCexBalance = accountManager
-      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
-      ?.balance.getSpotBalance(tokenInfo[0].symbol);
+    const srcTokenCexBalance = accountIns.balance.getSpotBalance(
+      tokenInfo[0].symbol
+    );
     const srcBalanceCount = Number(srcTokenCexBalance?.free); // 这个是左侧可以卖的最大量
     if (!srcBalanceCount || !_.isFinite(srcBalanceCount)) {
       return 0;
     }
-    return srcBalanceCount;
+    return SystemMath.min([srcBalanceCount, maxTradeCount]);
   }
 
   /**
