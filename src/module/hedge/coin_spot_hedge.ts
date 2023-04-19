@@ -126,75 +126,96 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     if (!accountIns) {
       throw new Error(`Account instance not found`);
     }
-    const [amount, value] = this.getOptAmountAndValue(ammContext, srcUnitPrice, dstUnitPrice);
+    const [amount, value] = this.getOptAmountAndValue(
+      ammContext,
+      srcUnitPrice,
+      dstUnitPrice
+    );
     logger.debug(`Enter total value ,amount [${amount}] value [${value}] `);
     if (amount === -1 && value === -1) {
       logger.warn(`mode no hedging condition check required`);
       return true;
     }
-    if (
-      !(await accountIns.order.spotTradeCheck(
-        stdSymbol,
-        value,
-        amount
-      ))
-    ) {
+    if (!(await accountIns.order.spotTradeCheck(stdSymbol, value, amount))) {
       throw new Error("Execution condition not met");
     }
     return false;
   }
 
-  public async getMinHedgeAmount(ammContext: AmmContext, srcPrice: number, dstPrice: number, gasTokenPrice: number): Promise<{
-    min: number,
-    gasTokenMin: number
-  }> {
+  public async getMinHedgeAmount(
+    ammContext: AmmContext,
+    srcPrice: number,
+    dstPrice: number,
+    gasTokenPrice: number
+  ): Promise<number> {
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
       throw new Error(`Account instance not found`);
     }
-    let ret = { min: 0, gasTokenMin: 0 };
-    const gasTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(`${ammContext.baseInfo.dstChain.tokenName}/USDT`);
-    const srcTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(`${ammContext.baseInfo.srcToken.symbol}/USDT`);
-    const dstTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(`${ammContext.baseInfo.dstToken.symbol}/USDT`);
+    let ret = { min: 0, swapGasTokenMin: 0 };
+    const gasTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(
+      `${ammContext.baseInfo.dstChain.tokenName}/USDT`
+    );
+    const srcTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(
+      `${ammContext.baseInfo.srcToken.symbol}/USDT`
+    );
+    const dstTokenMinNotional = await accountIns.order.spotGetTradeMinNotional(
+      `${ammContext.baseInfo.dstToken.symbol}/USDT`
+    );
     if (ammContext.quoteInfo.mode === "11") {
       ret = {
-        min: 0,
-        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}`)
+        min: SystemMath.execNumber(
+          `${srcTokenMinNotional}*2/${srcPrice}*100.3`
+        ),
+        swapGasTokenMin: SystemMath.execNumber(
+          `${gasTokenMinNotional}/${srcPrice}`
+        ),
       };
     }
     if (ammContext.quoteInfo.mode === "ss") {
       ret = {
         min: 0,
-        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}*100.3%`)
+        swapGasTokenMin: SystemMath.execNumber(
+          `${gasTokenMinNotional}/${srcPrice}*100.3%`
+        ),
       };
     }
     if (ammContext.quoteInfo.mode === "bs") {
       ret = {
         min: SystemMath.execNumber(`${srcTokenMinNotional}/${srcPrice}*100.3%`),
-        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}*100.3%`)
+        swapGasTokenMin: SystemMath.execNumber(
+          `${gasTokenMinNotional}/${srcPrice}*100.3%`
+        ),
       };
     }
     if (ammContext.quoteInfo.mode === "sb") {
       ret = {
         min: SystemMath.execNumber(`${dstTokenMinNotional}/${srcPrice}*100.3%`),
-        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}*100.3%`)
+        swapGasTokenMin: SystemMath.execNumber(
+          `${gasTokenMinNotional}/${srcPrice}*100.3%`
+        ),
       };
     }
     if (ammContext.quoteInfo.mode === "bb") {
       ret = {
         min: ((): any => {
-          const a = SystemMath.execNumber(`${dstTokenMinNotional}/${srcPrice}*100.3%`);
-          const b = SystemMath.execNumber(`${srcTokenMinNotional}/${srcPrice}*100.3%`);
-          return _.max([a, b]);
+          const a = SystemMath.execNumber(
+            `${dstTokenMinNotional}/${srcPrice}*100.3%`
+          );
+          const b = SystemMath.execNumber(
+            `${srcTokenMinNotional}/${srcPrice}*100.3%`
+          );
+          return SystemMath.execNumber(`${a}+${b}`);
         })(),
-        gasTokenMin: SystemMath.execNumber(`${gasTokenMinNotional}/${srcPrice}`)
+        swapGasTokenMin: SystemMath.execNumber(
+          `${gasTokenMinNotional}/${srcPrice}`
+        ),
       };
     }
-    return ret;
+    return SystemMath.execNumber(`${ret.min}+${ret.swapGasTokenMin}`);
   }
-
 
   public async getHedgeAccountState() {
     return 0;
@@ -202,10 +223,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   public async getSwapMax(): Promise<BigNumber> {
     return new BigNumber(0);
-  }
-
-  public async getMinUsdAmount(): Promise<number> {
-    return 20;
   }
 
   /**
@@ -488,11 +505,39 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   }
 
   public async calculateCapacity_11(ammContext: AmmContext): Promise<number> {
-    return -1;
+    const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
+    const srcTokenCexBalanceInfo = accountManager
+      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
+      ?.balance.getSpotBalance(tokenInfo[0].symbol);
+    if (!srcTokenCexBalanceInfo || srcTokenCexBalanceInfo.free === "0") {
+      logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
+      return 0;
+    }
+    const srcTokenCexBalance = Number(srcTokenCexBalanceInfo.free);
+    if (!_.isFinite(srcTokenCexBalance)) {
+      logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
+      return 0;
+    }
+    const minCount: any = _.min([srcTokenCexBalance]);
+    return minCount;
   }
 
   private async calculateCapacity_ss(ammContext: AmmContext): Promise<number> {
-    return -1;
+    const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
+    const srcTokenCexBalanceInfo = accountManager
+      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
+      ?.balance.getSpotBalance(tokenInfo[0].symbol);
+    if (!srcTokenCexBalanceInfo || srcTokenCexBalanceInfo.free === "0") {
+      logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
+      return 0;
+    }
+    const srcTokenCexBalance = Number(srcTokenCexBalanceInfo.free);
+    if (!_.isFinite(srcTokenCexBalance)) {
+      logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
+      return 0;
+    }
+    const minCount: any = _.min([srcTokenCexBalance]);
+    return minCount;
   }
 
   private async calculateCapacity_bb(ammContext: AmmContext): Promise<number> {

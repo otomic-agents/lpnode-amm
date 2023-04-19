@@ -27,7 +27,7 @@ async function main() {
   setTimeout(async () => {
     const result = await accountManager
       .getAccount("a001")
-      ?.order.spotBuy("C020983", "ETH/USDT", undefined, new BigNumber(20).toString());
+      ?.order.spotBuy("C020983", "BNB/USDT", new BigNumber(0.15).toString(), undefined);
     logger.debug(result);
   }, 10000);
 }

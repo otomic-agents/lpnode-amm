@@ -155,6 +155,7 @@ class Business {
         native_token_price: "", // srcToken/GasToken 价格
         native_token_usdt_price: "", // 目标链原生币的udst价格
         native_token_orig_price: "", // srcToken/GasToken 价格
+        capacity_num: 0,
       },
       askTime: new Date().getTime(),
     };
@@ -248,11 +249,14 @@ class Business {
       ammContext.systemInfo.msmqName,
       cmdMsg
     );
-    redisPub.publish(ammContext.systemInfo.msmqName, cmdMsg).then(() => {
-      //
-    }).catch((e: any) => {
-      logger.error(`回复消息到Lp发生错误`, e);
-    });
+    redisPub
+      .publish(ammContext.systemInfo.msmqName, cmdMsg)
+      .then(() => {
+        //
+      })
+      .catch((e: any) => {
+        logger.error(`回复消息到Lp发生错误`, e);
+      });
   }
 }
 

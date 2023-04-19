@@ -95,10 +95,7 @@ enum IHedgeType {
 interface IHedgeClass {
   checkMinHedge(ammContext: AmmContext, unitPrice: number, dstUnitPrice: number): Promise<boolean>;
 
-  getMinHedgeAmount(ammContext: AmmContext, srcPrice: number, dstPrice: number, gasTokenPrice: number): Promise<{
-    min: number,
-    gasTokenMin: number
-  }>;
+  getMinHedgeAmount(ammContext: AmmContext, srcPrice: number, dstPrice: number, gasTokenPrice: number): Promise<number>; // 输入多少的左侧量，才能保证基本的对冲量限制
 
   checkSwapAmount(ammContext: AmmContext): Promise<boolean>;
 
@@ -115,8 +112,6 @@ interface IHedgeClass {
   writeJob(hedgeinfo: ISpotHedgeInfo);
 
   calculateCapacity(ammContext: AmmContext);
-
-  getMinUsdAmount(): Promise<number>;
 }
 
 interface IOrderbookStoreItem {

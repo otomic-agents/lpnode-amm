@@ -1,10 +1,12 @@
 import BigNumber from "bignumber.js";
 import * as crypto from "crypto";
+
 interface ILocalOrderInfo {
   marketType: string;
   orderIndex: number;
   price: number;
 }
+
 function signatureObject(object: any, apiSecret: string) {
   if (!object) {
     return "";
@@ -22,7 +24,9 @@ function signatureObject(object: any, apiSecret: string) {
     .digest("hex");
   return `${retStr}&signature=${signedStr}`;
 }
+
 const encodeSize = 32;
+
 function createOrderId(
   marketType: string,
   indexNumber: number,
@@ -38,8 +42,10 @@ function createOrderId(
 
   return sourceIdStr;
 }
+
 function parseOrderId(orderStr: string): ILocalOrderInfo {
   // S_2vbo80_msdg_l70h9
+  // orderStr = "S_2vbo80_msdg_l70h9"
   const orderInfoList = orderStr.split("_");
   const index = Number(
     new BigNumber(orderInfoList[1], encodeSize).toString(10)
@@ -47,6 +53,7 @@ function parseOrderId(orderStr: string): ILocalOrderInfo {
 
   const price0 = new BigNumber(orderInfoList[2], encodeSize).toString(10);
   const price1 = new BigNumber(orderInfoList[3], encodeSize).toString(10);
+
   const price = Number(new BigNumber(`${price0}.${price1}`).toString(10));
   return {
     marketType: (() => {
@@ -57,4 +64,5 @@ function parseOrderId(orderStr: string): ILocalOrderInfo {
     price,
   };
 }
+
 export { signatureObject, createOrderId, parseOrderId, ILocalOrderInfo };

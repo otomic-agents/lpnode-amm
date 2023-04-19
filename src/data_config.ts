@@ -36,6 +36,7 @@ class DataConfig {
   // @ts-ignore
   private chainMaxTokenUsd: Map<number, number> = new Map();
   private chainMap: Map<number, string> = new Map();
+  private chainDataMap: Map<number, { chainType: string }> = new Map();
   private chainTokenMap: Map<number, string> = new Map(); // 链id 和Market Symbol之间的关系
   private tokenToSymbolMap: Map<string, ICexCoinConfig> = new Map();
   private hedgeAccountList: {
@@ -337,6 +338,7 @@ class DataConfig {
     const chainList: {
       chainId: number;
       chainName: string;
+      chainType: string;
       tokenName: string;
       tokenUsd: number;
     }[] = await chainListModule.find({})
@@ -344,6 +346,7 @@ class DataConfig {
 
     _.map(chainList, (item) => {
       this.chainMap.set(item.chainId, item.chainName);
+      this.chainDataMap.set(item.chainId, { chainType: item.chainType });
       this.chainTokenMap.set(item.chainId, item.tokenName);
     });
     console.log("当前链的基础数据:");
@@ -385,7 +388,8 @@ class DataConfig {
     if (address.startsWith("0x")) {
       return web3.utils.hexToNumberString(address);
     }
-    if (chainId === 397) {
+    const chainType = _.get(this.chainDataMap.get(chainId), "chainType", undefined);
+    if (chainType === "near") {
       const bytes = bs58.decode(address);
       const ud = web3.utils.hexToNumberString(
         `0x${Buffer.from(bytes)

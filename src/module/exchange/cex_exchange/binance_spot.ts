@@ -73,7 +73,6 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
-
   public async initMarkets() {
     const url = `${this.apiBaseUrl}/api/v3/exchangeInfo`;
     try {
@@ -96,7 +95,11 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
-  public async spotTradeCheck(stdSymbol: string, value: number, amount: number): Promise<boolean> {
+  public async spotTradeCheck(
+    stdSymbol: string,
+    value: number,
+    amount: number
+  ): Promise<boolean> {
     if (stdSymbol === "T/USDT") {
       return true;
     }
@@ -117,22 +120,29 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
-  public async spotGetTradeMinMax(stdSymbol: string, price: number): Promise<[number, number]> {
+  public async spotGetTradeMinMax(
+    stdSymbol: string,
+    price: number
+  ): Promise<[number, number]> {
     if (stdSymbol === "T/USDT") {
-      return [0, Number.MAX_VALUE];
+      return [0, 0];
     }
     const item = this.spotSymbolsInfo.get(stdSymbol);
     if (!item) {
       logger.warn(`No trading pair information found ${stdSymbol}`);
-      return [0, Number.MAX_VALUE];
+      return [0, 0];
     }
     const filterSet = _.find(item.filters, { filterType: "NOTIONAL" });
     if (!filterSet || !_.get(filterSet, "minNotional", undefined)) {
       logger.warn("filter not found", item.filters);
-      return [0, Number.MAX_VALUE];
+      return [0, 0];
     }
     const minNotional = _.get(filterSet, "minNotional");
-    return [SystemMath.execNumber(`${minNotional}/${price}`), Number.MAX_VALUE];
+    const maxNotional = _.get(filterSet, "maxNotional");
+    return [
+      SystemMath.execNumber(`${minNotional}/${price}`),
+      SystemMath.execNumber(`${maxNotional}/${price}`),
+    ];
   }
 
   public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
@@ -165,8 +175,14 @@ class BinanceSpot implements IStdExchangeSpot {
     if (value > minNotional) {
       return;
     }
-    logger.warn(`The transaction volume does not meet the minimum order limit`, value, minNotional);
-    throw new Error(`The transaction volume does not meet the minimum order limit input:${value} ${minNotional}`);
+    logger.warn(
+      `The transaction volume does not meet the minimum order limit`,
+      value,
+      minNotional
+    );
+    throw new Error(
+      `The transaction volume does not meet the minimum order limit input:${value} ${minNotional}`
+    );
   }
 
   private filters_LOT_SIZE(item: ISpotSymbolItemBinance, value: number) {
@@ -182,7 +198,9 @@ class BinanceSpot implements IStdExchangeSpot {
       return;
     }
     logger.warn(`The transaction amount error LOT_SIZE`, value, min, max);
-    throw new Error(`The transaction amount error LOT_SIZE value [${value}] , filter [${min}] [${max}]`);
+    throw new Error(
+      `The transaction amount error LOT_SIZE value [${value}] , filter [${min}] [${max}]`
+    );
   }
 
   private setExchangeSymbolInfo(symbols: ISpotSymbolItemBinance[]) {
@@ -220,6 +238,7 @@ class BinanceSpot implements IStdExchangeSpot {
     quoteOrderQty: BigNumber | undefined,
     side: ISide
   ): Promise<ISpotOrderResult> {
+    console.dir(this.spotSymbolsInfo.get(stdSymbol));
     const symbol = this.getSymbolByStdSymbol(stdSymbol);
     if (!symbol) {
       logger.error(`无法找到交易的Symbol信息......FindOption`, stdSymbol);
@@ -249,7 +268,7 @@ class BinanceSpot implements IStdExchangeSpot {
           "X-MBX-APIKEY": this.apiKey,
         },
         data: postStr,
-        httpsAgent: httpsKeepAliveAgent
+        httpsAgent: httpsKeepAliveAgent,
       });
       _.set(result, "data.stdSymbol", stdSymbol); // 结果中设置Stdsymbol
       logger.debug("下单完成", "下单返回的信息:");
@@ -270,12 +289,25 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
-  private setAmountOrQty(stdSymbol: string, amount: BigNumber | undefined, qty: BigNumber | undefined, struct: any) {
+  private setAmountOrQty(
+    stdSymbol: string,
+    amount: BigNumber | undefined,
+    qty: BigNumber | undefined,
+    struct: any
+  ) {
     if (amount !== undefined) {
-      _.set(struct, "quantity", Number(this.formatBigNumberPrecision(stdSymbol, amount)));
+      _.set(
+        struct,
+        "quantity",
+        Number(this.formatBigNumberPrecision(stdSymbol, amount))
+      );
     }
     if (qty !== undefined) {
-      _.set(struct, "quoteOrderQty", Number(this.formatBigNumberPrecision(stdSymbol, qty)));
+      _.set(
+        struct,
+        "quoteOrderQty",
+        Number(this.formatBigNumberPrecision(stdSymbol, qty))
+      );
     }
   }
 

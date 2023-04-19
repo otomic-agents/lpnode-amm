@@ -7,7 +7,7 @@ import * as _ from "lodash";
 import { ISide } from "../interface/std_difi";
 
 interface IProfit {
-
+  origPrice: number,
   srcChainInfo: {
     userInput: {
       amount: number,
@@ -42,9 +42,9 @@ interface IProfit {
     }[]
     orders: {
       amount: number,
-      assets: string,
-      slippage: number,
-      fee: number,
+      symbol: string,
+      slippage: string,
+      fee: any,
     }[]
     assetsList: {
       assets: string, amount: number, des?: string, average: number
@@ -80,6 +80,7 @@ class Profit {
 
   private async processItem(ammContext: AmmContext) {
     const report = await this.createNewProfitReport();
+    // this.process_setRawPrice(ammContext, report);
     this.process_scrChainInfo(ammContext, report);
     this.process_dstChainInfo(ammContext, report);
     this.process_cexInfo(ammContext, report);
@@ -88,6 +89,7 @@ class Profit {
 
   private async createNewProfitReport(): Promise<IProfit> {
     const profit = {
+      origPrice: 0,
       srcChainInfo: {
         userInput: {
           amount: 0,
@@ -151,14 +153,31 @@ class Profit {
   }
 
   private process_cexInfo(ammContext: AmmContext, report: IProfit) {
-    const assetsChangeList: { assets: string, amount: number, des?: string, average: number }[] = [];
+    const assetsChangeList: { assets: string, amount: number, des?: string, average: number, action: string }[] = [];
     ammContext.systemOrder.hedgeResult.forEach(orderRaw => {
       profitHelper.getAssetsRecord(orderRaw).forEach(assetsChangeItem => {
         assetsChangeList.push(assetsChangeItem);
       });
     });
     report.cexInfo.assetsList = assetsChangeList;
+    // hedgePlan
     report.cexInfo.hedgePlan = ammContext.systemOrder.hedgePlan;
+    // orderRecord
+    const orderList: {
+      amount: number,
+      symbol: string,
+      slippage: string,
+      fee: any,
+    }[] = [];
+    ammContext.systemOrder.hedgeResult.forEach(orderRaw => {
+      orderList.push({
+        amount: _.get(orderRaw, "result.stdSymbol"),
+        slippage: profitHelper.getSlippage(orderRaw),
+        fee: {},
+        symbol: _.get(orderRaw, "result.stdSymbol")
+      });
+    });
+    report.cexInfo.orders = orderList;
   }
 }
 

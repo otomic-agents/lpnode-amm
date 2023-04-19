@@ -17,7 +17,7 @@ class QuotationPrice {
     stdSymbol: string | null;
     bids: number[][];
     asks: number[][];
-    timestamp: number
+    timestamp: number;
   } {
     const { symbol: stdCoinSymbol } = dataConfig.getStdCoinSymbolInfoByToken(
       token,
@@ -25,7 +25,12 @@ class QuotationPrice {
     );
     if (!stdCoinSymbol) {
       logger.error(`获取Token对应的StdCoinSymbol失败，请检查基础配置${token}`);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
+      return {
+        stdSymbol: null,
+        bids: [[0, 0]],
+        asks: [[0, 0]],
+        timestamp: new Date().getTime(),
+      };
     }
     const stdSymbol = `${stdCoinSymbol}/USDT`;
     if (stdSymbol === "USDT/USDT" || stdSymbol === "USDC/USDT") {
@@ -33,7 +38,7 @@ class QuotationPrice {
         stdSymbol,
         bids: [[1, 100000000]],
         asks: [[1, 100000000]],
-        timestamp: new Date().getTime()
+        timestamp: new Date().getTime(),
       };
     }
     if (stdSymbol === "T/USDT") {
@@ -41,13 +46,18 @@ class QuotationPrice {
         stdSymbol,
         bids: [[1, 100000000]],
         asks: [[1, 100000000]],
-        timestamp: new Date().getTime()
+        timestamp: new Date().getTime(),
       };
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
       logger.error(`获取orderbook失败...`);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
+      return {
+        stdSymbol: null,
+        bids: [[0, 0]],
+        asks: [[0, 0]],
+        timestamp: new Date().getTime(),
+      };
     }
     const { bids, asks } = orderbookItem;
     const retBids = bids.map((it) => {
@@ -58,23 +68,108 @@ class QuotationPrice {
     });
     if (retBids.length <= 2 || retAsks.length <= 2) {
       logger.debug(`orderbook的深度不够`, stdSymbol);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
+      return {
+        stdSymbol: null,
+        bids: [[0, 0]],
+        asks: [[0, 0]],
+        timestamp: new Date().getTime(),
+      };
     }
-    return { stdSymbol, asks: retAsks, bids: retBids, timestamp: orderbookItem.timestamp };
+    return {
+      stdSymbol,
+      asks: retAsks,
+      bids: retBids,
+      timestamp: orderbookItem.timestamp,
+    };
   }
-
-  public getCoinUsdtExecuteOrderbook(
+  public getCoinStableCoinOrderBookLiquidity(
     token: string,
-    chainId: number,
-    amount: number
-  ): { stdSymbol: string | null; bids: number[][]; asks: number[][], timestamp: number } {
+    chainId: number
+  ): {
+    stdSymbol: string | null;
+    bids: number;
+    asks: number;
+    timestamp: number;
+  } {
     const { symbol: stdCoinSymbol } = dataConfig.getStdCoinSymbolInfoByToken(
       token,
       chainId
     );
     if (!stdCoinSymbol) {
       logger.error(`获取Token对应的StdCoinSymbol失败，请检查基础配置${token}`);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
+      return {
+        stdSymbol: null,
+        bids: 0,
+        asks: 0,
+        timestamp: new Date().getTime(),
+      };
+    }
+    const stdSymbol = `${stdCoinSymbol}/USDT`;
+    if (stdSymbol === "USDT/USDT" || stdSymbol === "USDC/USDT") {
+      return {
+        stdSymbol,
+        bids: 100000000,
+        asks: 100000000,
+        timestamp: new Date().getTime(),
+      };
+    }
+    if (stdSymbol === "T/USDT") {
+      return {
+        stdSymbol,
+        bids: 100000000,
+        asks: 100000000,
+        timestamp: new Date().getTime(),
+      };
+    }
+    const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
+    if (!orderbookItem) {
+      logger.error(`获取orderbook失败...`);
+      return {
+        stdSymbol: null,
+        bids: 0,
+        asks: 0,
+        timestamp: new Date().getTime(),
+      };
+    }
+    const { bids, asks } = orderbookItem;
+    let bidsNumber = 0;
+    let asksNumber = 0;
+    bids.map((it) => {
+      bidsNumber = bidsNumber + Number(it[1]);
+    });
+    asks.map((it) => {
+      asksNumber = asksNumber + Number(it[1]);
+    });
+    return {
+      stdSymbol,
+      asks: asksNumber,
+      bids: bidsNumber,
+      timestamp: orderbookItem.timestamp,
+    };
+  }
+
+  public getCoinStableCoinExecuteOrderbook(
+    token: string,
+    chainId: number,
+    amount: number
+  ): {
+    stdSymbol: string | null;
+    bids: number[][];
+    asks: number[][];
+    timestamp: number;
+  } {
+    const { symbol: stdCoinSymbol } = dataConfig.getStdCoinSymbolInfoByToken(
+      token,
+      chainId
+    );
+    if (!stdCoinSymbol) {
+      logger.error(`获取Token对应的StdCoinSymbol失败，请检查基础配置${token}`);
+      return {
+        stdSymbol: null,
+        bids: [[0, 0]],
+        asks: [[0, 0]],
+        timestamp: new Date().getTime(),
+      };
     }
     const stdSymbol = `${stdCoinSymbol}/USDT`;
     if (stdSymbol === "USDT/USDT" || stdSymbol === "USDC/USDT") {
@@ -82,7 +177,7 @@ class QuotationPrice {
         stdSymbol,
         bids: [[1, 100000000]],
         asks: [[1, 100000000]],
-        timestamp: new Date().getTime()
+        timestamp: new Date().getTime(),
       };
     }
     if (stdSymbol === "T/USDT") {
@@ -90,13 +185,18 @@ class QuotationPrice {
         stdSymbol,
         bids: [[1, 100000000]],
         asks: [[1, 100000000]],
-        timestamp: new Date().getTime()
+        timestamp: new Date().getTime(),
       };
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
       logger.error(`获取orderbook失败...`);
-      return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]], timestamp: new Date().getTime() };
+      return {
+        stdSymbol: null,
+        bids: [[0, 0]],
+        asks: [[0, 0]],
+        timestamp: new Date().getTime(),
+      };
     }
     const { bids: orderbook_bids, asks: orderbook_asks } = orderbookItem;
     const level_1_asks = (inputAmount: number): number[][] => {
@@ -179,7 +279,7 @@ class QuotationPrice {
       stdSymbol,
       asks: level_1_asks(amount),
       bids: level_1_bids(amount),
-      timestamp: orderbookItem.timestamp
+      timestamp: orderbookItem.timestamp,
     };
   }
 
@@ -211,6 +311,48 @@ class QuotationPrice {
     return { stdSymbol, asks: retAsks, bids: retBids };
   }
 
+  public getCoinStableCoinOrderBookLiquidityByCoinName(stdCoinSymbol: string): {
+    stdSymbol: string | null;
+    bids: number;
+    asks: number;
+    timestamp: number;
+  } {
+    const stdSymbol = `${stdCoinSymbol}/USDT`;
+    if (stdSymbol === "USDT/USDT") {
+      return {
+        stdSymbol: "USDT/USDT",
+        bids: 100000000,
+        asks: 100000000,
+        timestamp: new Date().getTime(),
+      };
+    }
+    const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
+    if (!orderbookItem) {
+      logger.error(`获取orderbook失败...${stdSymbol}`);
+      return {
+        stdSymbol: null,
+        bids: 0,
+        asks: 0,
+        timestamp: new Date().getTime(),
+      };
+    }
+    const { bids, asks } = orderbookItem;
+    let bidsNumber = 0;
+    let asksNumber = 0;
+    bids.map((it) => {
+      bidsNumber = bidsNumber + Number(it[1]);
+    });
+    asks.map((it) => {
+      asksNumber = asksNumber + Number(it[1]);
+    });
+    return {
+      stdSymbol,
+      asks: asksNumber,
+      bids: bidsNumber,
+      timestamp: orderbookItem.timestamp,
+    };
+  }
+
   public getABPrice(
     amount: BigNumber,
     A: { bids: any; asks: any } | any,
@@ -240,9 +382,21 @@ class QuotationPrice {
     }
     return tokenUsdtPrice;
   }
+  public getNativeTokenBuyLiquidity(chainId: number): number {
+    const gasSymbol = dataConfig.getChainTokenName(chainId);
+    if (!gasSymbol) {
+      throw new Error(`No coins found for the target chain 【${chainId}】`);
+    }
+    const { asks: askLiquidity } =
+      this.getCoinStableCoinOrderBookLiquidityByCoinName(gasSymbol);
+    if (!_.isFinite(askLiquidity) || askLiquidity === 0) {
+      logger.error(`没有找到流动性信息 ${gasSymbol}`);
+      throw new Error(`目标链Gas币Usdt 流动性获取失败`);
+    }
+    return askLiquidity;
+  }
 
-
-  public getSrcTokenBidPrice(ammContext: AmmContext) {
+  public getSrcTokenBuyPrice(ammContext: AmmContext) {
     const { stdSymbol, asks } = this.getCoinStableCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
@@ -255,8 +409,20 @@ class QuotationPrice {
     const [[price]] = asks;
     return price;
   }
+  public getGasTokenBuyPrice(ammContext: AmmContext) {
+    const { stdSymbol, asks } = this.getCoinStableCoinOrderBookByCoinName(
+      ammContext.baseInfo.dstChain.tokenName
+    );
+    if (stdSymbol === null) {
+      throw new Error(
+        `no orderbook found, chain ${ammContext.baseInfo.dstChain.id}`
+      );
+    }
+    const [[price]] = asks;
+    return price;
+  }
 
-  public getDstTokenBidPrice(ammContext: AmmContext) {
+  public getDstTokenBuyPrice(ammContext: AmmContext) {
     const { stdSymbol, asks } = this.getCoinStableCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
@@ -267,6 +433,20 @@ class QuotationPrice {
       );
     }
     const [[price]] = asks;
+    return price;
+  }
+
+  public getDstTokenSellPrice(ammContext: AmmContext) {
+    const { stdSymbol, bids } = this.getCoinStableCoinOrderBook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId
+    );
+    if (stdSymbol === null) {
+      throw new Error(
+        `no orderbook found,bridge ${ammContext.bridgeItem.msmq_name}`
+      );
+    }
+    const [[price]] = bids;
     return price;
   }
 }
