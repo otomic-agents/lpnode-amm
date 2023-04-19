@@ -307,7 +307,7 @@ class Quotation {
       maxSwapGasCount, // 最大价值中能换取多少gasToken (受到对冲配置影响, 关闭时受余额影响，开启时，受Hedge模式影响)
       orderbookLiquidity, // orderbook 流动性能提供的最大swap 量 (level 5)
     ]);
-    if (!nativeTokenMax) {
+    if (!_.isFinite(nativeTokenMax)) {
       logger.error(`Error in calculating the maximum amount of tokens`);
       nativeTokenMax = 0;
     }
@@ -315,6 +315,7 @@ class Quotation {
       native_token_max: new BigNumber(nativeTokenMax).toFixed(8).toString(),
       native_token_max_number: Number(nativeTokenMax),
     });
+    ammContext.quoteInfo = sourceObject.quote_data;
   }
 
   public async queryRealtimeQuote(ammContext: AmmContext): Promise<string> {
@@ -379,6 +380,7 @@ class Quotation {
       origTotalPrice: origTotalPrice.toString(),
       usd_price: usdPrice, // 目标币的U价格  如 ETH-USDT   则 1  ETH-AVAX  则显示  Avax/Usdt的价格
     });
+    ammContext.quoteInfo = sourceObject.quote_data;
   }
 
   private price_native_token(ammContext: AmmContext, sourceObject: any) {
@@ -762,10 +764,11 @@ class Quotation {
       .calculateCapacity(ammContext);
     const dstBalanceMaxSwap = await this.dstBalanceMaxSwap(ammContext);
     let capacity;
+    const orderbookLiquidity = await this.calculateLiquidity(ammContext);
     if (hedgeCapacity >= 0) {
-      capacity = _.min([hedgeCapacity, dstBalanceMaxSwap]);
+      capacity = _.min([hedgeCapacity, dstBalanceMaxSwap, orderbookLiquidity]);
     } else {
-      capacity = _.min([dstBalanceMaxSwap]);
+      capacity = _.min([dstBalanceMaxSwap, orderbookLiquidity]);
     }
     logger.debug(
       hedgeCapacity,
@@ -773,13 +776,6 @@ class Quotation {
       "⏩⏩⏩⏩⏩⏩⏩⏩⏩",
       capacity
     );
-    // ETH-USDT // ETH 能卖出的最大个数 bs 🤬     测试
-    // USDT-ETH // USDT的余额 sb  🤬 测试
-    // USDT-USDT // 不限制 ss 🤬测试
-    // ETH-ETH // 不限制 11 🤬
-    // ETH-BTC // ETH 能卖出的最大个数 bb      测试 (单次下单，可以下的数量)
-    // const capacity16 = new BigNumber(capacity).toString(16);
-    // const capacity16Str = `0x${capacity16}`;
     logger.debug(
       `最大价格应该报价为`,
       new BigNumber(capacity).toFixed(8).toString()
@@ -792,6 +788,33 @@ class Quotation {
       capacity_num: new BigNumber(capacity).toFixed(8).toString(),
       capacity: `0x${etherWei}`,
     });
+  }
+
+  private async calculateLiquidity(ammContext: AmmContext): Promise<number> {
+    let leftSymbol = "";
+    if (ammContext.quoteInfo.mode === "11") {
+      leftSymbol = ammContext.baseInfo.srcToken.symbol;
+    }
+    if (ammContext.quoteInfo.mode === "ss") {
+      leftSymbol = dataConfig.getChainTokenName(
+        ammContext.baseInfo.dstChain.id
+      );
+    }
+    if (ammContext.quoteInfo.mode === "bs") {
+      leftSymbol = ammContext.baseInfo.srcToken.symbol;
+    }
+    if (ammContext.quoteInfo.mode === "sb") {
+      leftSymbol = ammContext.baseInfo.dstToken.symbol;
+    }
+    if (ammContext.quoteInfo.mode === "bb") {
+      leftSymbol = ammContext.baseInfo.srcToken.symbol;
+    }
+    if (leftSymbol === "") {
+      throw new Error(`未知的兑换模式`);
+    }
+    const { bids } =
+      quotationPrice.getCoinStableCoinOrderBookLiquidityByCoinName(leftSymbol);
+    return bids;
   }
 
   /**
@@ -843,6 +866,9 @@ class Quotation {
     if (max <= input) {
       logger.warn(
         "The quotation has expired, and the maximum quantity is not enough to meet the input requirement."
+      );
+      throw new Error(
+        `The quotation has expired, and the maximum quantity is not enough to meet the input requirement`
       );
     }
   }
