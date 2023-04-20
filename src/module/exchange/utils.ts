@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import * as crypto from "crypto";
+import { SystemMath } from "../../utils/system_math";
 
 interface ILocalOrderInfo {
   marketType: string;
@@ -65,4 +66,18 @@ function parseOrderId(orderStr: string): ILocalOrderInfo {
   };
 }
 
-export { signatureObject, createOrderId, parseOrderId, ILocalOrderInfo };
+function formatStepSize(input: string, stepFormat: string): [number, number] {
+  const digit = SystemMath.exec(`1/${stepFormat}`);
+  const digitNumber = Number(digit).toString().length - 1;
+  const ret = Number(new BigNumber(input).toFixed(digitNumber).toString());
+  const lostNumber = SystemMath.execNumber(`${input}-${ret}`);
+  return [ret, lostNumber];
+}
+
+export {
+  signatureObject,
+  createOrderId,
+  parseOrderId,
+  ILocalOrderInfo,
+  formatStepSize,
+};

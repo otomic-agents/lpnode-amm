@@ -9,7 +9,7 @@ import {
 import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
 import { logger } from "../../../sys_lib/logger";
 import * as _ from "lodash";
-import { signatureObject } from "../utils";
+import { formatStepSize, signatureObject } from "../utils";
 import {
   ISide,
   ISpotBalanceItem,
@@ -20,6 +20,7 @@ import { IStdExchangeSpot } from "../../../interface/std_exchange";
 import { binanceConfig } from "./binance_config";
 import { BinanceSpotRequest } from "./binance_spot_request";
 import { SystemMath } from "../../../utils/system_math";
+import { ConsoleDirDepth5 } from "../../../utils/console";
 
 class BinanceSpot implements IStdExchangeSpot {
   private apiKey: string;
@@ -268,9 +269,15 @@ class BinanceSpot implements IStdExchangeSpot {
   ): Promise<ISpotOrderResult> {
     console.dir(this.spotSymbolsInfo.get(stdSymbol));
     const symbol = this.getSymbolByStdSymbol(stdSymbol);
+
     if (!symbol) {
       logger.error(`无法找到交易的Symbol信息......FindOption`, stdSymbol);
       throw new Error(`无法找到对应的交易对信息:${stdSymbol}`);
+    }
+    const tradeInfo = this.spotSymbolsInfo.get(stdSymbol);
+    if (!tradeInfo) {
+      logger.error(`无法找到交易信息......FindOption`, stdSymbol);
+      throw new Error(`无法找到交易信息:${stdSymbol}`);
     }
     logger.debug(`准备创建订单........`);
     const orderData = {
@@ -282,12 +289,24 @@ class BinanceSpot implements IStdExchangeSpot {
       newClientOrderId: orderId,
       timestamp: new Date().getTime(),
     };
-    this.setAmountOrQty(stdSymbol, amount, quoteOrderQty, orderData);
+    this.setAmountOrQty(
+      stdSymbol,
+      amount,
+      quoteOrderQty,
+      orderData,
+      tradeInfo.filters
+    );
+    let lostAmount = "";
+    const origAmount = amount?.toString();
     logger.debug(`用户 【${this.apiKey}】下单:`);
-    console.table(orderData);
+    console.dir(orderData, { depth: 5 });
+    lostAmount = _.get(orderData, "lostAmount", "");
+    delete orderData["lostAmount"];
+
     const postStr = signatureObject(orderData, this.apiSecret);
     logger.debug("post Str", postStr);
     let result;
+
     try {
       result = await axios.request({
         url: `${this.apiBaseUrl}/api/v3/order`,
@@ -299,12 +318,17 @@ class BinanceSpot implements IStdExchangeSpot {
         httpsAgent: httpsKeepAliveAgent,
       });
       _.set(result, "data.stdSymbol", stdSymbol); // 结果中设置Stdsymbol
+      _.set(result, "data.inputInfo", {
+        amount: _.get(orderData, "quantity", ""),
+        lostAmount,
+        origAmount,
+      });
+
       logger.debug("下单完成", "下单返回的信息:");
       console.log("_______________________________");
       const execResult = this.formatMarketResponse(_.get(result, "data", {}));
-      console.table(_.get(result, "data.fills", {}));
-      _.set(execResult, "feeView", JSON.stringify(execResult.fee));
-      console.table(execResult);
+      console.dir(_.get(result, "data.fills", {}), ConsoleDirDepth5);
+      console.dir(execResult, ConsoleDirDepth5);
       console.log("_______________________________");
       return execResult;
     } catch (e) {
@@ -321,21 +345,35 @@ class BinanceSpot implements IStdExchangeSpot {
     stdSymbol: string,
     amount: BigNumber | undefined,
     qty: BigNumber | undefined,
-    struct: any
+    struct: any,
+    filters: any[]
   ) {
     if (amount !== undefined) {
+      const lotSizeFilter = _.find(filters, { filterType: "LOT_SIZE" });
+      if (!lotSizeFilter) {
+        throw new Error("filter not fount :LOT_SIZE");
+      }
+      const stepSize = lotSizeFilter["stepSize"];
+      const [tradeAmount, lostAmount] = formatStepSize(
+        amount.toString(),
+        stepSize
+      );
       _.set(
         struct,
         "quantity",
-        Number(this.formatBigNumberPrecision(stdSymbol, amount))
+        Number(
+          this.formatBigNumberPrecision(stdSymbol, new BigNumber(tradeAmount))
+        )
       );
+      _.set(struct, "lostAmount", new BigNumber(lostAmount).toString());
     }
     if (qty !== undefined) {
-      _.set(
-        struct,
-        "quoteOrderQty",
-        Number(this.formatBigNumberPrecision(stdSymbol, qty))
-      );
+      throw new Error(`暂时没有通过测试`);
+      // _.set(
+      //   struct,
+      //   "quoteOrderQty",
+      //   Number(this.formatBigNumberPrecision(stdSymbol, qty))
+      // );
     }
   }
 
@@ -350,11 +388,14 @@ class BinanceSpot implements IStdExchangeSpot {
   private formatMarketResponse(
     retData: ISpotOrderResponseBinance
   ): ISpotOrderResult {
+    // console.dir(retData, { depth: 5 });
     const stdSymbol = _.get(retData, "stdSymbol", "");
     const result: ISpotOrderResult = {
       side: (() => {
         return _.get(retData, "side", "");
       })(),
+      lostAmount: _.get(retData, "inputInfo.lostAmount", ""),
+      origAmount: _.get(retData, "inputInfo.origAmount", ""),
       type: _.get(retData, "type", ""),
       timeInForce: _.get(retData, "timeInForce", ""),
       fee: this.getOrderFee(retData),

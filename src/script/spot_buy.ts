@@ -12,8 +12,12 @@ appEnv.initConfig(); // 初始化基本配置
 import { dataConfig } from "../data_config";
 import { accountManager } from "../module/exchange/account_manager";
 import { logger } from "../sys_lib/logger";
+import { formatStepSize } from "../module/exchange/utils";
 
 appEnv.initConfig(); // 初始化基本配置
+
+console.log(formatStepSize("0.013884994", "0.01000000"));
+
 async function main() {
   await dataConfig.prepareConfigResource(); // 提前创建配置
   await accountManager.init();
@@ -27,7 +31,12 @@ async function main() {
   setTimeout(async () => {
     const result = await accountManager
       .getAccount("a001")
-      ?.order.spotBuy("C020983", "BNB/USDT", new BigNumber(0.15).toString(), undefined);
+      ?.order.spotBuy(
+        "C020983",
+        "BNB/USDT",
+        new BigNumber(0.1518987).toString(),
+        undefined
+      );
     logger.debug(result);
   }, 10000);
 }

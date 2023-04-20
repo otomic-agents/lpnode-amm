@@ -76,6 +76,8 @@ enum ISide {
 
 interface ISpotOrderResult {
   side: string;
+  lostAmount: string; // lostsize filter 之后损失的精度
+  origAmount: string; // 计划输入的amount
   fee: { [key: string]: string };
   symbol: string; // "ETHUSDT"
   stdSymbol: string; // "ETH/USDT";
