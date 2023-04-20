@@ -235,13 +235,15 @@ class Quotation {
         dataConfig.getHedgeConfig().hedgeAccount
       );
       if (accountIns) {
-        [minHedgeCount] = await accountIns.order.getSpotTradeMinMax(
-          `${gasSymbol}/USDT`,
-          gasTokenPrice
+        const minHedgeValue = await accountIns.order.spotGetTradeMinNotional(
+          `${gasSymbol}/USDT`
         );
-        minHedgeCount = SystemMath.execNumber(`${minHedgeCount} * 110%`); // 向上浮动10% ，保证最小量
+        minHedgeCount = SystemMath.execNumber(
+          `${minHedgeValue}*200%/${gasTokenPrice}`
+        ); // 向上浮动10% ，保证最小量
       }
     }
+    // 使用价值提高200% 来提交最小下单量
     const minCount = SystemMath.max([minHedgeCount]);
 
     Object.assign(sourceObject.quote_data, {
