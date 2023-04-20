@@ -191,7 +191,7 @@ class EventProcessLock extends BaseEventProcess {
       throw new Error(`dst_native_amount amount is empty`);
     }
     const dstNativeAmount = EthUnit.fromWei(dstNativeAmountRaw, 18);
-    const formulaNative = `1/${ammContext.quoteInfo.native_token_price}*${dstNativeAmount}`;
+    const formulaNative = `1/${ammContext.quoteInfo.native_token_orig_price}*${dstNativeAmount}`;
     const dstNativeTokenToSrcTokenValue = SystemMath.exec(
       formulaNative,
       "dstNativeTokenValue calculate"
@@ -388,7 +388,6 @@ class EventProcessLock extends BaseEventProcess {
     if (!historyQuoteData) {
       throw new Error(`No historical quotes found,Hash${historyQuoteData}`);
     }
-    const historyQuoteInfo = JSON.parse(historyQuoteData);
     const [token0, token1] = [
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.dstToken.address,
@@ -443,13 +442,7 @@ class EventProcessLock extends BaseEventProcess {
         coinType: _.get(token1Info, "coinType", ""),
       },
     };
-    systemOrder.quoteInfo = {
-      amount: `0`, // 没有改成websocket之前，是0
-      quoteHash,
-      price: _.get(historyQuoteInfo, "price", ""),
-      capacity: _.get(historyQuoteInfo, "capacity", ""),
-      nativeTokenPrice: _.get(historyQuoteInfo, "native_token_price", ""),
-    };
+    systemOrder.quoteInfo = ammContext.quoteInfo;
     // var_dump(systemOrder);
     // const redisStore = new RedisStore("SYSTEM_ORDER");
     // const orderId = await redisStore.insertData(systemOrder, { hash: "1" });

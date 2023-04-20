@@ -344,6 +344,7 @@ class Quotation {
     const mode = _.clone(ammContext.quoteInfo.mode);
     ammContext.quoteInfo = quoteInfo.quote_data;
     ammContext.quoteInfo.mode = mode;
+    quoteInfo.quote_data.inputAmount = ammContext.swapInfo.inputAmount;
     await ammContextModule.create(ammContext);
     await this.storeQuoteHistory(quoteHash, quoteInfo.quote_data);
   }
@@ -380,6 +381,7 @@ class Quotation {
       origTotalPrice: origTotalPrice.toString(),
       usd_price: usdPrice, // 目标币的U价格  如 ETH-USDT   则 1  ETH-AVAX  则显示  Avax/Usdt的价格
     });
+    sourceObject.quote_data.mode = ammContext.quoteInfo.mode;
     ammContext.quoteInfo = sourceObject.quote_data;
   }
 
@@ -404,10 +406,10 @@ class Quotation {
       throw new Error(`原始币的价格获取的不正确`);
     }
     const targetPriceWithFee = SystemMath.exec(
-      `${nativeTokenPrice}/${srcTokenOrgPrice}*(1-${ammContext.baseInfo.fee})`
+      `${srcTokenOrgPrice}/${nativeTokenPrice}*(1-${ammContext.baseInfo.fee})`
     );
     const targetPrice = SystemMath.exec(
-      `${nativeTokenPrice}/${srcTokenOrgPrice}`
+      `${srcTokenOrgPrice}/${nativeTokenPrice}`
     );
 
     Object.assign(sourceObject.quote_data, {
@@ -650,23 +652,28 @@ class Quotation {
     if (swapType === "bb") {
       // ETH-AVAX
       ammContext.quoteInfo.mode = "bb";
+      Object.assign(sourceObject.quote_data, { mode: "bb" });
       return this.calculatePrice_bb(ammContext, sourceObject);
     }
     if (swapType === "bs") {
       // ETH-USDT
       ammContext.quoteInfo.mode = "bs";
+      Object.assign(sourceObject.quote_data, { mode: "bs" });
       return this.calculatePrice_bs(ammContext, sourceObject);
     }
     if (swapType === "ss") {
       ammContext.quoteInfo.mode = "ss";
+      Object.assign(sourceObject.quote_data, { mode: "ss" });
       return this.calculatePrice_ss(ammContext, sourceObject);
     }
     if (swapType === "11") {
       ammContext.quoteInfo.mode = "11";
+      Object.assign(sourceObject.quote_data, { mode: "11" });
       return this.calculatePrice_11(ammContext, sourceObject);
     }
     if (swapType === "sb") {
       ammContext.quoteInfo.mode = "sb";
+      Object.assign(sourceObject.quote_data, { mode: "sb" });
       return this.calculatePrice_sb(ammContext, sourceObject);
     }
     throw new Error("没有实现的交换");
