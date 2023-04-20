@@ -75,6 +75,7 @@ enum ISide {
 }
 
 interface ISpotOrderResult {
+  orderId: number;
   side: string;
   lostAmount: string; // lostsize filter 之后损失的精度
   origAmount: string; // 计划输入的amount

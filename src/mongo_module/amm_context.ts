@@ -19,6 +19,7 @@ const ammContextSchema = new Schema({
   lockInfo: Object,
   tradeStatus: Number,
   profitStatus: Number,
+  flowStatus: String,
 });
 
 ammContextSchema.index({ "systemOrder.id": 1, type: -1 });

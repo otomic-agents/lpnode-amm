@@ -33,6 +33,7 @@ import { IQuoteData } from "../interface/quotation";
 import { EthUnit } from "../utils/eth";
 import { SystemMath } from "../utils/system_math";
 import { accountManager } from "./exchange/account_manager";
+import { ConsoleDirDepth5 } from "../utils/console";
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -871,6 +872,7 @@ class Quotation {
     const max = _.get(sourceObject, "quote_data.capacity_num", 0);
     const input = ammContext.swapInfo.inputAmountNumber;
     if (max <= input) {
+      console.dir(sourceObject.quote_data, ConsoleDirDepth5);
       logger.warn(
         "The quotation has expired, and the maximum quantity is not enough to meet the input requirement."
       );

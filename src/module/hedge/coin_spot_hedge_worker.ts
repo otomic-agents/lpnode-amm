@@ -8,13 +8,14 @@ import { balanceLockModule } from "../../mongo_module/balance_lock";
 import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
 import _ from "lodash";
 import { ammContextManager } from "../amm_context_manager/amm_context_manager";
+import { EFlowStatus } from "../../interface/interface";
 
 interface IHedgeOrderItem {
-  orderId: string,
+  orderId: string;
   symbol: string;
-  side: string,
-  amount: string
-  amountNumber: number
+  side: string;
+  amount: string;
+  amountNumber: number;
 }
 
 class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
@@ -44,30 +45,65 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         executeFun = "spotSell";
       }
       if (order.amountNumber === 0) {
-        logger.warn("忽略这个，amount为0", order.symbol, order.side);
+        logger.warn("忽略这个,amount为0", order.symbol, order.side);
         continue;
       }
-      logger.debug(executeFun, order.orderId, order.symbol, new BigNumber(order.amountNumber).toString());
+      logger.debug(
+        executeFun,
+        order.orderId,
+        order.symbol,
+        new BigNumber(order.amountNumber).toString()
+      );
       const execRow = {
         plan: order,
         result: {},
         error: "",
+        status: 0,
       };
       try {
-        execRow.result = await accountIns.order[executeFun](order.orderId, order.symbol, new BigNumber(order.amountNumber).toString());
+        execRow.result = await accountIns.order[executeFun](
+          order.orderId,
+          order.symbol,
+          new BigNumber(order.amountNumber).toString()
+        );
+        execRow.status = 1;
       } catch (e: any) {
         execRow.error = e.toString();
       } finally {
         cexExeResult.push(execRow);
       }
     }
-    await ammContextManager.appendContext(call.ammContext.systemOrder.orderId, "systemOrder.hedgePlan", cexExePlan);
-    await ammContextManager.appendContext(call.ammContext.systemOrder.orderId, "systemOrder.hedgeResult", cexExeResult);
+    try {
+      await ammContextManager.appendContext(
+        call.ammContext.systemOrder.orderId,
+        "systemOrder.hedgePlan",
+        cexExePlan
+      );
+      await ammContextManager.appendContext(
+        call.ammContext.systemOrder.orderId,
+        "systemOrder.hedgeResult",
+        cexExeResult
+      );
+      await ammContextManager.appendContext(
+        call.ammContext.systemOrder.orderId,
+        "systemOrder.executed",
+        1
+      );
+      await ammContextManager.set(call.ammContext.systemOrder.orderId, {
+        flowStatus: EFlowStatus.HedgeCompletion,
+      });
+    } catch (e) {
+      logger.error(`更新对冲记录失败`, e);
+    }
   }
 
-  private async prepareOrder(ammContext: AmmContext): Promise<IHedgeOrderItem[]> {
+  private async prepareOrder(
+    ammContext: AmmContext
+  ): Promise<IHedgeOrderItem[]> {
     const mode = _.get(ammContext, "quoteInfo.mode", undefined);
-    const orderList: IHedgeOrderItem[] = await this[`prepareOrder_${mode}`](ammContext);
+    const orderList: IHedgeOrderItem[] = await this[`prepareOrder_${mode}`](
+      ammContext
+    );
     console.table(orderList);
     return orderList;
   }
@@ -80,15 +116,23 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     let orderId;
     orderId = await this.getHedgeOrderId();
     orderList.push({
-      orderId: createOrderId("spot", orderId, Number(ammContext.lockInfo.srcTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        orderId,
+        Number(ammContext.lockInfo.srcTokenPrice)
+      ),
       symbol: leftSymbol,
       side: "SELL",
       amount: ammContext.chainOptInfo.srcChainReceiveAmount,
-      amountNumber: ammContext.chainOptInfo.srcChainReceiveAmountNumber
+      amountNumber: ammContext.chainOptInfo.srcChainReceiveAmountNumber,
     });
     orderId = await this.getHedgeOrderId();
     orderList.push({
-      orderId: createOrderId("spot", orderId, Number(ammContext.lockInfo.nativeTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        orderId,
+        Number(ammContext.lockInfo.nativeTokenPrice)
+      ),
       symbol: nativeSymbol,
       side: "BUY",
       amount: ammContext.chainOptInfo.dstChainPayNativeTokenAmount,
@@ -106,23 +150,35 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     let orderId;
     orderId = await this.getHedgeOrderId();
     orderList.push({
-      orderId: createOrderId("spot", orderId, Number(ammContext.lockInfo.srcTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        orderId,
+        Number(ammContext.lockInfo.srcTokenPrice)
+      ),
       symbol: leftSymbol,
       side: "SELL",
       amount: ammContext.chainOptInfo.srcChainReceiveAmount,
-      amountNumber: ammContext.chainOptInfo.srcChainReceiveAmountNumber
+      amountNumber: ammContext.chainOptInfo.srcChainReceiveAmountNumber,
     });
     orderId = await this.getHedgeOrderId();
     orderList.push({
-      orderId: createOrderId("spot", orderId, Number(ammContext.lockInfo.dstTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        orderId,
+        Number(ammContext.lockInfo.dstTokenPrice)
+      ),
       symbol: rightSymbol,
       side: "BUY",
       amount: ammContext.chainOptInfo.dstChainPayAmount,
-      amountNumber: ammContext.chainOptInfo.dstChainPayAmountNumber
+      amountNumber: ammContext.chainOptInfo.dstChainPayAmountNumber,
     });
     orderId = await this.getHedgeOrderId();
     orderList.push({
-      orderId: createOrderId("spot", orderId, Number(ammContext.lockInfo.nativeTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        orderId,
+        Number(ammContext.lockInfo.nativeTokenPrice)
+      ),
       symbol: nativeSymbol,
       side: "BUY",
       amount: ammContext.chainOptInfo.dstChainPayNativeTokenAmount,
@@ -137,7 +193,11 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     const orderId = await this.getHedgeOrderId();
     const orderList: IHedgeOrderItem[] = [];
     orderList.push({
-      orderId: createOrderId("spot", orderId, Number(ammContext.lockInfo.nativeTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        orderId,
+        Number(ammContext.lockInfo.nativeTokenPrice)
+      ),
       symbol: nativeSymbol,
       side: "BUY",
       amount: ammContext.chainOptInfo.dstChainPayNativeTokenAmount,
@@ -152,7 +212,11 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     const orderId = await this.getHedgeOrderId();
     const orderList: IHedgeOrderItem[] = [];
     orderList.push({
-      orderId: createOrderId("spot", orderId, Number(ammContext.lockInfo.nativeTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        orderId,
+        Number(ammContext.lockInfo.nativeTokenPrice)
+      ),
       symbol: nativeSymbol,
       side: "BUY",
       amount: ammContext.chainOptInfo.dstChainPayNativeTokenAmount,
@@ -167,14 +231,22 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     const nativeSymbol = `${ammContext.baseInfo.dstChain.tokenName}/USDT`;
     const orderList: IHedgeOrderItem[] = [];
     orderList.push({
-      orderId: createOrderId("spot", ammContext.systemOrder.orderId, Number(ammContext.lockInfo.dstTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        ammContext.systemOrder.orderId,
+        Number(ammContext.lockInfo.dstTokenPrice)
+      ),
       symbol: rightSymbol,
       side: "BUY",
       amount: ammContext.chainOptInfo.dstChainPayAmount,
-      amountNumber: ammContext.chainOptInfo.dstChainPayAmountNumber
+      amountNumber: ammContext.chainOptInfo.dstChainPayAmountNumber,
     });
     orderList.push({
-      orderId: createOrderId("spot", ammContext.systemOrder.orderId, Number(ammContext.lockInfo.nativeTokenPrice)),
+      orderId: createOrderId(
+        "spot",
+        ammContext.systemOrder.orderId,
+        Number(ammContext.lockInfo.nativeTokenPrice)
+      ),
       symbol: nativeSymbol,
       side: "BUY",
       amount: ammContext.chainOptInfo.dstChainPayNativeTokenAmount,
@@ -198,6 +270,4 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
   }
 }
 
-export {
-  CoinSpotHedgeWorker
-};
+export { CoinSpotHedgeWorker };

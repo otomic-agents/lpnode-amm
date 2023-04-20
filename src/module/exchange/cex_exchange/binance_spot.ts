@@ -394,6 +394,7 @@ class BinanceSpot implements IStdExchangeSpot {
       side: (() => {
         return _.get(retData, "side", "");
       })(),
+      orderId: retData.orderId,
       lostAmount: _.get(retData, "inputInfo.lostAmount", ""),
       origAmount: _.get(retData, "inputInfo.origAmount", ""),
       type: _.get(retData, "type", ""),

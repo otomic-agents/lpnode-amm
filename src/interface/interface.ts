@@ -146,7 +146,11 @@ interface IBalanceLock {
   lockedTime: number;
   lockedId: string;
 }
-
+// 回答
+enum EFlowStatus {
+  AnswerOffer = "AnswerOffer",
+  WaitHedge = "WaitHedge",
+}
 export {
   ISpotHedgeInfo,
   IBridgeTokenConfigItem,
@@ -162,4 +166,5 @@ export {
   ICoinType,
   IBalanceLock,
   ISwapStep,
+  EFlowStatus,
 };

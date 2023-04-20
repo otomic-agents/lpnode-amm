@@ -20,6 +20,21 @@ class AmmContextManager {
       logger.error(e);
     }
   }
+  public async set(orderId: number, data: any) {
+    try {
+      await ammContextModule.findOneAndUpdate(
+        {
+          "systemOrder.orderId": orderId,
+        },
+        {
+          $set: data,
+        }
+      );
+    } catch (e) {
+      logger.error(`无法处理 ammContext appendContext`);
+      logger.error(e);
+    }
+  }
   public async getContextByQuoteHash(hash: string) {
     const ammContext: AmmContext = await ammContextModule
       .findOne({
