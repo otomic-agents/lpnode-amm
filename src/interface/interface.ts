@@ -147,9 +147,11 @@ interface IBalanceLock {
   lockedId: string;
 }
 // 回答
+// Hedge 完成
 enum EFlowStatus {
   AnswerOffer = "AnswerOffer",
   WaitHedge = "WaitHedge",
+  HedgeCompletion = "HedgeCompletion",
 }
 export {
   ISpotHedgeInfo,
