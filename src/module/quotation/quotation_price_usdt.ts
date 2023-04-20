@@ -403,7 +403,7 @@ class QuotationPrice {
     );
     if (stdSymbol === null) {
       throw new Error(
-        `no orderbook found,bridge ${ammContext.bridgeItem.msmq_name}`
+        `no orderbook found,bridge ${ammContext.bridgeItem.msmq_name} bridgeInfo ${ammContext.summary}`
       );
     }
     const [[price]] = asks;

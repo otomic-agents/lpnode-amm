@@ -235,15 +235,13 @@ class Quotation {
         dataConfig.getHedgeConfig().hedgeAccount
       );
       if (accountIns) {
-        const minHedgeValue = await accountIns.order.spotGetTradeMinNotional(
-          `${gasSymbol}/USDT`
+        [minHedgeCount] = await accountIns.order.getSpotTradeMinMax(
+          `${gasSymbol}/USDT`,
+          gasTokenPrice
         );
-        minHedgeCount = SystemMath.execNumber(
-          `${minHedgeValue}*200%/${gasTokenPrice}`
-        ); // 向上浮动10% ，保证最小量
+        minHedgeCount = SystemMath.execNumber(`${minHedgeCount} * 110%`); // 向上浮动10% ，保证最小量
       }
     }
-    // 使用价值提高200% 来提交最小下单量
     const minCount = SystemMath.max([minHedgeCount]);
 
     Object.assign(sourceObject.quote_data, {
@@ -777,8 +775,20 @@ class Quotation {
     const orderbookLiquidity = await this.calculateLiquidity(ammContext);
     if (hedgeCapacity >= 0) {
       capacity = _.min([hedgeCapacity, dstBalanceMaxSwap, orderbookLiquidity]);
+      logger.info(
+        hedgeCapacity,
+        dstBalanceMaxSwap,
+        orderbookLiquidity,
+        "<-hedgeCapacity"
+      );
     } else {
       capacity = _.min([dstBalanceMaxSwap, orderbookLiquidity]);
+      logger.info(
+        hedgeCapacity,
+        dstBalanceMaxSwap,
+        orderbookLiquidity,
+        "<-capacity"
+      );
     }
     logger.debug(
       hedgeCapacity,
@@ -824,7 +834,16 @@ class Quotation {
     }
     const { bids } =
       quotationPrice.getCoinStableCoinOrderBookLiquidityByCoinName(leftSymbol);
-    return bids;
+    let bidPrice = bids;
+    if (ammContext.quoteInfo.mode === "sb") {
+      bidPrice = SystemMath.execNumber(
+        `${bids}* ${ammContext.quoteInfo.usd_price}`
+      );
+      logger.info(
+        `Orderbook ${bids} 个${ammContext.baseInfo.dstToken.symbol} 可以提供【${ammContext.baseInfo.srcToken.symbol}】流动性${bidPrice}`
+      );
+    }
+    return bidPrice;
   }
 
   /**

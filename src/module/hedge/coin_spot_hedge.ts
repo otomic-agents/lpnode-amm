@@ -490,7 +490,8 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       await accountIns.order.getSpotTradeMinMaxValue(gasSymbol);
     const maxTradeValue = SystemMath.min([coinMaxValue, gasTokenCoinMaxValue]);
     const maxTradeCount = SystemMath.execNumber(
-      `${maxTradeValue}/${ammContext.quoteInfo.src_usd_price}*99.7%`
+      `${maxTradeValue}/${ammContext.quoteInfo.src_usd_price}*99.7%`,
+      "最大交易尺寸"
     );
     const srcTokenCexBalance = accountIns.balance.getSpotBalance(
       tokenInfo[0].symbol
