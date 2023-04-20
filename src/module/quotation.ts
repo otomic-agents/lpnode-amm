@@ -301,7 +301,13 @@ class Quotation {
       throw `计算目标链token最大报价发生错误 !isFinite`;
     }
     const maxCount = Number(maxCountBN.toFixed(8).toString());
+    const nativeTokenBalance = chainBalance.getBalance(
+      ammContext.baseInfo.dstChain.id,
+      ammContext.walletInfo.walletName,
+      "0x0"
+    );
     let nativeTokenMax = SystemMath.min([
+      SystemMath.execNumber(`${nativeTokenBalance}*70%`), // lp 目标链钱包中，有多少余额 ,留下30% 用来换币
       maxCexTradeCount, // trade 中最大能交易多少个gasToken
       maxCount, // 配置中最大能swap多少个gasToken
       inputValueSwapGasCount, // 输入的量中最多能满足多大的swap gasToken
