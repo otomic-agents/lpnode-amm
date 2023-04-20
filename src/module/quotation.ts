@@ -122,8 +122,8 @@ class Quotation {
       }
       this.process_quote_type(ammContext, quoteInfo);
       this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice usd_price mode
-      this.price_native_token(ammContext, quoteInfo); // native_token_usdt_price native_token_price  native_token_orig_price native_token_symbol
       this.price_src_token(ammContext, quoteInfo); // src_usd_price
+      this.price_native_token(ammContext, quoteInfo); // native_token_usdt_price native_token_price  native_token_orig_price native_token_symbol
       await this.amount_check(ammContext); // format check
       this.renderInfo(ammContext, quoteInfo); // assetName assetTokenName assetChainInfo
       await this.min_amount(ammContext, quoteInfo); // min gas + min hedge check
@@ -401,16 +401,20 @@ class Quotation {
       ammContext.baseInfo.dstChain.id
     );
     const nativeTokenPrice = quotationPrice.getGasTokenBuyPrice(ammContext);
-    const srcTokenOrgPrice = _.get(sourceObject, "quote_data.origPrice", 0);
-    if (!_.isFinite(Number(srcTokenOrgPrice))) {
+    const srcTokenOrigPrice = _.get(
+      sourceObject,
+      "quote_data.src_usd_price",
+      0
+    );
+    if (!_.isFinite(Number(srcTokenOrigPrice))) {
       logger.warn(`原始币的价格获取的不正确`);
       throw new Error(`原始币的价格获取的不正确`);
     }
     const targetPriceWithFee = SystemMath.exec(
-      `${srcTokenOrgPrice}/${nativeTokenPrice}*(1-${ammContext.baseInfo.fee})`
+      `${srcTokenOrigPrice}/${nativeTokenPrice}*(1-${ammContext.baseInfo.fee})`
     );
     const targetPrice = SystemMath.exec(
-      `${srcTokenOrgPrice}/${nativeTokenPrice}`
+      `${srcTokenOrigPrice}/${nativeTokenPrice}`
     );
 
     Object.assign(sourceObject.quote_data, {
@@ -843,6 +847,24 @@ class Quotation {
         `Orderbook ${bids} 个${ammContext.baseInfo.dstToken.symbol} 可以提供【${ammContext.baseInfo.srcToken.symbol}】流动性${bidPrice}`
       );
     }
+    if (ammContext.quoteInfo.mode === "ss") {
+      bidPrice = SystemMath.execNumber(
+        `${bids}* ${ammContext.quoteInfo.native_token_usdt_price}/${ammContext.quoteInfo.src_usd_price}`
+      );
+      logger.info(
+        `Orderbook ${bids} 个${ammContext.baseInfo.dstChain.tokenName} 可以提供【${ammContext.baseInfo.srcToken.symbol}】流动性${bidPrice}`
+      );
+    }
+    if (ammContext.quoteInfo.mode === "11") {
+      // 应该是左侧卖的流动性 和右侧买的流动性最小值  ,暂时使用左侧卖的流动性  orderbook bids
+    }
+    if (ammContext.quoteInfo.mode === "bs") {
+      // 左侧流动性，没有问题
+    }
+    if (ammContext.quoteInfo.mode === "bb") {
+      // 应该是左侧卖流动性  右侧买流动性的最小值 ,,暂时使用左侧卖的流动性  orderbook bids
+    }
+
     return bidPrice;
   }
 
