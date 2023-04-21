@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 /* eslint-disable arrow-parens */
 /**
  * Maintain the balance of the payment wallet on the chain, and use it for reference when quoting, whether there is enough amount

@@ -239,7 +239,7 @@ class Quotation {
           `${gasSymbol}/USDT`,
           gasTokenPrice
         );
-        minHedgeCount = SystemMath.execNumber(`${minHedgeCount} * 110%`); // 向上浮动10% ，保证最小量
+        minHedgeCount = SystemMath.execNumber(`${minHedgeCount} * 200%`); // 向上浮动10% ，保证最小量
       }
     }
     const minCount = SystemMath.max([minHedgeCount]);
@@ -252,7 +252,7 @@ class Quotation {
   private async native_token_max(ammContext: AmmContext, sourceObject: any) {
     const dstChainId = ammContext.baseInfo.dstToken.chainId;
     const orderbookLiquidity =
-      quotationPrice.getNativeTokenBuyLiquidity(dstChainId);
+      quotationPrice.getNativeTokenBuyLiquidity(dstChainId); // gas token都是购买，使用购买流动性即可
     logger.debug("GasToken 可以购买的最大流动性", orderbookLiquidity);
     const nativeTokenPrice =
       this.quotationPrice.getNativeTokenBidPrice(dstChainId);
@@ -935,7 +935,6 @@ class Quotation {
   private async storeQuoteHistory(quoteHash: string, data: any) {
     await quotationListHistory.store(quoteHash, data);
   }
-
   private initStatus() {
     //
   }
