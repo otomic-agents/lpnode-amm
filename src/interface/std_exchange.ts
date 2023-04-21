@@ -34,7 +34,8 @@ interface IStdExchangeSpot {
     stdSymbol: string,
     amount: BigNumber | undefined,
     quoteOrderQty: BigNumber | undefined,
-    side: ISide
+    side: ISide,
+    simulation: boolean
   ): Promise<ISpotOrderResult>; // 简单市价单
   getBalance(): Map<string, ISpotBalanceItem>;
 }

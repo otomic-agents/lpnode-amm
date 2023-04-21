@@ -35,7 +35,8 @@ async function main() {
         "C020983",
         "BNB/USDT",
         new BigNumber(0.1518987).toString(),
-        undefined
+        undefined,
+        true
       );
     logger.debug(result);
   }, 10000);

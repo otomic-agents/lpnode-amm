@@ -97,7 +97,56 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     }
   }
 
-  private async prepareOrder(
+  public async simulationExec(optOrderList: IHedgeOrderItem[]) {
+    try {
+      const accountIns = await this.getAccountIns();
+      for (const order of optOrderList) {
+        const actionSide = order.side;
+        let executeFun = "";
+        if (actionSide === "BUY") {
+          executeFun = "spotBuy";
+        }
+        if (actionSide === "SELL") {
+          executeFun = "spotSell";
+        }
+        if (order.amountNumber === 0) {
+          logger.warn("忽略这个,amount为0", order.symbol, order.side);
+          continue;
+        }
+        logger.debug(
+          "simulationExec",
+          executeFun,
+          order.orderId,
+          order.symbol,
+          new BigNumber(order.amountNumber).toString()
+        );
+        const execRow = {
+          plan: order,
+          result: {},
+          error: "",
+          status: 0,
+        };
+        try {
+          execRow.result = await accountIns.order[executeFun](
+            order.orderId,
+            order.symbol,
+            new BigNumber(order.amountNumber).toString(),
+            undefined,
+            true
+          );
+          execRow.status = 1;
+        } catch (e: any) {
+          execRow.error = e.toString();
+          throw e;
+        }
+      }
+    } catch (e) {
+      logger.error(`仿真发生了错误`, e);
+      throw e;
+    }
+  }
+
+  public async prepareOrder(
     ammContext: AmmContext
   ): Promise<IHedgeOrderItem[]> {
     const mode = _.get(ammContext, "quoteInfo.mode", undefined);

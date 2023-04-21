@@ -4,6 +4,7 @@ import { ICexCoinConfig, ICoinType } from "../../interface/interface";
 import { hedgeOrderIncModule } from "../../mongo_module/hedge_order_inc";
 import * as _ from "lodash";
 import { SystemMath } from "../../utils/system_math";
+import { accountManager } from "../exchange/account_manager";
 
 class CoinSpotHedgeBase {
   protected getTokenInfoByAmmContext(ammContext: AmmContext) {
@@ -36,7 +37,11 @@ class CoinSpotHedgeBase {
     throw new Error(`unknown type`);
   }
 
-  protected getOptAmountAndValue(ammContext: AmmContext, srcUnitPrice: number, dstUnitPrice: number): [number, number] {
+  protected getOptAmountAndValue(
+    ammContext: AmmContext,
+    srcUnitPrice: number,
+    dstUnitPrice: number
+  ): [number, number] {
     const mode = _.get(ammContext, "quoteInfo.mode", undefined);
     if (mode === "11") {
       return this.optAmountValue_11(ammContext);
@@ -64,30 +69,45 @@ class CoinSpotHedgeBase {
     return [-1, -1];
   }
 
-  private optAmountValue_bs(ammContext: AmmContext, srcUnitPrice: number, dstUnitPrice: number): [number, number] {
+  private optAmountValue_bs(
+    ammContext: AmmContext,
+    srcUnitPrice: number,
+    dstUnitPrice: number
+  ): [number, number] {
     const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
-    const value = SystemMath.exec(`${ammContext.swapInfo.inputAmountNumber} * ${srcUnitPrice} * (1-${fee})`);
+    const value = SystemMath.exec(
+      `${ammContext.swapInfo.inputAmountNumber} * ${srcUnitPrice} * (1-${fee})`
+    );
     const amount = ammContext.swapInfo.inputAmountNumber;
     return [amount, Number(value.toString())];
   }
 
-  private optAmountValue_sb(ammContext: AmmContext, srcUnitPrice: number, dstUnitPrice: number): [number, number] {
+  private optAmountValue_sb(
+    ammContext: AmmContext,
+    srcUnitPrice: number,
+    dstUnitPrice: number
+  ): [number, number] {
     const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
     const value = SystemMath.exec(`
-      ${ammContext.swapInfo.inputAmountNumber} * 
+      ${ammContext.swapInfo.inputAmountNumber} *
       (1-${fee})
     `);
     const amount = SystemMath.exec(`
-      ${ammContext.swapInfo.inputAmountNumber} * 
+      ${ammContext.swapInfo.inputAmountNumber} *
       (1-${fee}) /
-      ${dstUnitPrice}`
-    );
+      ${dstUnitPrice}`);
     return [Number(amount.toString()), Number(value.toString())];
   }
 
-  private optAmountValue_bb(ammContext: AmmContext, srcUnitPrice: number, dstUnitPrice: number): [number, number] {
+  private optAmountValue_bb(
+    ammContext: AmmContext,
+    srcUnitPrice: number,
+    dstUnitPrice: number
+  ): [number, number] {
     const fee = ammContext.bridgeItem.fee_manager.getQuotationPriceFee();
-    const value = SystemMath.exec(`${ammContext.swapInfo.inputAmountNumber} * ${srcUnitPrice} * (1-${fee})`);
+    const value = SystemMath.exec(
+      `${ammContext.swapInfo.inputAmountNumber} * ${srcUnitPrice} * (1-${fee})`
+    );
     const amount = ammContext.swapInfo.inputAmountNumber;
     return [amount, Number(value.toString())];
   }
@@ -113,13 +133,24 @@ class CoinSpotHedgeBase {
       .findOneAndUpdate(
         {},
         { $inc: { inumber: 1 } },
-        { upsert: true, returnDocument: "after" },
+        { upsert: true, returnDocument: "after" }
       )
       .lean();
     return idResult.inumber;
   }
+  protected async getAccountIns() {
+    const accountIns = await accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      throw new Error(
+        `No instance of hedging account was found.AccountId:${
+          dataConfig.getHedgeConfig().hedgeAccount
+        }`
+      );
+    }
+    return accountIns;
+  }
 }
 
-export {
-  CoinSpotHedgeBase
-};
+export { CoinSpotHedgeBase };

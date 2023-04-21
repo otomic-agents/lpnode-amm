@@ -18,6 +18,7 @@ import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
 import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
 import { EthUnit } from "../../utils/eth";
 import { SystemMath } from "../../utils/system_math";
+import { ConsoleDirDepth5 } from "../../utils/console";
 
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
@@ -32,7 +33,7 @@ const hedgeQueue = new Bull("SYSTEM_HEDGE_QUEUE", {
 class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   // @ts-ignore
   // private accountStatus = 0;
-  private worker: CoinSpotHedgeWorker = new CoinSpotHedgeWorker();
+  public worker: CoinSpotHedgeWorker = new CoinSpotHedgeWorker();
 
   public constructor() {
     super();
@@ -394,6 +395,25 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       return false;
     }
     return true;
+  }
+  public async preExecOrder(ammContext: AmmContext): Promise<boolean> {
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      logger.error(`account ins not found`);
+      return false;
+    }
+    try {
+      const orderList = await this.worker.prepareOrder(ammContext);
+      console.log(`需要预先执行的订单`);
+      console.dir(orderList, ConsoleDirDepth5);
+      await this.worker.simulationExec(orderList);
+      return true;
+    } catch (e) {
+      logger.error(`simulation order execute error`, e);
+      return false;
+    }
   }
 
   public async getLockedBalance(

@@ -21,6 +21,7 @@ import { orderIncModule } from "../../mongo_module/order_inc";
 import { EthUnit } from "../../utils/eth";
 import { ammContextManager } from "../amm_context_manager/amm_context_manager";
 import { SystemMath } from "../../utils/system_math";
+import { getNumberFrom16 } from "../../utils/ethjs_unit";
 
 const stringify = require("json-stringify-safe");
 
@@ -106,6 +107,7 @@ class EventProcessLock extends BaseEventProcess {
       await this.verificationDexBalance(ammContext); // Check Des balance
       await this.verificationHistory(ammContext, msg); // Check history quote
       await this.checkSpread(ammContext, msg); // Check spread
+      await this.setMemoryContext(msg, ammContext);
       await this.verificationLockValue(ammContext, msg); // Check the value of the operation lock
       ammContext.swapInfo.lpReceiveAmount =
         await ammContext.bridgeItem.lp_wallet_info.getReceivePrice(ammContext);
@@ -157,7 +159,34 @@ class EventProcessLock extends BaseEventProcess {
       }
     );
   }
+  private setMemoryContext(msg: IEVENT_LOCK_QUOTE, ammContext: AmmContext) {
+    const dstChainPayAmountRaw = _.get(
+      msg,
+      "pre_business.swap_asset_information.dst_amount",
+      ""
+    );
+    const dstChainPayAmountNumber = getNumberFrom16(
+      dstChainPayAmountRaw,
+      ammContext.baseInfo.dstToken.precision
+    );
+    ammContext.chainOptInfo.dstChainPayAmount = dstChainPayAmountRaw;
+    ammContext.chainOptInfo.dstChainPayAmountNumber = dstChainPayAmountNumber;
 
+    const dstChainPayNativeTokenAmountRaw = _.get(
+      msg,
+      "pre_business.swap_asset_information.dst_native_amount",
+      ""
+    );
+    const dstChainPayNativeTokenAmountNumber = getNumberFrom16(
+      dstChainPayNativeTokenAmountRaw,
+      18
+    );
+
+    ammContext.chainOptInfo.dstChainPayNativeTokenAmount =
+      dstChainPayNativeTokenAmountRaw;
+    ammContext.chainOptInfo.dstChainPayNativeTokenAmountNumber =
+      dstChainPayNativeTokenAmountNumber;
+  }
   private verificationLockValue(
     ammContext: AmmContext,
     msg: IEVENT_LOCK_QUOTE
@@ -360,6 +389,9 @@ class EventProcessLock extends BaseEventProcess {
       throw new Error(
         `Hedging conditions are not met，Unable to lock price，Insufficient hedging amount`
       );
+    }
+    if (!(await hedgeManager.getHedgeIns(hedgeType).preExecOrder(ammContext))) {
+      throw new Error(`preExecOrder error`);
     }
     logger.info("create lock result ");
     const balanceLockId = await hedgeManager

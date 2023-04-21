@@ -120,7 +120,7 @@ class Quotation {
           .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
           .checkSwapAmount(ammContext); // 余额和对冲额检查
       }
-      this.process_quote_type(ammContext, quoteInfo);
+      this.process_quote_type(ammContext, quoteInfo); // 处理换币的模式
       this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice usd_price mode
       this.price_src_token(ammContext, quoteInfo); // src_usd_price
       this.price_native_token(ammContext, quoteInfo); // native_token_usdt_price native_token_price  native_token_orig_price native_token_symbol
@@ -366,26 +366,30 @@ class Quotation {
    * @returns {*} ""
    */
   public price(ammContext: AmmContext, sourceObject: any) {
-    const { bids: dstTokenBids } =
+    const { asks: dstTokenAsks } =
       this.quotationPrice.getCoinStableCoinOrderBook(
         ammContext.baseInfo.dstToken.address,
         ammContext.baseInfo.dstToken.chainId
       );
 
-    const [[usdPrice]] = dstTokenBids;
+    const [[usdPrice]] = dstTokenAsks;
     if (usdPrice === 0) {
-      logger.warn(`没有获取到dstToken/USDT,无法进行报价`);
-      throw new Error(`没有获取到dstToken/USDT,无法进行报价`);
+      logger.warn(
+        `没有获取到dstToken/USDT,无法进行报价 ${ammContext.baseInfo.dstToken.symbol}/USDT`
+      );
+      throw new Error(
+        `没有获取到dstToken/USDT,无法进行报价 ${ammContext.baseInfo.dstToken.symbol}/USDT`
+      );
     }
-    const [bTargetPrice, origPrice, origTotalPrice] = this.calculatePrice(
+    const [priceBn, origPrice, origTotalPriceBn] = this.calculatePrice(
       ammContext,
       sourceObject
     );
-    ammContext.quoteInfo.price = bTargetPrice.toString();
+    ammContext.quoteInfo.price = priceBn.toString();
     Object.assign(sourceObject.quote_data, {
       origPrice,
-      price: bTargetPrice.toString(),
-      origTotalPrice: origTotalPrice.toString(),
+      price: priceBn.toString(),
+      origTotalPrice: origTotalPriceBn.toString(),
       usd_price: usdPrice, // 目标币的U价格  如 ETH-USDT   则 1  ETH-AVAX  则显示  Avax/Usdt的价格
     });
     sourceObject.quote_data.mode = ammContext.quoteInfo.mode;
@@ -432,19 +436,19 @@ class Quotation {
   }
 
   private price_src_token(ammContext: AmmContext, sourceObject: any) {
-    const { asks: srcTokenAsks } =
+    const { bids: srcTokenBids } =
       this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
         ammContext.baseInfo.srcToken.symbol
       );
-    const [[usdPrice]] = srcTokenAsks;
+    const [[price]] = srcTokenBids;
 
-    if (usdPrice === 0) {
-      logger.warn(`没有获得源链，币的Usdt报价`);
-      throw new Error(`没有获得源链，币的Usdt报价`);
+    if (price === 0) {
+      logger.warn(`没有获得源链,币的Usdt报价`);
+      throw new Error(`没有获得源链,币的Usdt报价`);
     }
 
     Object.assign(sourceObject.quote_data, {
-      src_usd_price: new BigNumber(usdPrice).toString(),
+      src_usd_price: new BigNumber(price).toString(),
     });
     ammContext.quoteInfo = sourceObject.quote_data;
   }
@@ -542,8 +546,6 @@ class Quotation {
     ammContext: AmmContext,
     sourceObject: any = undefined
   ): [string, string, string] {
-    // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
-    // ETH/USDT
     const { stdSymbol, bids, asks, timestamp } =
       this.quotationPrice.getCoinStableCoinExecuteOrderbook(
         ammContext.baseInfo.srcToken.address,
@@ -556,22 +558,19 @@ class Quotation {
     }
     logger.info("get orderbook ", stdSymbol);
     const [[price]] = bids;
-    const priceBn = new BigNumber(price);
-    const withFee = 1 - ammContext.baseInfo.fee;
-    const targetPriceBN = priceBn.times(new BigNumber(withFee));
+
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: { bids, asks, timestamp },
         B: null,
       },
     });
-    const totalOrigPrice = new BigNumber(
-      ammContext.swapInfo.inputAmountNumber
-    ).times(new BigNumber(priceBn));
     return [
-      targetPriceBN.toString(),
-      priceBn.toString(),
-      totalOrigPrice.toString(),
+      SystemMath.exec(`${price} * (1 - ${ammContext.baseInfo.fee})`).toString(),
+      SystemMath.exec(`1* ${price}`).toString(),
+      SystemMath.exec(
+        `${ammContext.swapInfo.inputAmountNumber} * ${price}`
+      ).toString(),
     ];
   }
 

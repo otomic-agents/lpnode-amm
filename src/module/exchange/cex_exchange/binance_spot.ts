@@ -265,7 +265,8 @@ class BinanceSpot implements IStdExchangeSpot {
     stdSymbol: string,
     amount: BigNumber | undefined,
     quoteOrderQty: BigNumber | undefined,
-    side: ISide
+    side: ISide,
+    simulation = false
   ): Promise<ISpotOrderResult> {
     console.dir(this.spotSymbolsInfo.get(stdSymbol));
     const symbol = this.getSymbolByStdSymbol(stdSymbol);
@@ -306,10 +307,14 @@ class BinanceSpot implements IStdExchangeSpot {
     const postStr = signatureObject(orderData, this.apiSecret);
     logger.debug("post Str", postStr);
     let result;
-
+    let orderUrl = `${this.apiBaseUrl}/api/v3/order`;
+    if (simulation === true) {
+      orderUrl = `${this.apiBaseUrl}/api/v3/order/test`;
+      logger.warn("使用仿真模式，进行处理，不提交到orderbook");
+    }
     try {
       result = await axios.request({
-        url: `${this.apiBaseUrl}/api/v3/order`,
+        url: orderUrl,
         method: "POST",
         headers: {
           "X-MBX-APIKEY": this.apiKey,

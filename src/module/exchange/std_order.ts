@@ -14,7 +14,8 @@ class StdOrder {
     orderId: string,
     stdSymbol: string,
     amount: string | undefined,
-    qty: string | undefined
+    qty: string | undefined,
+    simulation = false
   ) {
     logger.debug(`spotBuy`, stdSymbol);
     return this.stdExchange.exchangeSpot.createMarketOrder(
@@ -32,7 +33,8 @@ class StdOrder {
         }
         return undefined;
       })(),
-      ISide.BUY
+      ISide.BUY,
+      simulation
     );
   }
 
@@ -67,7 +69,8 @@ class StdOrder {
     orderId: string,
     stdSymbol: string,
     amount: string | undefined,
-    qty: string | undefined
+    qty: string | undefined,
+    simulation = false
   ) {
     return this.stdExchange.exchangeSpot.createMarketOrder(
       orderId,
@@ -84,7 +87,8 @@ class StdOrder {
         }
         return undefined;
       })(),
-      ISide.SELL
+      ISide.SELL,
+      simulation
     );
   }
 }

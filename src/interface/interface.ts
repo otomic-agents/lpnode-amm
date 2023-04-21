@@ -95,6 +95,9 @@ enum IHedgeType {
 }
 
 interface IHedgeClass {
+  worker: {
+    prepareOrder(ammContext: AmmContext): Promise<any>;
+  };
   checkMinHedge(
     ammContext: AmmContext,
     unitPrice: number,
@@ -115,7 +118,7 @@ interface IHedgeClass {
   getSwapMax(ammContext: AmmContext): Promise<BigNumber>; // 返回可以swap的最大量
 
   checkHedgeCond(ammContext: AmmContext); // 检查是否可以完成对冲
-
+  preExecOrder(ammContext: AmmContext): Promise<boolean>;
   hedge(info: ISpotHedgeInfo); // 设置对冲信息
 
   lockHedgeBalance(ammContext: AmmContext, accountId: string); //  锁定用户余额
