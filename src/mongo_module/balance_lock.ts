@@ -7,6 +7,7 @@ const balanceLockSchema = new Schema({
   accountId: String,
   quoteHash: String,
   record: Object,
+  ammName: String,
   createTime: {
     type: Date,
     default: Date.now(),

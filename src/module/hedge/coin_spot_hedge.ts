@@ -247,43 +247,22 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       ammContext.baseInfo.dstToken.chainId
     );
     let balanceLockedId = "";
-    if (
-      symbol0.coinType === ICoinType.Coin &&
-      symbol1.coinType === ICoinType.StableCoin
-    ) {
-      const lockResult = {
-        accountId,
-        asset: symbol0.symbol,
-        quoteHash: ammContext.quoteInfo.quote_hash,
-        lockedTime: new Date().getTime(),
-        locked: await this.getAmount(
-          ammContext.swapInfo.srcAmount,
-          symbol0.precision
-        ),
-      };
-      logger.info(`lock balance`);
-      logger.info(lockResult);
-      balanceLockedId = await this.createLockRecord(lockResult);
-    }
-    if (
-      symbol0.coinType === ICoinType.StableCoin &&
-      symbol1.coinType === ICoinType.Coin
-    ) {
-      const lockResult = {
-        appName: ammContext.appName,
-        accountId,
-        asset: symbol0.symbol,
-        quoteHash: ammContext.quoteInfo.quote_hash,
-        lockedTime: new Date().getTime(),
-        locked: await this.getAmount(
-          ammContext.swapInfo.srcAmount,
-          symbol0.precision
-        ),
-      };
-      logger.info(`lock balance`);
-      logger.info(lockResult);
-      balanceLockedId = await this.createLockRecord(lockResult);
-    }
+
+    const lockResult = {
+      ammName: ammContext.appName,
+      accountId,
+      asset: symbol0.symbol,
+      quoteHash: ammContext.quoteInfo.quote_hash,
+      lockedTime: new Date().getTime(),
+      locked: await this.getAmount(
+        ammContext.swapInfo.srcAmount,
+        symbol0.precision
+      ),
+    };
+    logger.info(`lock balance`);
+    logger.info(lockResult);
+    balanceLockedId = await this.createLockRecord(lockResult);
+
     return balanceLockedId;
   }
 
@@ -327,8 +306,10 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   private async createLockRecord(record: any): Promise<string> {
     const accountId = _.get(record, "accountId", "");
     const quoteHash = _.get(record, "quoteHash");
+    const ammName = _.get(record, "ammName", "");
     logger.info("write lock record");
     const insertData = await balanceLockModule.create({
+      ammName,
       accountId,
       quoteHash,
       record,
