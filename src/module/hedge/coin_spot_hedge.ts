@@ -270,6 +270,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       symbol1.coinType === ICoinType.Coin
     ) {
       const lockResult = {
+        appName: ammContext.appName,
         accountId,
         asset: symbol0.symbol,
         quoteHash: ammContext.quoteInfo.quote_hash,

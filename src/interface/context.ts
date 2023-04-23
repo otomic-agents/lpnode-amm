@@ -1,6 +1,7 @@
 import { IBridgeTokenConfigItem } from "./interface";
 
 interface AmmContext {
+  appName: string;
   summary: string;
   bridgeItem: IBridgeTokenConfigItem;
   hedgeEnabled: boolean;
