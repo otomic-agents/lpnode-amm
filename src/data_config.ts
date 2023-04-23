@@ -488,6 +488,7 @@ class DataConfig {
       dstClientUri: string;
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
+    logger.info(`加载到了${lpConfigList.length}个BridgeConfig`);
     if (!lpConfigList || lpConfigList.length <= 0) {
       logger.warn(
         "没有查询到任何可用的BridgeItem配置",

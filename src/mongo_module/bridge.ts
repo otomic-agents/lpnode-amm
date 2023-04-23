@@ -10,6 +10,7 @@ const bridgesSchema = new Schema({
   marketName: String,
   precision: Number,
   tokenName: String,
+  ammName: String,
 });
 export const bridgesModule = mongoConn.model(
   "bridgesModule",
