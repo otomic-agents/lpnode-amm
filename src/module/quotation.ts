@@ -229,7 +229,7 @@ class Quotation {
       ammContext.baseInfo.dstToken.chainId
     );
     const gasTokenPrice = quotationPrice.getGasTokenBuyPrice(ammContext);
-    let minHedgeCount = 0;
+    let minHedgeCount = -1;
     if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
       const accountIns = await accountManager.getAccount(
         dataConfig.getHedgeConfig().hedgeAccount
@@ -251,9 +251,14 @@ class Quotation {
 
   private async native_token_max(ammContext: AmmContext, sourceObject: any) {
     const dstChainId = ammContext.baseInfo.dstToken.chainId;
-    const orderbookLiquidity =
-      quotationPrice.getNativeTokenBuyLiquidity(dstChainId); // gas token都是购买，使用购买流动性即可
-    logger.debug("GasToken 可以购买的最大流动性", orderbookLiquidity);
+
+    let orderbookLiquidity = -1;
+    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+      orderbookLiquidity =
+        quotationPrice.getNativeTokenBuyLiquidity(dstChainId); // gas token都是购买，使用购买流动性即可
+      logger.debug("GasToken 可以购买的最大流动性", orderbookLiquidity);
+    }
+
     const nativeTokenPrice =
       this.quotationPrice.getNativeTokenBidPrice(dstChainId);
     const inputValueSwapGasCount = SystemMath.execNumber(
@@ -546,12 +551,17 @@ class Quotation {
     ammContext: AmmContext,
     sourceObject: any = undefined
   ): [string, string, string] {
-    const { stdSymbol, bids, asks, timestamp } =
-      this.quotationPrice.getCoinStableCoinExecuteOrderbook(
-        ammContext.baseInfo.srcToken.address,
-        ammContext.baseInfo.srcToken.chainId,
-        ammContext.swapInfo.inputAmountNumber
-      );
+    let quoteOrderbookType = "getCoinStableCoinOrderBook";
+    if (ammContext.hedgeEnabled) {
+      quoteOrderbookType = "getCoinStableCoinExecuteOrderbook";
+    }
+    const { stdSymbol, bids, asks, timestamp } = this.quotationPrice[
+      quoteOrderbookType
+    ](
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.srcToken.chainId,
+      ammContext.swapInfo.inputAmountNumber
+    );
     if (stdSymbol === null) {
       logger.error(`获取orderbook失败无法计算价格`, "calculatePrice_bs");
       throw "获取orderbook失败无法计算价格";
@@ -773,32 +783,27 @@ class Quotation {
    * @returns {*} ""
    */
   private async calculate_capacity(ammContext: AmmContext, sourceObject: any) {
-    if (dataConfig.getHedgeConfig().hedgeType === IHedgeType.Null) {
-      return;
-    }
-    const hedgeCapacity = await hedgeManager
-      .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
-      .calculateCapacity(ammContext);
-    const dstBalanceMaxSwap = await this.dstBalanceMaxSwap(ammContext);
-    let capacity;
+    let hedgeCapacity = -1;
     const orderbookLiquidity = await this.calculateLiquidity(ammContext);
-    if (hedgeCapacity >= 0) {
-      capacity = _.min([hedgeCapacity, dstBalanceMaxSwap, orderbookLiquidity]);
-      logger.info(
-        hedgeCapacity,
-        dstBalanceMaxSwap,
-        orderbookLiquidity,
-        "<-hedgeCapacity"
-      );
-    } else {
-      capacity = _.min([dstBalanceMaxSwap, orderbookLiquidity]);
-      logger.info(
-        hedgeCapacity,
-        dstBalanceMaxSwap,
-        orderbookLiquidity,
-        "<-capacity"
-      );
+    const dstBalanceMaxSwap = await this.dstBalanceMaxSwap(ammContext);
+    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+      hedgeCapacity = await hedgeManager
+        .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
+        .calculateCapacity(ammContext);
     }
+
+    const capacity = SystemMath.min([
+      hedgeCapacity,
+      dstBalanceMaxSwap,
+      orderbookLiquidity,
+    ]);
+    logger.info(
+      hedgeCapacity,
+      dstBalanceMaxSwap,
+      orderbookLiquidity,
+      "<-hedgeCapacity"
+    );
+
     logger.debug(
       hedgeCapacity,
       dstBalanceMaxSwap,
@@ -918,7 +923,13 @@ class Quotation {
    */
   private async analysis(ammContext: AmmContext, sourceObject: any) {
     const max = _.get(sourceObject, "quote_data.capacity_num", 0);
+    const min = _.get(sourceObject, "quote_data.min_amount", 0);
     const input = ammContext.swapInfo.inputAmountNumber;
+    if (input < min) {
+      console.dir(sourceObject.quote_data, ConsoleDirDepth5);
+      logger.warn("The amount of input is too small");
+      throw new Error(`The amount of input is too small`);
+    }
     if (max <= input) {
       console.dir(sourceObject.quote_data, ConsoleDirDepth5);
       logger.warn(

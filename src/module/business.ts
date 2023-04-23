@@ -11,7 +11,11 @@ import {
   IEVENT_TRANSFER_OUT,
   IEVENT_TRANSFER_OUT_CONFIRM,
 } from "../interface/event";
-import { IBridgeTokenConfigItem, ILpCmd } from "../interface/interface";
+import {
+  IBridgeTokenConfigItem,
+  IHedgeType,
+  ILpCmd,
+} from "../interface/interface";
 import { eventProcessLock } from "./event_process/lock";
 import { eventProcessTransferOut } from "./event_process/transferout";
 import { eventProcessTransferOutConfirm } from "./event_process/transferout_confirm";
@@ -65,6 +69,7 @@ class Business {
       throw new Error("token not found");
     }
     const context: AmmContext = {
+      hedgeEnabled: dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null,
       summary: `chainInfo: ${token0.chainId}-${token1.chainId} ,swapInfo: ${token0.symbol}-${token1.symbol}`,
       systemContext: {
         lockStepInfo: {},

@@ -52,6 +52,9 @@ class SystemMath {
         usedNumberList.push(item);
       }
     }
+    if (usedNumberList.length === 0) {
+      return 0;
+    }
     return <number>_.max(usedNumberList);
   }
 }

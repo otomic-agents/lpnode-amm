@@ -34,7 +34,7 @@ async function main() {
       ?.order.spotBuy(
         "C020983",
         "BNB/USDT",
-        new BigNumber(0.1518987).toString(),
+        new BigNumber(0.0118987).toString(),
         undefined,
         true
       );

@@ -87,9 +87,7 @@ class EventProcessLock extends BaseEventProcess {
     if (!ammContext) {
       throw new Error(`No historical inquiry found`);
     }
-    if (_.get(ammContext, "lockInfo.time", 0) > 0) {
-      throw new Error("It is not possible to lock the same quote repeatedly");
-    }
+
     const [srcFee, dstFee] = this.getFeeInfoFromMsg(msg);
     ammContext.swapInfo.srcAmount = _.get(
       msg,
@@ -103,6 +101,9 @@ class EventProcessLock extends BaseEventProcess {
     let systemOrder;
     let orderId;
     try {
+      if (_.get(ammContext, "lockInfo.time", 0) > 0) {
+        throw new Error("It is not possible to lock the same quote repeatedly");
+      }
       await this.runVerificationEngine(msg); // Validate data
       await this.verificationDexBalance(ammContext); // Check Des balance
       await this.verificationHistory(ammContext, msg); // Check history quote
@@ -111,7 +112,10 @@ class EventProcessLock extends BaseEventProcess {
       await this.verificationLockValue(ammContext, msg); // Check the value of the operation lock
       ammContext.swapInfo.lpReceiveAmount =
         await ammContext.bridgeItem.lp_wallet_info.getReceivePrice(ammContext);
-      await this.verificationHedge(ammContext, msg); // Verify that hedging is possible
+      if (ammContext.hedgeEnabled) {
+        await this.verificationHedge(ammContext, msg); // Verify that hedging is possible
+      }
+
       [orderId, systemOrder] = await this.createSystemOrder(ammContext, msg); // Create system order
       _.set(
         msg,
@@ -159,7 +163,19 @@ class EventProcessLock extends BaseEventProcess {
       }
     );
   }
-  private setMemoryContext(msg: IEVENT_LOCK_QUOTE, ammContext: AmmContext) {
+  private async setMemoryContext(
+    msg: IEVENT_LOCK_QUOTE,
+    ammContext: AmmContext
+  ) {
+    const receive = await ammContext.bridgeItem.lp_wallet_info.getReceivePrice(
+      ammContext
+    );
+    const receiveStr = EthUnit.toWei(
+      receive.toString(),
+      ammContext.baseInfo.srcToken.precision
+    );
+    ammContext.chainOptInfo.srcChainReceiveAmount = receiveStr;
+    ammContext.chainOptInfo.srcChainReceiveAmountNumber = receive;
     const dstChainPayAmountRaw = _.get(
       msg,
       "pre_business.swap_asset_information.dst_amount",
