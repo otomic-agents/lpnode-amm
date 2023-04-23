@@ -240,7 +240,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     ammContext: AmmContext,
     accountId: string
   ): Promise<string> {
-    const [symbol0, symbol1] = dataConfig.getCexStdSymbolInfoByToken(
+    const [symbol0] = dataConfig.getCexStdSymbolInfoByToken(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.srcToken.chainId,
