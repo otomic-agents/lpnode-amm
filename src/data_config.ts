@@ -105,16 +105,14 @@ class DataConfig {
         logger.error("无法去远端创建资源");
         process.exit(0);
       }
-      await dataRedis.set(configIdKey, clientId)
-        .then(() => {
-          console.log("设置ClientId 到持久化数据库中成功", clientId);
-        });
+      await dataRedis.set(configIdKey, clientId).then(() => {
+        console.log("设置ClientId 到持久化数据库中成功", clientId);
+      });
       await (() => {
         return new Promise(() => {
-          statusReport.pendingStatus("等待配置完成")
-            .catch((e) => {
-              logger.error(`写入状态失败`, e);
-            });
+          statusReport.pendingStatus("等待配置完成").catch((e) => {
+            logger.error(`写入状态失败`, e);
+          });
           logger.warn("等待配置完成..");
         });
       })();
@@ -141,7 +139,9 @@ class DataConfig {
       .lean();
     if (!marketServiceRow) {
       logger.error(`没有找到正确的market地址，无法覆盖默认值`);
-      await statusReport.pendingStatus("没有找到正确的market地址,无法覆盖默认值");
+      await statusReport.pendingStatus(
+        "没有找到正确的market地址,无法覆盖默认值"
+      );
       await TimeSleepForever("没有找到正确的market地址,无法覆盖默认值");
     } else {
       const rewriteHost = `obridge-amm-market-${marketServiceRow.name}-service`;
@@ -162,12 +162,15 @@ class DataConfig {
     }
     const chainDataConfigList: {
       chainId: number;
-      config: { minSwapNativeTokenValue: string, maxSwapNativeTokenValue: string };
+      config: {
+        minSwapNativeTokenValue: string;
+        maxSwapNativeTokenValue: string;
+      };
     }[] = _.get(baseConfig, "chainDataConfig", []);
     for (const chainData of chainDataConfigList) {
       this.chainTokenUsd.set(
         chainData.chainId,
-        Number(chainData.config.minSwapNativeTokenValue),
+        Number(chainData.config.minSwapNativeTokenValue)
       );
       this.chainMaxTokenUsd.set(
         chainData.chainId,
@@ -207,7 +210,10 @@ class DataConfig {
       throw new Error(` chainDataConfig is empty`);
     }
     for (const item of chainDataConfig) {
-      if (!Object.keys(item["config"]).includes("minSwapNativeTokenValue") || !Object.keys(item["config"]).includes("maxSwapNativeTokenValue")) {
+      if (
+        !Object.keys(item["config"]).includes("minSwapNativeTokenValue") ||
+        !Object.keys(item["config"]).includes("maxSwapNativeTokenValue")
+      ) {
         throw new Error(`chainDataConfig is missing a field`);
       }
     }
@@ -231,7 +237,7 @@ class DataConfig {
         },
       });
       const configData = JSON.parse(
-        _.get(result, "data.result.templateResult", {}),
+        _.get(result, "data.result.templateResult", {})
       );
       return configData;
     } catch (e) {
@@ -250,11 +256,9 @@ class DataConfig {
         data: {
           appName: _.get(process.env, "APP_NAME", ""),
           version: _.get(process.env, "APP_VERSION", ""),
-          clientId: Buffer.from(new Date().getTime()
-            .toString())
-            .toString(
-              "base64",
-            ),
+          clientId: Buffer.from(new Date().getTime().toString()).toString(
+            "base64"
+          ),
           template:
             '{"chainDataConfig":[{"chainId":9006,"config":{"minSwapNativeTokenValue":"0.5"}},{"chainId":9000,"config":{"minSwapNativeTokenValue":"0.5"}}],"hedgeConfig":{"hedgeAccount":"a001","hedgeType":"CoinSpotHedge","accountList":[{"accountId":"a001","exchangeName":"binance","spotAccount":{"apiKey":"","apiSecret":""},"usdtFutureAccount":{"apiKey":"","apiSecret":""},"coinFutureAccount":{"apiKey":"","apiSecret":""}}]}}',
         },
@@ -272,7 +276,7 @@ class DataConfig {
       logger.error(
         "创建配置发生了错误",
         err.toString(),
-        _.get(e, "response.data", ""),
+        _.get(e, "response.data", "")
       );
     }
     return [];
@@ -281,10 +285,9 @@ class DataConfig {
   public async loadBaseConfig() {
     setInterval(() => {
       // 自动定期刷新TokenList
-      this.loadTokenToSymbol()
-        .catch((e) => {
-          logger.error("同步TokenList出错");
-        });
+      this.loadTokenToSymbol().catch((e) => {
+        logger.error("同步TokenList出错");
+      });
     }, 1000 * 60 * 2);
     await this.loadTokenToSymbol();
     await this.loadChainConfig();
@@ -310,8 +313,10 @@ class DataConfig {
       this.tokenToSymbolMap.set(key, {
         chainId: it.chainId,
         address: this.convertAddressToHex(it.address, it.chainId),
-        addressLower: this.convertAddressToHex(it.address, it.chainId)
-          .toLowerCase(),
+        addressLower: this.convertAddressToHex(
+          it.address,
+          it.chainId
+        ).toLowerCase(),
         coinType: it.coinType,
         symbol: it.marketName,
         precision: it.precision,
@@ -341,8 +346,7 @@ class DataConfig {
       chainType: string;
       tokenName: string;
       tokenUsd: number;
-    }[] = await chainListModule.find({})
-      .lean();
+    }[] = await chainListModule.find({}).lean();
 
     _.map(chainList, (item) => {
       this.chainMap.set(item.chainId, item.chainName);
@@ -369,7 +373,7 @@ class DataConfig {
     token0: string,
     token1: string,
     token0ChainId: number,
-    token1ChainId: number,
+    token1ChainId: number
   ): ICexCoinConfig[] | any {
     const uniqAddress0 = this.convertAddressToUniq(token0, token0ChainId);
     const uniqAddress1 = this.convertAddressToUniq(token1, token1ChainId);
@@ -388,12 +392,15 @@ class DataConfig {
     if (address.startsWith("0x")) {
       return web3.utils.hexToNumberString(address);
     }
-    const chainType = _.get(this.chainDataMap.get(chainId), "chainType", undefined);
+    const chainType = _.get(
+      this.chainDataMap.get(chainId),
+      "chainType",
+      undefined
+    );
     if (chainType === "near") {
       const bytes = bs58.decode(address);
       const ud = web3.utils.hexToNumberString(
-        `0x${Buffer.from(bytes)
-          .toString("hex")}`,
+        `0x${Buffer.from(bytes).toString("hex")}`
       );
       return ud;
     }
@@ -405,7 +412,8 @@ class DataConfig {
       return address;
     }
     try {
-      const hexAddress: string = chainAdapter[`AddressAdapter_${chainId}`](address);
+      const hexAddress: string =
+        chainAdapter[`AddressAdapter_${chainId}`](address);
       return hexAddress;
     } catch (e) {
       logger.error("处理地址发生了错误");
@@ -478,14 +486,13 @@ class DataConfig {
       msmqName: string;
       walletName: string;
       dstClientUri: string;
-    }[] = await bridgesModule.find()
-      .lean();
+    }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
     if (!lpConfigList || lpConfigList.length <= 0) {
       logger.warn(
         "没有查询到任何可用的BridgeItem配置",
         "findOption",
-        findOption,
+        findOption
       );
       await TimeSleepMs(1000 * 10);
       process.exit(1);
@@ -502,11 +509,14 @@ class DataConfig {
           name: item.walletName, // 把钱包地址也初始化，报价的时候要能够处理余额
           balance: {},
         },
-        dst_chain_client_uri: item.dstClientUri
+        dst_chain_client_uri: item.dstClientUri,
       };
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const context = this;
-      const proxyedFormatedItem: IBridgeTokenConfigItem = extend_bridge_item(formatedItem, context);
+      const proxyedFormatedItem: IBridgeTokenConfigItem = extend_bridge_item(
+        formatedItem,
+        context
+      );
       this.bridgeTokenList.push(proxyedFormatedItem);
     }
     console.table(this.bridgeTokenList);
@@ -547,7 +557,7 @@ class DataConfig {
   public getPrecision(hexAddress: string) {
     const findHex = hexAddress.toLowerCase();
 
-    this.tokenToSymbolMap.forEach(item => {
+    this.tokenToSymbolMap.forEach((item) => {
       if (item.addressLower === findHex) {
         return item;
       }

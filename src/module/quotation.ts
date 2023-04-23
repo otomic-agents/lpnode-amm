@@ -109,18 +109,15 @@ class Quotation {
     quoteInfo.quote_data.quote_hash = quoteHash;
     try {
       ammContext.quoteInfo.mode = this.getSwapType(ammContext);
-      if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+      if (ammContext.hedgeEnabled) {
         const srcTokenPrice = quotationPrice.getSrcTokenBuyPrice(ammContext);
         const dstTokenPrice = quotationPrice.getDstTokenBuyPrice(ammContext);
-        await hedgeManager
-          .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
-          .checkMinHedge(ammContext, srcTokenPrice, dstTokenPrice); // 初步的hedge检查 , 检查不换gas币的情况下，能否通过
+        const hedgeIns = ammContext.bridgeItem.hedge_info.getHedgeIns();
+        await hedgeIns.checkMinHedge(ammContext, srcTokenPrice, dstTokenPrice); // 初步的hedge检查 , 检查不换gas币的情况下，能否通过
         logger.info(`The cex order limit has been met`);
-        await hedgeManager
-          .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
-          .checkSwapAmount(ammContext); // 余额和对冲额检查
+        await hedgeIns.checkSwapAmount(ammContext); // 余额和对冲额检查 ,CEX 有没有足够的量，卖出左侧，或者花费左侧币
       }
-      this.process_quote_type(ammContext, quoteInfo); // 处理换币的模式
+      this.process_quote_type(ammContext, quoteInfo); // 处理换币的模式 quote_orderbook_type
       this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice usd_price mode
       this.price_src_token(ammContext, quoteInfo); // src_usd_price
       this.price_native_token(ammContext, quoteInfo); // native_token_usdt_price native_token_price  native_token_orig_price native_token_symbol

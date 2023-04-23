@@ -4,6 +4,7 @@ import { FeeManager } from "../module/bridge_extend/fee_manager";
 import { StatusManager } from "../module/bridge_extend/status_manager";
 import { LpWalletManager } from "../module/bridge_extend/lp_wallet_manager";
 import { SymbolManager } from "../module/bridge_extend/symbol_manager";
+import { BridgeHedgeInfo } from "../module/bridge_extend/bridge_hedge_info";
 
 interface IBridgeTokenConfigItem {
   bridge_name: string; // tokenBridge的name
@@ -22,6 +23,7 @@ interface IBridgeTokenConfigItem {
   status_manager: StatusManager;
   lp_wallet_info: LpWalletManager;
   symbol_info: SymbolManager;
+  hedge_info: BridgeHedgeInfo;
 }
 
 enum ISwapStep {

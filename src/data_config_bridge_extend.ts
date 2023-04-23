@@ -4,6 +4,7 @@ import { StatusManager } from "./module/bridge_extend/status_manager";
 import { LpWalletManager } from "./module/bridge_extend/lp_wallet_manager";
 import * as _ from "lodash";
 import { SymbolManager } from "./module/bridge_extend/symbol_manager";
+import { BridgeHedgeInfo } from "./module/bridge_extend/bridge_hedge_info";
 
 function extend_bridge_item(
   source_object: any,
@@ -61,6 +62,14 @@ function extend_bridge_item(
         return symbolManager;
       }
       return _.get(target_object, "symbol_info____", {});
+    }
+    if (key === "hedge_info") {
+      if (!_.get(target_object, "hedge_info____", undefined)) {
+        const bridgeHedgeinfo = new BridgeHedgeInfo(proxy);
+        _.set(target_object, "hedge_info____", bridgeHedgeinfo);
+        return bridgeHedgeinfo;
+      }
+      return _.get(target_object, "hedge_info____", {});
     }
     return Reflect.get(target_object, key, receiver);
   };
