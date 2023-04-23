@@ -42,16 +42,21 @@ class SetCtrl {
     //   "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x61D35C6B6a7568542acA42448B47690650C69bb9_9006_9006"
     // );
     // usdt - usdt;
-    eventProcess.onMessage(
-      JSON.stringify(req.body),
-      "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
-    );
+    // eventProcess.onMessage(
+    //   JSON.stringify(req.body),
+    //   "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
+    // );
     // eth - eth;
     // eventProcess.onMessage(
     //   JSON.stringify(req.body),
     //   "0x61D35C6B6a7568542acA42448B47690650C69bb9/0x61D35C6B6a7568542acA42448B47690650C69bb9_9006_9006"
     // );
 
+    // BNB -USDT
+    eventProcess.onMessage(
+      JSON.stringify(req.body),
+      "0xEc8303f11a6528fE67fbB41577892209E57578D6/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
+    );
     // T - USDT;
     // eventProcess.onMessage(
     //   JSON.stringify(req.body),

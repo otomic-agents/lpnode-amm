@@ -243,6 +243,7 @@ class Quotation {
 
     Object.assign(sourceObject.quote_data, {
       native_token_min: new BigNumber(minCount).toString(),
+      native_token_min_number: Number(new BigNumber(minCount).toString()),
     });
   }
 
@@ -319,6 +320,17 @@ class Quotation {
     if (!_.isFinite(nativeTokenMax)) {
       logger.error(`Error in calculating the maximum amount of tokens`);
       nativeTokenMax = 0;
+    }
+    const minNumber = _.get(
+      sourceObject.quote_data,
+      "native_token_min_number",
+      0
+    );
+    if (Number(nativeTokenMax) < minNumber) {
+      logger.error(`The maximum value cannot be less than the minimum value`);
+      throw new Error(
+        `The maximum value cannot be less than the minimum value`
+      );
     }
     Object.assign(sourceObject.quote_data, {
       native_token_max: new BigNumber(nativeTokenMax).toFixed(8).toString(),
