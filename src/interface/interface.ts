@@ -19,6 +19,7 @@ interface IBridgeTokenConfigItem {
     balance: { [key: string]: number }; // 目标链钱包的余额
   };
   dst_chain_client_uri: string; // 目标链客户端的链接地址
+  enable_hedge: boolean;
   fee_manager: FeeManager;
   status_manager: StatusManager;
   lp_wallet_info: LpWalletManager;

@@ -16,7 +16,7 @@ import { binanceConfig } from "./binance_config";
 class BinanceCoinFuture implements IStdExchangeCoinFuture {
   private apiKey: string;
   private apiSecret: string;
-  private apiBaseUrl = "https://testnet.binancefuture.com";
+  private apiBaseUrl = "";
   private balance: Map<string, ICoinFutureBalanceItemBinance> = new Map();
   private symbolsInfo: Map<string, ICoinFutureSymbolItemBinance> = new Map();
   constructor(accountInfo: { apiKey: string; apiSecret: string }) {

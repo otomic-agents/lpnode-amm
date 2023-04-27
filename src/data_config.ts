@@ -486,6 +486,7 @@ class DataConfig {
       msmqName: string;
       walletName: string;
       dstClientUri: string;
+      enableHedge: boolean;
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
     logger.info(`加载到了${lpConfigList.length}个BridgeConfig`);
@@ -511,6 +512,12 @@ class DataConfig {
           balance: {},
         },
         dst_chain_client_uri: item.dstClientUri,
+        enable_hedge: _.attempt(() => {
+          if (item.enableHedge) {
+            return true;
+          }
+          return false;
+        }),
       };
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const context = this;

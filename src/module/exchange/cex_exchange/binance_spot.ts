@@ -26,7 +26,7 @@ class BinanceSpot implements IStdExchangeSpot {
   private apiKey: string;
   private apiSecret: string;
   private balance: Map<string, ISpotBalanceItemBinance> = new Map();
-  private apiBaseUrl = "https://testnet.binance.vision";
+  private apiBaseUrl = "";
   protected spotSymbolsInfo: Map<string, ISpotSymbolItemBinance> = new Map();
 
   public constructor(accountInfo: { apiKey: string; apiSecret: string }) {
@@ -246,20 +246,6 @@ class BinanceSpot implements IStdExchangeSpot {
   public fetchMarkets(): Map<string, ISpotSymbolItemBinance> {
     return this.spotSymbolsInfo;
   }
-
-  /**
-   * Description 创建一个市价单
-   * @date 1/17/2023 - 9:02:54 PM
-   *
-   * @public
-   * @async
-   * @param {string} orderId "001"
-   * @param {string} stdSymbol "ETH/USDT"
-   * @param {BigNumber} amount "new Bignumber(0.005)"
-   * @param {BigNumber} quoteOrderQty "new Bignumber(0.005)"
-   * @param {ISide} side "Iside"
-   * @returns {Promise<ISpotOrderResult>} ISpotOrderResult
-   */
   public async createMarketOrder(
     orderId: string,
     stdSymbol: string,

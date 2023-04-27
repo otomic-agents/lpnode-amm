@@ -37,9 +37,8 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
       ammContext.systemInfo.msmqName
     );
     await this.setChainOptInfoData(ammContext, msg);
-    const hedgeType = ammContext.bridgeItem.hedge_info.getHedgeType();
-    logger.debug(`hedgeType:${hedgeType}`);
-    if (hedgeType !== IHedgeType.Null) {
+
+    if (ammContext.hedgeEnabled) {
       await ammContextManager.appendContext(
         orderId,
         "flowStatus",
@@ -65,11 +64,6 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     ammContext: AmmContext,
     msg: IEVENT_TRANSFER_OUT_CONFIRM
   ) {
-    // const srcChainReceiveAmountRaw = _.get(msg, "business_full_data.event_transfer_out.amount", "");
-    // const srcChainReceiveAmountNumber = getNumberFrom16(srcChainReceiveAmountRaw, ammContext.baseInfo.srcToken.precision);
-    // ammContext.chainOptInfo.srcChainReceiveAmount = srcChainReceiveAmountRaw;
-    // ammContext.chainOptInfo.srcChainReceiveAmountNumber = srcChainReceiveAmountNumber;
-
     ammContext = await this.setSrcChainOptInfo(ammContext); // 设置远链的数据，之后对冲用这个来卖
 
     const dstChainPayAmountRaw = _.get(

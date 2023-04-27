@@ -14,7 +14,6 @@ import {
 import {
   EFlowStatus,
   IBridgeTokenConfigItem,
-  IHedgeType,
   ILpCmd,
 } from "../interface/interface";
 import { eventProcessLock } from "./event_process/lock";
@@ -71,7 +70,7 @@ class Business {
     }
     const context: AmmContext = {
       appName: _.get(process.env, "APP_NAME", ""),
-      hedgeEnabled: dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null,
+      hedgeEnabled: item.enable_hedge,
       summary: `chainInfo: ${token0.chainId}-${token1.chainId} ,swapInfo: ${token0.symbol}-${token1.symbol}`,
       systemContext: {
         lockStepInfo: {},

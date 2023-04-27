@@ -1,31 +1,27 @@
 import * as _ from "lodash";
 class BinanceConfig {
-  public constructor() {
-    const testVal = _.get(
-      process.env,
-      "KUBERNETES_SERVICE_PORT_HTTPS",
-      undefined
-    );
-    if (!testVal) {
-      // 测试环境
-      this.baseApi = {
-        spot: "https://testnet.binance.vision",
-        usdtFuture: "https://testnet.binancefuture.com",
-        coinFuture: "https://testnet.binancefuture.com",
-      };
-      return;
-    }
-    this.baseApi = {
-      spot: "https://testnet.binance.vision",
-      usdtFuture: "https://testnet.binancefuture.com",
-      coinFuture: "https://testnet.binancefuture.com",
-    };
-  }
   private baseApi: {
     spot: "https://testnet.binance.vision";
     usdtFuture: "https://testnet.binancefuture.com";
     coinFuture: "https://testnet.binancefuture.com";
   };
+  public constructor() {
+    const envStr = _.get(process.env, "NODE_ENV", "dev");
+    if (envStr === "production" || envStr === "prod") {
+      this.baseApi = {
+        spot: "https://testnet.binance.vision",
+        usdtFuture: "https://testnet.binancefuture.com",
+        coinFuture: "https://testnet.binancefuture.com",
+      };
+    } else {
+      this.baseApi = {
+        spot: "https://testnet.binance.vision",
+        usdtFuture: "https://testnet.binancefuture.com",
+        coinFuture: "https://testnet.binancefuture.com",
+      };
+    }
+  }
+
   public getSpotBaseApi() {
     return this.baseApi.spot;
   }
