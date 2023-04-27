@@ -6,14 +6,12 @@ import { redisPub } from "../../redis_bus";
 import {
   EFlowStatus,
   IBridgeTokenConfigItem,
-  IHedgeType,
   ILpCmd,
 } from "../../interface/interface";
 import { dataConfig } from "../../data_config";
 import { quotation } from "../quotation";
 import BigNumber from "bignumber.js";
 import { quotationListHistory } from "../quotation/quotation_history";
-import { hedgeManager } from "../hedge_manager";
 import { BaseEventProcess } from "./base_event_process";
 import { CreateRecord } from "./system_record";
 import { ammContextModule } from "../../mongo_module/amm_context";
@@ -397,25 +395,30 @@ class EventProcessLock extends BaseEventProcess {
     ammContext: AmmContext,
     msg: IEVENT_LOCK_QUOTE
   ): Promise<boolean> {
-    const hedgeType = ammContext.bridgeItem.hedge_info.getHedgeType();
-    const accountId = ammContext.bridgeItem.hedge_info.getHedgeAccount();
-    if (hedgeType === IHedgeType.Null) {
+    if (!ammContext.hedgeEnabled) {
       return true;
     }
+    const accountId = ammContext.bridgeItem.hedge_info.getHedgeAccount();
     if (
-      !(await hedgeManager.getHedgeIns(hedgeType).checkHedgeCond(ammContext))
+      !(await ammContext.bridgeItem.hedge_info
+        .getHedgeIns()
+        .checkHedgeCond(ammContext))
     ) {
       logger.error(`Hedging conditions are not met，Unable to lock price.`);
       throw new Error(
         `Hedging conditions are not met，Unable to lock price，Insufficient hedging amount`
       );
     }
-    if (!(await hedgeManager.getHedgeIns(hedgeType).preExecOrder(ammContext))) {
+    if (
+      !(await ammContext.bridgeItem.hedge_info
+        .getHedgeIns()
+        .preExecOrder(ammContext))
+    ) {
       throw new Error(`preExecOrder error`);
     }
     logger.info("create lock result ");
-    const balanceLockId = await hedgeManager
-      .getHedgeIns(hedgeType)
+    const balanceLockId = await ammContext.bridgeItem.hedge_info
+      .getHedgeIns()
       .lockHedgeBalance(ammContext, accountId);
     _.set(
       msg,
