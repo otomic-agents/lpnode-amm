@@ -12,6 +12,7 @@ import {
   IEVENT_TRANSFER_OUT_CONFIRM,
 } from "../interface/event";
 import {
+  EFlowStatus,
   IBridgeTokenConfigItem,
   IHedgeType,
   ILpCmd,
@@ -164,6 +165,8 @@ class Business {
         capacity_num: 0,
       },
       askTime: new Date().getTime(),
+      flowStatus: EFlowStatus.Init,
+      transferoutConfirmTime: 0,
     };
     return context;
   }

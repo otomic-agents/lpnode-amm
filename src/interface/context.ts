@@ -1,4 +1,4 @@
-import { IBridgeTokenConfigItem } from "./interface";
+import { EFlowStatus, IBridgeTokenConfigItem } from "./interface";
 
 interface AmmContext {
   appName: string;
@@ -96,6 +96,8 @@ interface AmmContext {
     lockStepInfo: any;
     transferoutConfirmInfo: any;
   };
+  flowStatus: EFlowStatus;
+  transferoutConfirmTime: number;
 }
 
 export { AmmContext };

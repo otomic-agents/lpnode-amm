@@ -4,6 +4,7 @@
  *报价的第一版服务，还在填充逻辑中
  * **/
 import {
+  EFlowStatus,
   IBridgeTokenConfigItem,
   ICoinType,
   ILpCmd,
@@ -359,6 +360,7 @@ class Quotation {
     ammContext.quoteInfo = quoteInfo.quote_data;
     ammContext.quoteInfo.mode = mode;
     quoteInfo.quote_data.inputAmount = ammContext.swapInfo.inputAmount;
+    ammContext.flowStatus = EFlowStatus.AnswerOffer;
     await ammContextModule.create(ammContext);
     await this.storeQuoteHistory(quoteHash, quoteInfo.quote_data);
   }

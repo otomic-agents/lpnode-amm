@@ -40,12 +40,18 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     const hedgeType = ammContext.bridgeItem.hedge_info.getHedgeType();
     logger.debug(`hedgeType:${hedgeType}`);
     if (hedgeType !== IHedgeType.Null) {
-      ammContextManager.appendContext(
+      await ammContextManager.appendContext(
         orderId,
         "flowStatus",
         EFlowStatus.WaitHedge
       );
       await this.processHedge(msg, ammContext);
+    } else {
+      // 标记无需对冲
+      await ammContextManager.set(orderId, {
+        flowStatus: EFlowStatus.NoHedge,
+        transferoutConfirmTime: new Date().getTime(),
+      });
     }
 
     const responseMsg = {

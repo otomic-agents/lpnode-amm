@@ -4,6 +4,7 @@ import { logger } from "../../sys_lib/logger";
 
 import { redisPub } from "../../redis_bus";
 import {
+  EFlowStatus,
   IBridgeTokenConfigItem,
   IHedgeType,
   ILpCmd,
@@ -149,6 +150,8 @@ class EventProcessLock extends BaseEventProcess {
       },
       {
         $set: {
+          flowStatus: EFlowStatus.Locked,
+          lockMsg: _.get(msg, "pre_business.err_msg", ""),
           systemContext: ammContext.systemContext,
           swapInfo: ammContext.swapInfo,
           step: 1, // 标记已经处于lock状态
