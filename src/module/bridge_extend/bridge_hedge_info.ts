@@ -1,5 +1,9 @@
 import { dataConfig } from "../../data_config";
-import { IBridgeTokenConfigItem, IHedgeClass } from "../../interface/interface";
+import {
+  IBridgeTokenConfigItem,
+  IHedgeClass,
+  IHedgeType,
+} from "../../interface/interface";
 import { StdAccount } from "../exchange/account";
 import { accountManager } from "../exchange/account_manager";
 import { hedgeManager } from "../hedge_manager";
@@ -17,6 +21,12 @@ class BridgeHedgeInfo {
       throw `没有找到对冲的实现`;
     }
     return ins;
+  }
+  public getHedgeType(): IHedgeType {
+    return dataConfig.getHedgeConfig().hedgeType;
+  }
+  public getHedgeAccount(): string {
+    return dataConfig.getHedgeConfig().hedgeAccount;
   }
   public getAccountIns(): StdAccount {
     const accountIns = accountManager.getAccount(

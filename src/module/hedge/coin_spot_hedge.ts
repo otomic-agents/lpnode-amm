@@ -23,7 +23,12 @@ import { ConsoleDirDepth5 } from "../../utils/console";
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
 const redisConfig = getRedisConfig();
-const hedgeQueue = new Bull("SYSTEM_HEDGE_QUEUE", {
+const appName = _.get(process.env, "APP_NAME", undefined);
+if (!appName) {
+  throw new Error(`Queue name is incorrectly configured`);
+}
+const queueName = `SYSTEM_HEDGE_QUEUE_${appName}`;
+const hedgeQueue = new Bull(queueName, {
   redis: { port: 6379, host: redisConfig.host, password: redisConfig.pass },
 });
 

@@ -6,7 +6,6 @@
 import {
   IBridgeTokenConfigItem,
   ICoinType,
-  IHedgeType,
   ILpCmd,
 } from "../interface/interface";
 import { redisPub } from "../redis_bus";
@@ -18,7 +17,6 @@ import { gas } from "./gas";
 import { dataConfig } from "../data_config";
 import * as _ from "lodash";
 import { quotationListHistory } from "./quotation/quotation_history";
-import { hedgeManager } from "./hedge_manager";
 import {
   quotationPrice,
   QuotationPrice,
@@ -32,7 +30,6 @@ import { measure, memo } from "helpful-decorators";
 import { IQuoteData } from "../interface/quotation";
 import { EthUnit } from "../utils/eth";
 import { SystemMath } from "../utils/system_math";
-import { accountManager } from "./exchange/account_manager";
 import { ConsoleDirDepth5 } from "../utils/console";
 
 const { v4: uuidv4 } = require("uuid");
@@ -227,10 +224,8 @@ class Quotation {
     );
     const gasTokenPrice = quotationPrice.getGasTokenBuyPrice(ammContext);
     let minHedgeCount = -1;
-    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
-      const accountIns = await accountManager.getAccount(
-        dataConfig.getHedgeConfig().hedgeAccount
-      );
+    if (ammContext.hedgeEnabled) {
+      const accountIns = ammContext.bridgeItem.hedge_info.getAccountIns();
       if (accountIns) {
         [minHedgeCount] = await accountIns.order.getSpotTradeMinMax(
           `${gasSymbol}/USDT`,
@@ -251,7 +246,7 @@ class Quotation {
     const dstChainId = ammContext.baseInfo.dstToken.chainId;
 
     let orderbookLiquidity = -1;
-    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+    if (ammContext.hedgeEnabled) {
       orderbookLiquidity =
         quotationPrice.getNativeTokenBuyLiquidity(dstChainId); // gas token都是购买，使用购买流动性即可
       logger.debug("GasToken 可以购买的最大流动性", orderbookLiquidity);
@@ -281,10 +276,8 @@ class Quotation {
     const tokenStdSymbol = `${tokenSymbol}/USDT`;
     let minCexTradeCount = -1; // 至少这个最大值要满足 > hedge 的最小值
     let maxCexTradeCount = -1;
-    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
-      const accountIns = await accountManager.getAccount(
-        dataConfig.getHedgeConfig().hedgeAccount
-      );
+    if (ammContext.hedgeEnabled) {
+      const accountIns = ammContext.bridgeItem.hedge_info.getAccountIns();
       if (accountIns) {
         [minCexTradeCount, maxCexTradeCount] =
           await accountIns.order.getSpotTradeMinMax(
@@ -711,11 +704,11 @@ class Quotation {
   private async min_amount(ammContext: AmmContext, sourceObject: any) {
     let minHedgeInputNumber = -1;
     const srcTokenPrice = quotationPrice.getSrcTokenBuyPrice(ammContext);
-    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
+    if (ammContext.hedgeEnabled) {
       const dstTokenPrice = quotationPrice.getDstTokenSellPrice(ammContext);
       const gasTokenPrice = quotationPrice.getGasTokenBuyPrice(ammContext);
-      minHedgeInputNumber = await hedgeManager
-        .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
+      minHedgeInputNumber = await ammContext.bridgeItem.hedge_info
+        .getHedgeIns()
         .getMinHedgeAmount(
           ammContext,
           srcTokenPrice,
@@ -795,9 +788,9 @@ class Quotation {
     let hedgeCapacity = -1;
     const orderbookLiquidity = await this.calculateLiquidity(ammContext);
     const dstBalanceMaxSwap = await this.dstBalanceMaxSwap(ammContext);
-    if (dataConfig.getHedgeConfig().hedgeType !== IHedgeType.Null) {
-      hedgeCapacity = await hedgeManager
-        .getHedgeIns(dataConfig.getHedgeConfig().hedgeType)
+    if (ammContext.hedgeEnabled) {
+      hedgeCapacity = await ammContext.bridgeItem.hedge_info
+        .getHedgeIns()
         .calculateCapacity(ammContext);
     }
 

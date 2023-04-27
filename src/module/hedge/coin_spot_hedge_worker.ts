@@ -1,6 +1,4 @@
 import { AmmContext } from "../../interface/context";
-import { accountManager } from "../exchange/account_manager";
-import { dataConfig } from "../../data_config";
 import { logger } from "../../sys_lib/logger";
 import { createOrderId } from "../exchange/utils";
 import BigNumber from "bignumber.js";
@@ -9,6 +7,7 @@ import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
 import _ from "lodash";
 import { ammContextManager } from "../amm_context_manager/amm_context_manager";
 import { EFlowStatus } from "../../interface/interface";
+import { dataConfig } from "../../data_config";
 
 interface IHedgeOrderItem {
   orderId: string;
@@ -20,17 +19,17 @@ interface IHedgeOrderItem {
 
 class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
   public async worker(call: { orderId: number; ammContext: AmmContext }) {
+    call.ammContext.bridgeItem = dataConfig.findItemByMsmqName(
+      call.ammContext.systemInfo.msmqName
+    );
     const optOrderList = await this.prepareOrder(call.ammContext);
     await this.freeBalanceLock(call);
 
-    const accountIns = await accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
-    );
+    const accountIns =
+      await call.ammContext.bridgeItem.hedge_info.getAccountIns();
     if (!accountIns) {
       throw new Error(
-        `No instance of hedging account was found.AccountId:${
-          dataConfig.getHedgeConfig().hedgeAccount
-        }`
+        `No instance of hedging account was found.AccountId:${call.ammContext.bridgeItem.hedge_info.getHedgeAccount()}`
       );
     }
     const cexExePlan = optOrderList;

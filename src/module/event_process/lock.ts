@@ -102,6 +102,7 @@ class EventProcessLock extends BaseEventProcess {
     let orderId;
     try {
       if (_.get(ammContext, "lockInfo.time", 0) > 0) {
+        logger.error(`It is not possible to lock the same quote repeatedly`);
         throw new Error("It is not possible to lock the same quote repeatedly");
       }
       await this.runVerificationEngine(msg); // Validate data
@@ -393,8 +394,8 @@ class EventProcessLock extends BaseEventProcess {
     ammContext: AmmContext,
     msg: IEVENT_LOCK_QUOTE
   ): Promise<boolean> {
-    const hedgeType = dataConfig.getHedgeConfig().hedgeType;
-    const accountId = dataConfig.getHedgeConfig().hedgeAccount;
+    const hedgeType = ammContext.bridgeItem.hedge_info.getHedgeType();
+    const accountId = ammContext.bridgeItem.hedge_info.getHedgeAccount();
     if (hedgeType === IHedgeType.Null) {
       return true;
     }

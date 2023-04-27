@@ -37,7 +37,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
       ammContext.systemInfo.msmqName
     );
     await this.setChainOptInfoData(ammContext, msg);
-    const hedgeType = dataConfig.getHedgeConfig().hedgeType;
+    const hedgeType = ammContext.bridgeItem.hedge_info.getHedgeType();
     logger.debug(`hedgeType:${hedgeType}`);
     if (hedgeType !== IHedgeType.Null) {
       ammContextManager.appendContext(
@@ -119,10 +119,10 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     msg: IEVENT_TRANSFER_OUT_CONFIRM,
     ammContext: AmmContext
   ) {
-    if (dataConfig.getHedgeConfig().hedgeType === IHedgeType.Null) {
+    if (ammContext.bridgeItem.hedge_info.getHedgeType() === IHedgeType.Null) {
       return true;
     }
-    const hedgeType = dataConfig.getHedgeConfig().hedgeType;
+    const hedgeType = ammContext.bridgeItem.hedge_info.getHedgeType();
 
     const sourceCountEtherString = _.get(
       msg,
