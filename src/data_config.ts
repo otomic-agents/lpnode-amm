@@ -527,7 +527,27 @@ class DataConfig {
       );
       this.bridgeTokenList.push(proxyedFormatedItem);
     }
+    const hedgeTokenList = _.filter(this.bridgeTokenList, (item) => {
+      return item.enable_hedge === true;
+    });
+    if (_.isArray(hedgeTokenList) && hedgeTokenList.length >= 1) {
+      logger.info(`需要检查对冲配置`, "🌎");
+      if (!this.hedgeAvailable()) {
+        await TimeSleepForever(
+          "有币对开启了对冲，必须保证对冲账号和模式的配置存在"
+        );
+      }
+    }
     console.table(this.bridgeTokenList);
+  }
+  private hedgeAvailable(): boolean {
+    if (this.getHedgeConfig().hedgeType === IHedgeType.Null) {
+      return false;
+    }
+    if (this.getHedgeConfig().hedgeAccount === "") {
+      return false;
+    }
+    return true;
   }
 
   public getChainName(chainId: number): string | undefined {
