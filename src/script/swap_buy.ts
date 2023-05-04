@@ -6,14 +6,14 @@ if (envFile) {
 } else {
   console.log("env File 不存在");
 }
-import BigNumber from "bignumber.js";
+// import BigNumber from "bignumber.js";
 import { appEnv } from "../app_env"; // 这个要在最前边
 appEnv.initConfig(); // 初始化基本配置
 import { dataConfig } from "../data_config";
 import { accountManager } from "../module/exchange/account_manager";
 import { logger } from "../sys_lib/logger";
 import { formatStepSize } from "../module/exchange/utils";
-
+import * as _ from "lodash";
 appEnv.initConfig(); // 初始化基本配置
 
 console.log(formatStepSize("0.013884994", "0.01000000"));
@@ -26,13 +26,14 @@ async function main() {
       accountId: "a002",
       exchangeName: "binance",
       spotAccount: {
-        apiKey:
-          "NzhXa9logqSx3Pnaejsa9siBtAnY5wPAmpyA7WN797BCGaaPxL8uWL178oWmYOLq",
-        apiSecret: "***************",
-      },
-      usdtFutureAccount: {
         apiKey: "",
         apiSecret: "",
+      },
+      usdtFutureAccount: {
+        apiKey:
+          "NzhXa9logqSx3Pnaejsa9siBtAnY5wPAmpyA7WN797BCGaaPxL8uWL178oWmYOLq",
+        apiSecret:
+          "c8qoWHR1TwkwfoiV4lMAoa1b1AyW454jbdGzezeBKDpIG4TjIaeTtz6QtjbvGeFs",
       },
       coinFutureAccount: {
         apiKey: "",
@@ -40,28 +41,31 @@ async function main() {
       },
     },
   ]);
-  // setTimeout(async () => {
-  //   const result = await accountManager
-  //     .getAccount("a001")
-  //     ?.order.spotSell("C020983", "ETH/USDT", new BigNumber(0.01).toString(), undefined);
-  //   logger.debug(result);
-  // }, 10000);
-
+  setInterval(() => {
+    // logger.debug(`000`);
+  }, 1000);
   setTimeout(async () => {
-    // logger.debug(
-    //   accountManager.getAccount("a002")?.balance.getAllSpotBalance()
-    // );
     const result = await accountManager
       .getAccount("a002")
-      ?.order.spotSell(
-        "C020983",
-        "ETH/USDT",
-        new BigNumber(0.01).toString(),
-        undefined,
-        false
-      );
-    logger.debug(result);
-  }, 10000);
+      ?.balance.getUsdtFutureAllPositionRisk();
+    console.log(_.find(result, { symbol: "ETH-USDT-SWAP" }));
+  }, 3000);
+  // setTimeout(async () => {
+  //   const result = await accountManager
+  //     .getAccount("a002")
+  //     ?.order.getUsdtFutureOrdersBySymbol("ETH/USDT");
+  //   logger.debug(result);
+  // }, 3000);
+
+  // setTimeout(async () => {
+  //   // logger.debug(
+  //   //   accountManager.getAccount("a002")?.balance.getAllSpotBalance()
+  //   // );
+  //   const result = await accountManager
+  //     .getAccount("a002")
+  //     ?.order.swapBuy("ETH/USDT", new BigNumber(0.01));
+  //   logger.debug(result);
+  // }, 3000);
 }
 
 main()

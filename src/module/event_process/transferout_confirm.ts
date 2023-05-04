@@ -46,7 +46,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
       );
       await this.processHedge(msg, ammContext);
     } else {
-      // 标记无需对冲
+      // mark no hedging required
       await ammContextManager.set(orderId, {
         flowStatus: EFlowStatus.NoHedge,
         transferoutConfirmTime: new Date().getTime(),
@@ -64,7 +64,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     ammContext: AmmContext,
     msg: IEVENT_TRANSFER_OUT_CONFIRM
   ) {
-    ammContext = await this.setSrcChainOptInfo(ammContext); // 设置远链的数据，之后对冲用这个来卖
+    ammContext = await this.setSrcChainOptInfo(ammContext); // set src data info
 
     const dstChainPayAmountRaw = _.get(
       msg,

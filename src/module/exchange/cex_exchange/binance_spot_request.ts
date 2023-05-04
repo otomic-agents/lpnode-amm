@@ -27,16 +27,16 @@ class BinanceSpotRequest {
       const result = await axios.request(requestOpt);
 
       if (_.get(result, "status", 0) !== 200) {
-        throw new Error("status code 不是 200");
+        throw new Error("status code neq 200");
       }
       return result;
     } catch (e) {
       const errMsg: any = _.get(e, "response.data.msg", "");
       if (errMsg !== "") {
-        logger.error(`${url} 访问发生了错误`, errMsg);
+        logger.error(`${url} request error`, errMsg);
         throw new Error(errMsg.toString());
       }
-      logger.error(`${url} 发送请求发生了错误`, _.get(e, "message", ""));
+      logger.error(`${url} request error`, _.get(e, "message", ""));
       throw new Error(_.get(e, "message", ""));
     }
   }
@@ -50,7 +50,6 @@ class BinanceSpotRequest {
         data: JSON.stringify(data),
       };
       if (apiKey && apiSecret) {
-        // 如果是需要签名的，处理一下
         const postStr = signatureObject(data, apiSecret);
         requestOpt.data = postStr;
         Object.assign(requestOpt.headers, {
@@ -62,10 +61,10 @@ class BinanceSpotRequest {
     } catch (e) {
       const errMsg: any = _.get(e, "response.data.msg", "");
       if (errMsg !== "") {
-        logger.error(`${url} 访问发生了错误`, errMsg);
+        logger.error(`${url} request error`, errMsg);
         throw new Error(errMsg.toString());
       }
-      logger.error(`${url} 发送请求发生了错误`, _.get(e, "message", ""));
+      logger.error(`${url} request error`, _.get(e, "message", ""));
       throw new Error(_.get(e, "message", ""));
     }
   }

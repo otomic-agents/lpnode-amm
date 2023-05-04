@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import { statusRedis } from "./redis_bus";
 import { logger } from "./sys_lib/logger";
 import { dataConfig } from "./data_config";
-const stringify = require('json-stringify-safe');
+const stringify = require("json-stringify-safe");
 class StatusReport {
   private store: any = {};
 
@@ -24,6 +24,7 @@ class StatusReport {
   intervalReport() {
     setTimeout(() => {
       this.storeData();
+      this.intervalReport();
     }, 1000 * 30);
   }
 
@@ -39,7 +40,7 @@ class StatusReport {
   private async storeData() {
     const statusKey = _.get(process.env, "STATUS_KEY", undefined);
     if (!statusKey) {
-      logger.error(`没有找到需要设置状态的Key`);
+      logger.error(`can't find status key`);
       return;
     }
     statusRedis

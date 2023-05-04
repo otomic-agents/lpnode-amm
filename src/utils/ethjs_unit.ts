@@ -13,7 +13,6 @@ const unitMap = {
   noether: "0", // eslint-disable-line
   wei: "1", // eslint-disable-line
 
-  // 这几个精度都是原版没有的，后来加的
   hwei: "100", // eslint-disable-line
   kwei: "1000", // eslint-disable-line
   tenkwei: "10000", // eslint-disable-line
@@ -80,7 +79,7 @@ function getNumberFrom16(input: string, decimals = 18) {
   ).toFixed(5);
   const number = Number(numberStrVal);
   if (!_.isFinite(number)) {
-    throw new Error(`转换格式失败,input:${input} `);
+    throw new Error(`format conversion failed,input:${input} `);
   }
   return number;
 }

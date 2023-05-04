@@ -6,17 +6,23 @@ import {
   ICexAccount,
   ICoinFutureBalanceItem,
   ISpotBalanceItem,
+  IUsdtFutureAccountPositionsRiskItem,
   IUsdtFutureBalanceItem,
 } from "../../interface/std_difi";
 import { logger } from "../../sys_lib/logger";
+import { exchangeRedisStore } from "./redis_store";
 // @ts-ignore
 const cTable = require("console.table");
 
 class StdBalance {
-  private stdExchange: IStdExchange; // cex 所的引用
+  private stdExchange: IStdExchange;
   private accountInfo: ICexAccount;
   private spotBalance: Map<string, ISpotBalanceItem> = new Map();
   private usdtFutureBalance: Map<string, IUsdtFutureBalanceItem> = new Map();
+  private usdtFuturePositionRisk: Map<
+    string,
+    IUsdtFutureAccountPositionsRiskItem
+  >;
   private coinFutureBalance: Map<string, ICoinFutureBalanceItem> = new Map();
 
   // private coinFutureBalance:Map<string ,IFutureUsdtBalanceItem> = new Map()
@@ -51,21 +57,27 @@ class StdBalance {
     });
     return itemList;
   }
+  public showSpotBalance() {
+    this.spotBalance.forEach((item, k) => {
+      console.log(k, JSON.stringify(item));
+    });
+  }
 
   public getUsdtFutureBalance(
     symbol: string
   ): IUsdtFutureBalanceItem | undefined {
     return this.usdtFutureBalance.get(symbol);
   }
+  public getUsdtFutureAllBalance() {
+    const list: IUsdtFutureBalanceItem[] = [];
+    this.usdtFutureBalance.forEach((value) => {
+      list.push(value);
+    });
+    return list;
+  }
 
   public getCoinFutureBalance(symbol: string) {
     return this.coinFutureBalance.get(symbol);
-  }
-
-  public showSpotBalance() {
-    this.spotBalance.forEach((item, k) => {
-      console.log(k, JSON.stringify(item));
-    });
   }
 
   public async withdrawApply() {
@@ -77,7 +89,7 @@ class StdBalance {
   }
 
   /**
-   * Description 同步Cex现货的余额信息,并开启定时
+   * Synchronize the balance information
    * @date 1/17/2023 - 9:04:34 PM
    *
    * @public
@@ -95,6 +107,37 @@ class StdBalance {
       this.syncSpotBalance();
     }, 1000 * 30);
   }
+
+  public async syncUsdtFuturePositionRisk() {
+    await this.stdExchange.exchangeUsdtFuture.fetchPositionRisk();
+    this.usdtFuturePositionRisk =
+      this.stdExchange.exchangeUsdtFuture.getPositionRisk();
+
+    for (const [key, value] of this.usdtFuturePositionRisk) {
+      const redisKey =
+        `${this.stdExchange.exchangeName}_PositionRisk_USDT_SWAP`.toUpperCase();
+      const subKey = `${key}`.toUpperCase();
+      logger.debug(redisKey, subKey);
+      await exchangeRedisStore.hset(redisKey, subKey, JSON.stringify(value));
+    }
+    logger.debug(`syncUsdtFuturePositionRisk Complete.... Set to StdBalance`);
+
+    setTimeout(() => {
+      this.syncUsdtFuturePositionRisk().catch((e) => {
+        logger.error(e);
+      });
+    }, 1000 * 30);
+  }
+  public getUsdtFutureAllPositionRisk() {
+    const itemList: IUsdtFutureAccountPositionsRiskItem[] = [];
+    this.usdtFuturePositionRisk.forEach((value) => {
+      itemList.push(value);
+    });
+    // console.log(JSON.stringify(itemList));
+    return itemList;
+    //
+  }
+
   private async reportSpotBalance() {
     console.log(`cex account info:`);
     const balanceList: any[] = [];
@@ -105,7 +148,6 @@ class StdBalance {
   }
 
   /**
-   * Description 同步U本位合约余额信息,并开启定时 ，并把数据适配为标准数据格式
    * @date 1/17/2023 - 9:04:34 PM
    *
    * @public
@@ -121,6 +163,10 @@ class StdBalance {
     setTimeout(() => {
       this.syncUsdtFutureBalance();
     }, 1000 * 30);
+  }
+
+  public async syncUsdtFuturePositions() {
+    //
   }
 
   public async syncCoinFutureBalance() {

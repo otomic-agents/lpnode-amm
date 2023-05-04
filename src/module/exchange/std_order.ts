@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 import { logger } from "../../sys_lib/logger";
 
 class StdOrder {
-  private stdExchange: IStdExchange; // cex 所的引用
+  private stdExchange: IStdExchange;
   public constructor(cexExchange: IStdExchange) {
     this.stdExchange = cexExchange;
   }
@@ -54,17 +54,6 @@ class StdOrder {
     );
   }
 
-  public async getSpotTradeMinMax(stdSymbol: string, price: number) {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinMax(stdSymbol, price);
-  }
-  public async getSpotTradeMinMaxValue(stdSymbol: string) {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinMaxValue(stdSymbol);
-  }
-
-  public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinNotional(stdSymbol);
-  }
-
   public async spotSell(
     orderId: string,
     stdSymbol: string,
@@ -90,6 +79,34 @@ class StdOrder {
       ISide.SELL,
       simulation
     );
+  }
+
+  public async swapBuy(stdSymbol: string, amount: BigNumber) {
+    return this.stdExchange.exchangeUsdtFuture.createMarketOrder(
+      "001",
+      stdSymbol,
+      amount,
+      ISide.SELL
+    );
+    //
+  }
+
+  public async getUsdtFutureOrdersBySymbol(symbol: string) {
+    return this.stdExchange.exchangeUsdtFuture.fetchOrdersBySymbol(symbol);
+  }
+
+  // public async swapSell(){
+  // }
+  public async getSpotTradeMinMax(stdSymbol: string, price: number) {
+    return this.stdExchange.exchangeSpot.spotGetTradeMinMax(stdSymbol, price);
+  }
+
+  public async getSpotTradeMinMaxValue(stdSymbol: string) {
+    return this.stdExchange.exchangeSpot.spotGetTradeMinMaxValue(stdSymbol);
+  }
+
+  public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
+    return this.stdExchange.exchangeSpot.spotGetTradeMinNotional(stdSymbol);
   }
 }
 

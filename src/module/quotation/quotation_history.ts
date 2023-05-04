@@ -1,15 +1,12 @@
 import { dataRedis } from "../../redis_bus";
 import { logger } from "../../sys_lib/logger";
 
-/**
- * 在内存或者Redis中存储所有的历史报价，用于查询
- * */
 class QuotationListHistory {
   public async store(quoteHash: string, quoteData: any) {
     const className = this.constructor.name;
     const key = `LpLoginSys:${className}:${quoteHash}`;
     dataRedis
-      .setex(key, 60 * 60 * 8, new Date().getTime().toString()) // 这里的存储时间要长一些
+      .setex(key, 60 * 60 * 8, new Date().getTime().toString())
       .catch((e: any) => {
         logger.error(`set quote history error key`, e);
       });

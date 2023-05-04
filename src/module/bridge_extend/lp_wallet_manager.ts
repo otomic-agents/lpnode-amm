@@ -19,14 +19,12 @@ class LpWalletManager {
     const formula = `${inputAmountBN.toString()} - ( ${inputAmountBN.toString()} * ${systemSrcFee}) `;
     logger.info(formula);
     const lpReceive = evaluate(formula);
-    logger.info("Lp钱包实际收入", formula, "结果：", lpReceive);
+    logger.info("lp wallet receive", formula, "result:", lpReceive);
     if (!_.isFinite(lpReceive)) {
-      logger.error(`计算存在问题`, "isFinite");
+      logger.error(`evaluate error:`, "isFinite");
     }
     return lpReceive;
   }
 }
 
-export {
-  LpWalletManager
-};
+export { LpWalletManager };

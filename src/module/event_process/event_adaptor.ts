@@ -4,11 +4,10 @@ import { logger } from "../../sys_lib/logger";
 
 class EventAdaptor {
   /**
-   * Description 从EventLock Data中获取Token 信息对
    * @date 1/18/2023 - 12:03:08 PM
    *
    * @public
-   * @param {*} sourceMessage 原始信息
+   * @param {*} sourceMessage original information
    * @returns {string} ""
    */
   public getTokenSymbolFromEventLock(sourceMessage: any): string {
@@ -40,7 +39,7 @@ class EventAdaptor {
       0
     );
     if (srcChainId === 0 || dstChainId === 0) {
-      logger.error("获取链信息失败");
+      logger.error("Failed to get chain information");
       return [0, 0];
     }
     return [srcChainId, dstChainId];

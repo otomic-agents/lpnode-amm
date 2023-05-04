@@ -1,13 +1,13 @@
 import { getNewRedis } from "./redis_bus";
 import { logger } from "./sys_lib/logger";
 const EventEmitter = require("events").EventEmitter;
-const systemRedisBusSub = getNewRedis(); // 创建一个新的redis 用于sub
-const systemRedisBusPub = getNewRedis(); // 创建一个新的redis 用于sub
+const systemRedisBusSub = getNewRedis();
+const systemRedisBusPub = getNewRedis();
 import * as _ from "lodash";
 class SystemRedisBus extends EventEmitter {
   public async init() {
     this.listenSystemEvent().catch((e: any) => {
-      logger.error("处理bus消息发生了错误", e);
+      logger.error("listen system event error:", e);
     });
   }
   public async emitEvent(eventName: string, data: any) {
@@ -20,21 +20,21 @@ class SystemRedisBus extends EventEmitter {
         })
       );
     } catch (e) {
-      logger.error(`发送系统事件通知发生了错误`, e);
+      logger.error(`send system event error:`, e);
     }
   }
   private async listenSystemEvent() {
     logger.debug(`sub system bus "SYSTEM_REDIS_EVENT_BUS"`);
     await systemRedisBusSub.subscribe("SYSTEM_REDIS_EVENT_BUS");
     systemRedisBusSub.on("message", (channel: string, msg: string) => {
-      logger.debug(`收到了系统通道的消息`, channel, msg);
+      logger.debug(`received`, channel, msg);
       const message = JSON.parse(msg);
       let eventName = _.get(message, "eventName", "");
       if (eventName === "") {
         eventName = _.get(message, "type", "");
       }
       if (eventName === "") {
-        logger.warn("无法识别的通道消息", msg);
+        logger.warn("parse error:", msg);
         return;
       }
       const payload = _.get(message, "payload", {});

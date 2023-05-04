@@ -5,10 +5,7 @@ import { BinanceExchange } from "./cex_exchange/binance";
 import { StdOrder } from "./std_order";
 import { logger } from "../../sys_lib/logger";
 import { StdInfo } from "./std_info";
-/**
- * 用于描述 Account 账号，
- * Exchange 可以拥有多个Account ，每个Account 组合两个角色 Balance Order
- */
+
 class StdAccount {
   private cexExchange: IStdExchange;
   private accountInfo: ICexAccount;
@@ -20,12 +17,16 @@ class StdAccount {
     this.accountInfo = option;
   }
 
+  public getExchangeName() {
+    return this.accountInfo.exchangeName;
+  }
+
   /**
-   * Description 初始化账号列表
+   * Initialize account list
    * @date 2023-01-17 20:51:30
    * @public
    * @async
-   * @return {Promise<void>} 空
+   * @return {Promise<void>} Empty
    */
   public async init(): Promise<void> {
     if (this.accountInfo.exchangeName === ICexExchangeList.binance) {
@@ -47,40 +48,45 @@ class StdAccount {
         `load exchange spot markets symbols 【${this.accountInfo.accountId}】`
       );
       try {
-        await this.cexExchange.exchangeSpot.initMarkets(); // 现货市场初始化交易对
-        await this.cexExchange.exchangeUsdtFuture.initMarkets(); // U本位合约初始化交易对
-        await this.cexExchange.exchangeCoinFuture.initMarkets(); // 币本位合约初始化交易对
+        await this.cexExchange.exchangeSpot.initMarkets(); // Initialize trading pairs in the spot market
+        await this.cexExchange.exchangeUsdtFuture.initMarkets(); //  initializes trading pairs
+        await this.cexExchange.exchangeCoinFuture.initMarkets(); // initializes trading pairs
         await this.initBalance(this.cexExchange);
         await this.initOrder(this.cexExchange);
         await this.initInfo(this.cexExchange);
       } catch (e) {
         const err: any = e;
-        logger.error(`初始化对冲账号发生了错误....`, err.toString());
-        throw new Error(`初始化账号发生了错误，Err:${err.toString()}`);
+        logger.error(
+          `An error occurred in initializing the hedging account....`,
+          err.toString()
+        );
+        throw new Error(
+          `An error occurred in initializing the hedging account:${err.toString()}`
+        );
       }
 
       return;
     }
     throw new Error(
-      `账号初始化失败,没有初始化到对应的交易所,Data:${JSON.stringify(
-        this.accountInfo
-      )}`
+      `Account initialization failed:${JSON.stringify(this.accountInfo)}`
     );
   }
+
   private async initOrder(cexExchange: IStdExchange) {
     this.order = new StdOrder(cexExchange);
   }
+
   private async initInfo(cexExchange: IStdExchange) {
     this.info = new StdInfo(cexExchange);
   }
 
   /**
-   * Description 初始化balance类，并定时同步余额
+   * Initialize the balance class
    * @date 1/17/2023 - 8:53:26 PM
    *
    * @private
    * @async
-   * @param {IStdExchange} cexExchange "标准交易所"
+   * @param {IStdExchange} cexExchange "Exchange"
    * @returns {Promise<void>} ""
    */
   private async initBalance(cexExchange: IStdExchange): Promise<void> {
@@ -88,9 +94,12 @@ class StdAccount {
     await this.balance.syncSpotBalance();
     await this.balance.syncUsdtFutureBalance();
     await this.balance.syncCoinFutureBalance();
+    await this.balance.syncUsdtFuturePositionRisk();
   }
+
   public getSpotStatus() {
     // this.cexExchange.getSpotStatus();
   }
 }
+
 export { StdAccount };

@@ -18,7 +18,7 @@ class BridgeHedgeInfo {
   public getHedgeIns(): IHedgeClass {
     const ins = hedgeManager.getHedgeIns(dataConfig.getHedgeConfig().hedgeType);
     if (!ins) {
-      throw `没有找到对冲的实现`;
+      throw `No hedging implementation found`;
     }
     return ins;
   }
@@ -33,7 +33,7 @@ class BridgeHedgeInfo {
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
-      throw `没有找到已经加载的对冲账号`;
+      throw `The loaded hedging account was not found`;
     }
     return accountIns;
   }

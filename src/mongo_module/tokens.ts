@@ -1,7 +1,7 @@
 import { Schema } from "mongoose";
 import { Mdb } from "../module/database/mdb";
 
-const dbKey = "main"; // model 链接的数据库
+const dbKey = "main";
 const mongoConn = Mdb.getInstance().getMongoDb(dbKey);
 const tokensSchema = new Schema({
   address: String,

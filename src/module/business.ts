@@ -1,6 +1,3 @@
-/**
- * 事件处理逻辑，主要对应，做价格验证和对冲，这里是一个Ctrl ，细化逻辑需要拆到Service中
- */
 import _ from "lodash";
 import { dataConfig } from "../data_config";
 import { logger } from "../sys_lib/logger";
@@ -26,13 +23,13 @@ import { ammContextModule } from "../mongo_module/amm_context";
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
     if (!channel) {
-      logger.error(`channel不能是空的.`);
+      logger.error(`channel cannot be empty.`);
       return;
     }
     const bridgeItem: IBridgeTokenConfigItem =
       dataConfig.findItemByMsmqName(channel);
     if (!bridgeItem) {
-      logger.error(`没有找到正确的bridge配置，channelName:${channel}`);
+      logger.error(`The correct bridge configuration was not found:${channel}`);
       return;
     }
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
@@ -151,16 +148,16 @@ class Business {
         dstAmountNumber: 0,
       },
       quoteInfo: {
-        src_usd_price: "", // srcToken/USDT
-        usd_price: "", // dstToken/USDT
-        price: "", // srcToken/dstToken * 0.003
+        src_usd_price: "",
+        dst_usd_price: "",
+        price: "",
         quote_hash: "",
         mode: "",
-        origPrice: "", // srcToken/dstToken
-        origTotalPrice: "", // srcToken/dstToken * input Amount
-        native_token_price: "", // srcToken/GasToken 价格
-        native_token_usdt_price: "", // 目标链原生币的udst价格
-        native_token_orig_price: "", // srcToken/GasToken 价格
+        origPrice: "",
+        origTotalPrice: "",
+        native_token_price: "",
+        native_token_usdt_price: "",
+        native_token_orig_price: "",
         capacity_num: 0,
       },
       askTime: new Date().getTime(),
@@ -170,30 +167,13 @@ class Business {
     return context;
   }
 
-  /**
-   * Description 用户锁定价格时
-   * @date 1/17/2023 - 9:11:56 PM
-   * 1. 检查报价时间是否有过期 💢
-   * 2. 价格这里本地短期内有没有报过 💢 hash 验证，目前数据无返回
-   * 3. lp的id 是否正确
-   * 4. hash 记录一下hash 💢 hash 验证，目前数据无返回
-   * 5. 检查价格的偏差 💢 加入了千3 的验证暂时
-   * 6. 检查是否和报价时的钱包配置等是一致的
-   * @public
-   * @async
-   * @param {IEVENT_LOCK_QUOTE} msg ""
-   * @returns {*} ""
-   */
   public async lockQuote(msg: IEVENT_LOCK_QUOTE) {
     await eventProcessLock.process(msg);
   }
 
   /**
-   * Description onTransferOut 处理函数
+   * onTransferOut Function
    * @date 1/17/2023 - 9:08:53 PM
-   * 1.如果没有特殊原因，应当尽量完成B链的Cmd 发送 CMD_TRANSFER_IN
-   * 2. 验证数据是否有 blockHash
-   * 3. TransferIn 有可能卡在后端，迟迟不转入
    * @public
    * @async
    * @param {*} msg any
@@ -205,8 +185,6 @@ class Business {
 
   // eslint-disable-next-line valid-jsdoc
   /**
-   * src chain 确认转出事件 (Step 6 Complete)
-   * 1. 这里暂时没有找到拒绝的理由
    * @msg {*} ""
    */
   public async onTransferOutConfirm(msg: any) {
@@ -242,10 +220,6 @@ class Business {
       throw new Error("No order information found");
     }
 
-    if (Number(1) !== 1) {
-      logger.warn(`用户取消转出后，系统竟然不取消.....`);
-      return;
-    }
     const cmdMsg = JSON.stringify({
       cmd: ILpCmd.CMD_TRANSFER_IN_REFUND,
       business_full_data: _.get(msg, "business_full_data"),
@@ -263,7 +237,7 @@ class Business {
         //
       })
       .catch((e: any) => {
-        logger.error(`回复消息到Lp发生错误`, e);
+        logger.error(`Reply message to Lp Error:`, e);
       });
   }
 }

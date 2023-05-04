@@ -1,6 +1,6 @@
 import { IStdExchange } from "../../interface/std_exchange";
 class StdInfo {
-  private stdExchange: IStdExchange; // cex 所的引用
+  private stdExchange: IStdExchange;
   public constructor(cexExchange: IStdExchange) {
     this.stdExchange = cexExchange;
   }

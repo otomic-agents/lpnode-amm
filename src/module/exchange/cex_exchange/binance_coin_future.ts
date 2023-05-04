@@ -13,17 +13,20 @@ import {
 } from "../../../interface/std_difi";
 import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
 import { binanceConfig } from "./binance_config";
+
 class BinanceCoinFuture implements IStdExchangeCoinFuture {
   private apiKey: string;
   private apiSecret: string;
   private apiBaseUrl = "";
   private balance: Map<string, ICoinFutureBalanceItemBinance> = new Map();
   private symbolsInfo: Map<string, ICoinFutureSymbolItemBinance> = new Map();
+
   constructor(accountInfo: { apiKey: string; apiSecret: string }) {
     this.apiKey = accountInfo.apiKey;
     this.apiSecret = accountInfo.apiSecret;
     this.apiBaseUrl = binanceConfig.getCoinFutureBaseApi();
   }
+
   public async initMarkets() {
     const url = `${this.apiBaseUrl}/dapi/v1/exchangeInfo`;
     try {
@@ -42,16 +45,16 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     } catch (e) {
       const err: any = e;
       logger.debug(err.toString());
-      throw new Error(`请求${url}发生了错误，Error:${err.toString()}`);
+      throw new Error(`${url} request Error:${err.toString()}`);
     }
   }
+
   private setExchangeSymbolInfo(symbols: ICoinFutureSymbolItemBinance[]) {
     for (const item of symbols) {
       if (
         item.contractStatus === "TRADING" &&
         item.contractType === "PERPETUAL"
       ) {
-        // 先只放永续合约
         const stdSymbol = `${item.baseAsset}/${item.quoteAsset}`;
         _.set(item, "stdSymbol", stdSymbol);
         this.symbolsInfo.set(item.stdSymbol, item);
@@ -59,6 +62,7 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     }
     logger.debug(`symbol list count: 【${this.symbolsInfo.size}】`);
   }
+
   public fetchMarkets(): Map<string, ICoinFutureSymbolItem> {
     const ret: Map<string, ICoinFutureSymbolItem> = new Map();
     this.symbolsInfo.forEach((value, key) => {
@@ -76,7 +80,15 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     });
     return ret;
   }
+
   public async fetchBalance(): Promise<void> {
+    if (this.apiKey === "" || this.apiSecret === "") {
+      logger.warn(
+        `The account is not synchronized and the balance is not initialized`,
+        "binance_coin_future___fetchBalance"
+      );
+      return;
+    }
     // /dapi/v1/balance
     try {
       const queryStr = {
@@ -106,25 +118,28 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
       }
     }
   }
+
   private saveBalanceList(balanceList: ICoinFutureBalanceItemBinance[]) {
     for (const item of balanceList) {
       this.balance.set(item.asset, item);
     }
   }
+
   public getBalance(): Map<string, ICoinFutureBalanceItem> {
     const ret: Map<string, ICoinFutureBalanceItem> = new Map();
     this.balance.forEach((value, key) => {
       ret.set(key, {
-        accountAlias: value.accountAlias, // "SgsR"; // 账户唯一识别码
-        asset: value.asset, // "BTC"; // 资产
-        balance: value.balance, // "0.00250000"; // 账户余额
-        withdrawAvailable: value.withdrawAvailable, // "0.00250000"; // 最大可提款金额,同`GET /dapi/account`中"maxWithdrawAmount"
-        crossWalletBalance: value.crossWalletBalance, // "0.00241969"; // 全仓账户余额
-        crossUnPnl: value.crossUnPnl, // "0.00000000"; // 全仓持仓未实现盈亏
-        availableBalance: value.availableBalance, // "0.00241969"; // 可用下单余额
+        accountAlias: value.accountAlias, // "SgsR";
+        asset: value.asset, // "BTC";
+        balance: value.balance, // "0.00250000";
+        withdrawAvailable: value.withdrawAvailable, // "0.00250000";
+        crossWalletBalance: value.crossWalletBalance, // "0.00241969";
+        crossUnPnl: value.crossUnPnl, // "0.00000000";
+        availableBalance: value.availableBalance, // "0.00241969";
       });
     });
     return ret;
   }
 }
+
 export { BinanceCoinFuture };

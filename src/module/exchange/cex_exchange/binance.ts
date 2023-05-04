@@ -14,6 +14,7 @@ class BinanceExchange implements IStdExchange {
   public exchangeSpot: IStdExchangeSpot;
   public exchangeUsdtFuture: IStdExchangeUsdtFuture;
   public exchangeCoinFuture: IStdExchangeCoinFuture;
+  public exchangeName = "binance";
   private spotAccount: {
     apiKey: string;
     apiSecret: string;
@@ -41,8 +42,8 @@ class BinanceExchange implements IStdExchange {
     };
 
     this.coinFutureAccount = {
-      apiKey: accountKeyInfo.usdtFutureAccount.apiKey,
-      apiSecret: accountKeyInfo.usdtFutureAccount.apiSecret,
+      apiKey: accountKeyInfo.coinFutureAccount.apiKey,
+      apiSecret: accountKeyInfo.coinFutureAccount.apiSecret,
     };
     this.exchangeSpot = new BinanceSpot(this.spotAccount);
     this.exchangeUsdtFuture = new BinanceUsdtFuture(this.usdtFutureAccount);

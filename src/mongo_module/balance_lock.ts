@@ -1,7 +1,7 @@
 import { Schema } from "mongoose";
 import { Mdb } from "../module/database/mdb";
 
-const dbKey = "main"; // model 链接的数据库
+const dbKey = "main";
 const mongoConn = Mdb.getInstance().getMongoDb(dbKey);
 const balanceLockSchema = new Schema({
   accountId: String,
@@ -11,7 +11,7 @@ const balanceLockSchema = new Schema({
   createTime: {
     type: Date,
     default: Date.now(),
-    expires: 600, // 10 分钟后锁定过期
+    expires: 600, // 10 minutes to expire
   },
 });
 export const balanceLockModule = mongoConn.model(

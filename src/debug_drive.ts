@@ -265,14 +265,14 @@ class DebugDrive {
       return;
     }
     await this.sleep(1000 * 20);
-    logger.debug(`开始驱动测试，发布测试数据........,用户锁定价格.....`);
+    logger.debug(`.....`);
     redisPub.publish("bridge-B-C", mockLockEvent);
     await this.sleep(1000 * 10);
-    logger.debug(`Mock`, "用户点击Lock ，并 TxOut.....");
+    logger.debug(`Mock`, "user client Lock , TxOut.....");
     redisPub.publish("bridge-B-C", mockTxOutEvent);
 
     await this.sleep(1000 * 10);
-    logger.debug(`mock`, "用户确定转入 TxOutConfirm");
+    logger.debug(`mock`, " TxOutConfirm");
     redisPub.publish("bridge-B-C", mockTxOutConfirmEvent);
   }
 }

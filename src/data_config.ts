@@ -1,9 +1,6 @@
 /* eslint-disable arrow-parens */
 import { chainAdapter } from "./chain_adapter/chain_adapter";
 
-/**
- * 从基础数据、环境变量、Httpd 中组合项目的配置
- */
 const bs58 = require("bs58");
 import * as _ from "lodash";
 import {
@@ -28,6 +25,7 @@ const Web3 = require("web3");
 const web3 = new Web3();
 
 class DataConfig {
+  private baseConfig: any;
   private hedgeConfig: IHedgeConfig = {
     hedgeType: IHedgeType.Null,
     hedgeAccount: "",
@@ -37,7 +35,7 @@ class DataConfig {
   private chainMaxTokenUsd: Map<number, number> = new Map();
   private chainMap: Map<number, string> = new Map();
   private chainDataMap: Map<number, { chainType: string }> = new Map();
-  private chainTokenMap: Map<number, string> = new Map(); // 链id 和Market Symbol之间的关系
+  private chainTokenMap: Map<number, string> = new Map();
   private tokenToSymbolMap: Map<string, ICexCoinConfig> = new Map();
   private hedgeAccountList: {
     accountId: string;
@@ -74,12 +72,12 @@ class DataConfig {
   private bridgeTokenList: IBridgeTokenConfigItem[] = [];
 
   /**
-   * Description 准备admin的Config
+   * Prepare admin Config
    * @date 2023/3/21 - 16:06:24
    *
    * @public
    * @async
-   * @returns {*} "无返回"
+   * @returns {*} "void"
    */
   public async prepareConfigResource() {
     let configId: string | null;
@@ -88,37 +86,39 @@ class DataConfig {
     try {
       const appName = _.get(process.env, "APP_NAME", null);
       if (!appName) {
-        logger.error("Appname无法获取");
+        logger.error("Unable to get Appname");
         await TimeSleepMs(3000);
         process.exit(1);
       }
       configIdKey = `config_id_${appName}`;
       configId = await dataRedis.get(configIdKey);
       if (configId == null) {
-        throw new Error("没有从redis中获取到对应的配置");
+        throw new Error("Unable to get config from redis");
       }
     } catch (e) {
       const err: any = e;
-      logger.warn("没有找到ConfigId", err.toString());
+      logger.warn("ConfigId not found", err.toString());
       [configId, clientId] = await this.createConfigResource();
       if (!clientId) {
-        logger.error("无法去远端创建资源");
+        logger.error("unable to create resources remotely");
         process.exit(0);
       }
       await dataRedis.set(configIdKey, clientId).then(() => {
-        console.log("设置ClientId 到持久化数据库中成功", clientId);
+        console.log("save clientId to database", clientId);
       });
       await (() => {
         return new Promise(() => {
-          statusReport.pendingStatus("等待配置完成").catch((e) => {
-            logger.error(`写入状态失败`, e);
-          });
-          logger.warn("等待配置完成..");
+          statusReport
+            .pendingStatus("Wait for the configuration to complete")
+            .catch((e) => {
+              logger.error(`Failed to write status`, e);
+            });
+          logger.warn("Wait for the configuration to complete..");
         });
       })();
     }
     if (configId == null) {
-      logger.error("没有读取到正确的configId");
+      logger.error("The correct configId was not read");
       process.exit(1);
     }
     logger.debug(`configId is:${configId} clientId`);
@@ -129,7 +129,7 @@ class DataConfig {
   public async rewriteMarketUrl() {
     const rewrite = _.get(process.env, "rewrite_market_host", "true");
     if (rewrite === "false") {
-      logger.warn(`跳过rewrite`);
+      logger.warn(`skip rewrite`);
       return;
     }
     const marketServiceRow = await installModule
@@ -138,11 +138,15 @@ class DataConfig {
       })
       .lean();
     if (!marketServiceRow) {
-      logger.error(`没有找到正确的market地址，无法覆盖默认值`);
-      await statusReport.pendingStatus(
-        "没有找到正确的market地址,无法覆盖默认值"
+      logger.error(
+        `The correct market address cannot be found, and the default value cannot be overridden`
       );
-      await TimeSleepForever("没有找到正确的market地址,无法覆盖默认值");
+      await statusReport.pendingStatus(
+        "The correct market address cannot be found, and the default value cannot be overridden"
+      );
+      await TimeSleepForever(
+        "The correct market address cannot be found, and the default value cannot be overridden"
+      );
     } else {
       const rewriteHost = `obridge-amm-market-${marketServiceRow.name}-service`;
       logger.warn("rewrite market host ", rewriteHost);
@@ -153,12 +157,15 @@ class DataConfig {
 
   private async initBaseConfig(baseConfig: any) {
     console.log(baseConfig);
+    this.baseConfig = baseConfig;
     try {
       this.checkBaseConfig(baseConfig);
     } catch (e) {
       logger.debug(e);
-      logger.error(`基础配置数据不正确`);
-      await TimeSleepForever("基础配置数据不正确,等待重新配置");
+      logger.error(`Incorrect base configuration data`);
+      await TimeSleepForever(
+        "The basic configuration data is incorrect, waiting for reconfiguration"
+      );
     }
     const chainDataConfigList: {
       chainId: number;
@@ -186,8 +193,10 @@ class DataConfig {
     let hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
     const hedgeAccount = _.get(baseConfig, "hedgeConfig.hedgeAccount", null);
     if (!hedgeType || !hedgeAccount) {
-      logger.error(`基础配置数据不正确`);
-      await TimeSleepForever("基础配置数据不正确,等待重新配置");
+      logger.error(`Incorrect base configuration data`);
+      await TimeSleepForever(
+        "The basic configuration data is incorrect, waiting for reconfiguration"
+      );
     }
     if (hedgeType === "null" || !hedgeType) {
       hedgeType = "Null";
@@ -196,8 +205,12 @@ class DataConfig {
     this.hedgeConfig.hedgeAccount = hedgeAccount;
     this.hedgeAccountList = _.get(baseConfig, "hedgeConfig.accountList", []);
     if (hedgeAccount.length <= 0) {
-      logger.error(`基础配置数据不正确,请检查对冲账号设置`);
-      await TimeSleepForever("基础配置数据不正确,等待重新配置");
+      logger.error(
+        `The basic configuration data is incorrect, please check the hedge account settings`
+      );
+      await TimeSleepForever(
+        "The basic configuration data is incorrect, waiting for reconfiguration"
+      );
     }
   }
 
@@ -227,7 +240,7 @@ class DataConfig {
     let result;
     const lpAdminPanelUrl = appEnv.GetLpAdminUrl();
     const url = `${lpAdminPanelUrl}/lpnode/lpnode_admin_panel/configResource/get`;
-    logger.info(`开始请求:${url}`);
+    logger.info(`request :${url}`);
     try {
       result = await axios.request({
         url,
@@ -242,7 +255,7 @@ class DataConfig {
       return configData;
     } catch (e) {
       const err: any = e;
-      logger.error(`获取配置发生了错误`, err.toString());
+      logger.error(`get config error:`, err.toString());
     }
   }
 
@@ -263,18 +276,20 @@ class DataConfig {
             '{"chainDataConfig":[{"chainId":9006,"config":{"minSwapNativeTokenValue":"0.5"}},{"chainId":9000,"config":{"minSwapNativeTokenValue":"0.5"}}],"hedgeConfig":{"hedgeAccount":"a001","hedgeType":"CoinSpotHedge","accountList":[{"accountId":"a001","exchangeName":"binance","spotAccount":{"apiKey":"","apiSecret":""},"usdtFutureAccount":{"apiKey":"","apiSecret":""},"coinFutureAccount":{"apiKey":"","apiSecret":""}}]}}',
         },
       });
-      logger.debug("创建配置返回", _.get(result, "data", ""));
+      logger.debug("create configuration return:", _.get(result, "data", ""));
       const id = _.get(result, "data.result.id", "");
       const clientId = _.get(result, "data.result.clientId", "");
       if (!id || id === "" || !clientId || clientId === "") {
-        logger.error("无法为服务创建配置，无法启动, Lp_admin返回不正确");
+        logger.error(
+          "Failed to create configuration for service, unable to start, Lp_admin returns incorrect"
+        );
         process.exit(5);
       }
       return [id, clientId];
     } catch (e) {
       const err: any = e;
       logger.error(
-        "创建配置发生了错误",
+        "Error creating configuration",
         err.toString(),
         _.get(e, "response.data", "")
       );
@@ -284,9 +299,8 @@ class DataConfig {
 
   public async loadBaseConfig() {
     setInterval(() => {
-      // 自动定期刷新TokenList
       this.loadTokenToSymbol().catch((e) => {
-        logger.error("同步TokenList出错");
+        logger.error("synchronize TokenList error");
       });
     }, 1000 * 60 * 2);
     await this.loadTokenToSymbol();
@@ -300,12 +314,8 @@ class DataConfig {
       marketName: string;
       chainId: number;
       precision: number;
-    }[] = await tokensModule
-      .find({
-        ammName: _.get(process.env, "APP_NAME", ""),
-      })
-      .lean();
-    // 同步的内容一定放在一起，保证同步币对，不会影响其它地方的报价
+      tokenName: string;
+    }[] = await tokensModule.find({}).lean();
     this.tokenToSymbolMap = new Map();
     tokenList.map((it) => {
       const uniqAddress = this.convertAddressToUniq(it.address, it.chainId);
@@ -320,10 +330,11 @@ class DataConfig {
         coinType: it.coinType,
         symbol: it.marketName,
         precision: it.precision,
+        tokenName: it.tokenName,
       });
       return null;
     });
-    console.log("当前配置好的Token列表:");
+    console.log("Token List:");
     const view: {}[] = [];
     for (const [_, item] of this.tokenToSymbolMap) {
       const viewItem = {
@@ -353,7 +364,7 @@ class DataConfig {
       this.chainDataMap.set(item.chainId, { chainType: item.chainType });
       this.chainTokenMap.set(item.chainId, item.tokenName);
     });
-    console.log("当前链的基础数据:");
+    console.log("chain base data:");
     console.table(chainList);
     await TimeSleepMs(5 * 1000);
   }
@@ -382,10 +393,21 @@ class DataConfig {
     const token0Symbol = this.tokenToSymbolMap.get(key0);
     const token1Symbol = this.tokenToSymbolMap.get(key1);
     if (!token0Symbol || !token1Symbol) {
-      logger.warn(`没有找到需要查询的币对 【${token0}/${token1}】`);
+      logger.warn(`【${token0}/${token1}】not found`);
       return undefined;
     }
     return [token0Symbol, token1Symbol];
+  }
+
+  public getSymbolInfoByToken(token: string, chainId: number) {
+    const uniqAddress = this.convertAddressToUniq(token, chainId);
+    const key = `${chainId}_${uniqAddress}`;
+    const tokenSymbol = this.tokenToSymbolMap.get(key);
+    if (!tokenSymbol) {
+      logger.warn("token was not found", chainId, token);
+      return undefined;
+    }
+    return tokenSymbol;
   }
 
   public convertAddressToUniq(address: string, chainId: number): string {
@@ -416,10 +438,10 @@ class DataConfig {
         chainAdapter[`AddressAdapter_${chainId}`](address);
       return hexAddress;
     } catch (e) {
-      logger.error("处理地址发生了错误");
-      logger.warn("未知的格式");
+      logger.error("error processing address");
+      logger.warn("unknown format");
     }
-    logger.warn("未知的格式");
+    logger.warn("unknown format");
     return address;
   }
 
@@ -431,14 +453,6 @@ class DataConfig {
     return this.lpConfig;
   }
 
-  /**
-   * Description 获取目标链换Gas Token 至少要价值的U
-   * @date 2/1/2023 - 4:12:31 PM
-   *
-   * @public
-   * @param {number} chainId "目标链的id"
-   * @returns {number} "配置好的U"
-   */
   public getChainGasTokenUsd(chainId: number): number {
     if (!_.isFinite(chainId)) {
       return 0;
@@ -462,7 +476,7 @@ class DataConfig {
   }
 
   /**
-   * Description 从Lp的缓存池中启动
+   * sync config from database
    * @date 1/18/2023 - 2:08:47 PM
    *
    * @public
@@ -472,12 +486,13 @@ class DataConfig {
   public async syncBridgeConfigFromLocalDatabase(): Promise<void> {
     const appName = _.get(process, "_sys_config.app_name", null);
     if (!appName) {
-      logger.error("读取配置时,没有找到AppName.");
+      logger.error("AppName is null");
       process.exit(1);
     }
     const findOption = { ammName: appName };
     logger.debug(`findOption`, findOption);
     const lpConfigList: {
+      _id: string;
       bridgeName: string;
       srcChainId: number;
       dstChainId: number;
@@ -486,13 +501,12 @@ class DataConfig {
       msmqName: string;
       walletName: string;
       dstClientUri: string;
-      enableHedge: boolean;
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
-    logger.info(`加载到了${lpConfigList.length}个BridgeConfig`);
+    logger.info(`loaded ${lpConfigList.length}个BridgeConfig`);
     if (!lpConfigList || lpConfigList.length <= 0) {
       logger.warn(
-        "没有查询到任何可用的BridgeItem配置",
+        "Did not find any available BridgeItem",
         "findOption",
         findOption
       );
@@ -501,6 +515,7 @@ class DataConfig {
     }
     for (const item of lpConfigList) {
       const formatedItem: any = {
+        id: item._id,
         bridge_name: item.bridgeName,
         src_chain_id: item.srcChainId,
         dst_chain_id: item.dstChainId,
@@ -508,16 +523,12 @@ class DataConfig {
         dstToken: item.dstToken,
         msmq_name: item.msmqName,
         wallet: {
-          name: item.walletName, // 把钱包地址也初始化，报价的时候要能够处理余额
+          name: item.walletName,
           balance: {},
         },
+        fee: undefined,
         dst_chain_client_uri: item.dstClientUri,
-        enable_hedge: _.attempt(() => {
-          if (item.enableHedge) {
-            return true;
-          }
-          return false;
-        }),
+        enable_hedge: false,
       };
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const context = this;
@@ -530,16 +541,57 @@ class DataConfig {
     const hedgeTokenList = _.filter(this.bridgeTokenList, (item) => {
       return item.enable_hedge === true;
     });
+    await this.loadBridgeConfig();
     if (_.isArray(hedgeTokenList) && hedgeTokenList.length >= 1) {
-      logger.info(`需要检查对冲配置`, "🌎");
+      logger.info(`check hedging configuration`, "🌎");
       if (!this.hedgeAvailable()) {
-        await TimeSleepForever(
-          "有币对开启了对冲，必须保证对冲账号和模式的配置存在"
-        );
+        await TimeSleepForever("please add hedging account configuration");
       }
     }
     console.table(this.bridgeTokenList);
   }
+  public async getBridgeBaseConfig() {
+    return _.get(this.baseConfig, "bridgeBaseConfig", undefined);
+  }
+  private async loadBridgeConfig() {
+    if (!_.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined)) {
+      logger.debug("bridgeBaseConfig.enabledHedge Can not be empty");
+      await TimeSleepForever("bridgeBaseConfig.enabledHedge Can not be empty");
+      return;
+    }
+    const bridgeConfig = _.get(this.baseConfig, "bridgeConfig", []);
+    const defHedgeSetting = _.get(
+      this.baseConfig,
+      "bridgeBaseConfig.enabledHedge",
+      false
+    );
+    const defFeeSetting = _.get(
+      this.baseConfig,
+      "bridgeBaseConfig.defaultFee",
+      false
+    );
+    logger.debug(
+      `system default value`,
+      defHedgeSetting,
+      defFeeSetting,
+      "🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻"
+    );
+    this.bridgeTokenList = this.bridgeTokenList.map((it) => {
+      const itemConfig = _.find(bridgeConfig, { bridgeId: it.id.toString() });
+      if (itemConfig) {
+        it.fee = _.get(itemConfig, "fee", undefined);
+        if (it.fee === undefined) {
+          logger.warn(`fee is undefined`);
+        }
+        it.enable_hedge = _.get(itemConfig, "enableHedge", defHedgeSetting);
+      } else {
+        it.fee = _.get(itemConfig, "fee", defFeeSetting);
+        it.enable_hedge = _.get(itemConfig, "enableHedge", defHedgeSetting);
+      }
+      return it;
+    });
+  }
+
   private hedgeAvailable(): boolean {
     if (this.getHedgeConfig().hedgeType === IHedgeType.Null) {
       return false;
@@ -555,7 +607,7 @@ class DataConfig {
   }
 
   /**
-   * 返回目标链的token币名称
+   * get Chain NativeToken Name
    * @date 1/31/2023 - 11:48:04 AM
    *
    * @public
@@ -565,8 +617,8 @@ class DataConfig {
   public getChainTokenName(chainId: number) {
     const tokenName = this.chainTokenMap.get(chainId);
     if (!tokenName) {
-      logger.error("没有找到基础连的配置数据");
-      throw new Error("没有找到对应链的基础配置");
+      logger.error("No configuration data for the base connection found");
+      throw new Error("No chain base configuration found");
     }
     return tokenName;
   }
@@ -590,8 +642,8 @@ class DataConfig {
         return item;
       }
     });
-    logger.error("没有找到对应的Precision");
-    throw new Error(`没有找到对应的Precision ${hexAddress}`);
+    logger.error("precision not found");
+    throw new Error(`precision not found ${hexAddress}`);
   }
 }
 

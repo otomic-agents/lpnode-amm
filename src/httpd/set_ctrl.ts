@@ -22,10 +22,6 @@ class SetCtrl {
   }
 
   public async eventTest(req: any, res: any) {
-    // "bridge-B-C" ETH/USDT
-    // "bridge-B-A" ETH/AVAX
-    // bs 这里的最大量还没有测试 ETH/USDT
-
     // eth-usdt
     // eventProcess.onMessage(
     //   JSON.stringify(req.body),

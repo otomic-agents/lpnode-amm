@@ -14,6 +14,7 @@ import { AsyncEach } from "../sys_lib/async_each";
 import { eventBus } from "../sys_lib/event.bus";
 import { IBridgeTokenConfigItem } from "../interface/interface";
 import { systemRedisBus } from "../system_redis_bus";
+import { statusReport } from "../status_report";
 
 // const var_dump = require("var_dump");
 
@@ -49,7 +50,10 @@ class ChainBalance {
     systemRedisBus.on("bridgeUpdate", async () => {
       await dataConfig.syncBridgeConfigFromLocalDatabase();
       this.bridgeItemList = dataConfig.getBridgeTokenList();
-      logger.info(`更新chainBalance中的bridge列表`, this.bridgeItemList.length);
+      logger.info(
+        `update bridgeList [chainBalance]`,
+        this.bridgeItemList.length
+      );
     });
     this.intervalSyncBalance();
     setInterval(() => {
@@ -70,7 +74,7 @@ class ChainBalance {
     }, 1000 * 10);
   }
 
-  // 获取连上的钱包情况
+  // get chain wallet info
   private async getChainWalletInfo(chainList: IChainListItem[]) {
     const eachFun = async (item: IChainListItem) => {
       let reqUrl = `${item.clientUri}/lpnode/get_wallets`;
@@ -180,6 +184,7 @@ class ChainBalance {
       balance: number;
       balanceRaw: string;
       decimals: number | undefined;
+      symbol: string | any;
     }[] = [];
     // eslint-disable-next-line array-callback-return
     Object.keys(this.chainWalletBalance).map((chainId) => {
@@ -196,6 +201,15 @@ class ChainBalance {
             walletName,
             balanceId,
             token: _.get(item, "token", ""),
+            symbol: _.attempt(() => {
+              const symbol = dataConfig.getSymbolInfoByToken(
+                _.get(item, "token", ""),
+                Number(chainId.replace("Cid_", ""))
+              );
+              const marketSymbol = _.get(symbol, "symbol", "--");
+              const symbolName = _.get(symbol, "tokenName", "--");
+              return `tokenName:${symbolName},market:${marketSymbol}`;
+            }),
             balance: _.get(item, "balance", 0),
             balanceRaw: _.get(item, "source", ""),
             decimals: _.get(item, "decimals", undefined),
@@ -203,6 +217,7 @@ class ChainBalance {
         });
       });
     });
+    statusReport.appendStatus("dex_balance", balanceList);
     console.table(balanceList);
   }
 

@@ -17,10 +17,12 @@ class AppEnv {
 
     const appName = _.get(process.env, "APP_NAME", null);
     if (!appName) {
-      logger.error("启动环境参数不正确，必须包含appName");
+      logger.error(
+        "The startup environment parameters are incorrect and must contain:appName"
+      );
       process.exit(1);
     }
-    _.set(process, "_sys_config.app_name", appName); // 从环境变量中设置appname
+    _.set(process, "_sys_config.app_name", appName);
     const mongoHost = _.get(process.env, "LP_NODE_DATA_MONGO_URL", "");
     const mongoUser = _.get(
       process.env,
@@ -28,14 +30,13 @@ class AppEnv {
       "root"
     );
     const mongoPass = _.get(process.env, "MONGODBPASS", "");
-    // 之后是正式环境的配置 mongo
     _.set(process, "_sys_config.mdb.main", {
       url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:27017/lp_store?authSource=admin`,
     });
     _.set(process, "_sys_config.mdb.business", {
       url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:27017/businessHistory?authSource=admin`,
     });
-    // "行情服务地址"
+
     _.set(
       process,
       "_sys_config.lp_market_host",
@@ -48,7 +49,9 @@ class AppEnv {
     );
     const adminUrl = _.get(process.env, "LP_ADMIN_PANEL_ACCESS_BASEURL", null);
     if (!adminUrl) {
-      logger.error("启动环境参数不正确，必须包含adminUrl");
+      logger.error(
+        "The startup environment parameters are incorrect and must contain:adminUrl"
+      );
       process.exit(1);
     }
     _.set(process, "_sys_config.lp_host", adminUrl);
@@ -59,7 +62,7 @@ class AppEnv {
   public GetLpAdminUrl() {
     const adminUrl = _.get(process, "_sys_config.lp_host", null);
     if (!adminUrl) {
-      logger.warn("没有获取到Admin-panel的Host");
+      logger.warn("can't fount admin-panel host config");
     }
     return adminUrl;
   }

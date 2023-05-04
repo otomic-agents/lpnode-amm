@@ -1,8 +1,8 @@
 enum IEVENT_NAME {
   "CMD_ASK_QUOTE" = "CMD_ASK_QUOTE",
-  "EVENT_LOCK_QUOTE" = "EVENT_LOCK_QUOTE", // 用户选择报价，并点击下一步时，表示锁定价格
-  "EVENT_TRANSFER_OUT" = "EVENT_TRANSFER_OUT", // 跨链用户，点击Lock 完成Token 到合约的锁定后
-  "EVENT_TRANSFER_OUT_CONFIRM" = "EVENT_TRANSFER_OUT_CONFIRM", // 如果用户在A链确认付款
+  "EVENT_LOCK_QUOTE" = "EVENT_LOCK_QUOTE",
+  "EVENT_TRANSFER_OUT" = "EVENT_TRANSFER_OUT",
+  "EVENT_TRANSFER_OUT_CONFIRM" = "EVENT_TRANSFER_OUT_CONFIRM",
   "EVENT_TRANSFER_OUT_REFUND" = "EVENT_TRANSFER_OUT_REFUND",
 }
 
@@ -36,7 +36,7 @@ interface IEVENT_LOCK_QUOTE {
             bridge_name: string;
           };
           lp_bridge_address: string;
-          price: string; // 10进制的价格
+          price: string;
           native_token_price: string;
           capacity: string;
           lp_node_uri: string;
@@ -44,8 +44,8 @@ interface IEVENT_LOCK_QUOTE {
         quote_name: string;
         timestamp: number;
       };
-      system_fee_src: number
-      system_fee_dst: number
+      system_fee_src: number;
+      system_fee_dst: number;
       append_information: string;
     };
     hash: string | null;
@@ -57,7 +57,6 @@ interface IEVENT_LOCK_QUOTE {
 }
 
 interface IEVENT_TRANSFER_OUT {
-  // 用户Lock 钱进入合约账户后
   cmd: string;
   quote_data: any;
   quote_remove_info: any;

@@ -4,17 +4,16 @@ const envFile = fs.existsSync(path.join(__dirname, "env.js"));
 if (envFile) {
   require("./env.js");
 } else {
-  console.log("env File 不存在");
+  console.log("env File does not exist");
 }
 
 // process.exit();
-import { App } from "./app";
 
 import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
 
-import { appEnv } from "./app_env"; // 这个要在最前边
-appEnv.initConfig(); // 初始化基本配置
+import { appEnv } from "./app_env";
+appEnv.initConfig();
 import { dataConfig } from "./data_config";
 import { Mdb } from "./module/database/mdb";
 import { orderbook } from "./module/orderbook";
@@ -23,7 +22,7 @@ import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
 import { quotation } from "./module/quotation";
 import { httpServer } from "./httpd/server";
 // @ts-ignore
-// const cTable = require("console.table"); //  替换console table
+// const cTable = require("console.table");
 
 import { chainBalance } from "./module/chain_balance";
 
@@ -31,54 +30,58 @@ import { hedgeManager } from "./module/hedge_manager";
 import { systemRedisBus } from "./system_redis_bus";
 import { statusReport } from "./status_report";
 
-class Main extends App {
-  public constructor() {
-    super();
-  }
-
+class Main {
   public async main() {
     try {
-      Mdb.getInstance()
-        .getMongoDb("main"); // 初始化数据库链接
-      await Mdb.getInstance()
-        .awaitDbConn("main");
+      Mdb.getInstance().getMongoDb("main"); // Initialize database connection
+      await Mdb.getInstance().awaitDbConn("main");
       logger.debug(`database connection ready...`, "..");
     } catch (e) {
       logger.error("Error initializing database connection", e);
       process.exit(3);
     }
     systemRedisBus.on("tokenReload", (msg: any) => {
-      logger.warn(`忽略token的reload事件，之后会自动重载`);
+      logger.warn(`skip tokenReload event`);
       logger.info(msg);
     });
-    systemRedisBus.on("configResourceUpdate", async () => {
-      logger.warn(`配置被admin_panel更新，需要重启程序`);
+    systemRedisBus.on("configResourceUpdate", async (message: any) => {
+      logger.debug(message);
+      if (
+        _.get(message, "appName", "") !==
+        _.get(process.env, "APP_NAME", undefined)
+      ) {
+        logger.debug(
+          `Not this program's message configResourceUpdate  skip process`
+        );
+        return;
+      }
+      logger.warn(`The configuration is updated by admin_panel,need restart`);
       await TimeSleepMs(3000);
       process.exit(1);
     });
     systemRedisBus.on("bridgeUpdate", async () => {
-      // logger.warn(`bridgeUpdate，需要重启程序`);
-      // await TimeSleepMs(3000);
-      // process.exit(1);
+      //
     });
     await systemRedisBus.init();
     logger.info("bus init");
 
-    await dataConfig.prepareConfigResource(); // 提前创建配置
-    await dataConfig.rewriteMarketUrl(); // 找到market service 的配置
+    await dataConfig.prepareConfigResource();
+    await dataConfig.rewriteMarketUrl();
 
-    await httpServer.start(); // 启动web服务器组件
+    await httpServer.start();
     try {
       // Do not start without basic configuration
       await dataConfig.loadBaseConfig(); // Load basic configuration from redis
       await dataConfig.syncBridgeConfigFromLocalDatabase(); // First get the Lp configuration from the Lp settings
     } catch (e) {
-      logger.warn("目前没有获得Lp的Bridge配置.", e);
+      logger.warn("No Bridge configuration.", e);
       await statusReport.pendingStatus("waiting bridge config");
-      await TimeSleepForever("LpBridge配置为空,等待配置");
+      await TimeSleepForever(
+        "LpBridge configuration is empty, waiting for configuration"
+      );
     }
     /**
-     * 1.加载 loadTokenToSymbol
+     * 1.load loadTokenToSymbol
      * 2.loadChainConfig
      */
 
@@ -95,13 +98,11 @@ class Main extends App {
   }
 }
 
-
 const mainIns: Main = new Main();
 mainIns
   .main()
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  .then(() => {
-  })
+  .then(() => {})
   .catch((e: any) => {
     logger.error("main process error", _.get(e, "message", "message"));
   });

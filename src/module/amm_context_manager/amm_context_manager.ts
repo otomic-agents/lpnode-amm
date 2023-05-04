@@ -16,7 +16,7 @@ class AmmContextManager {
         }
       );
     } catch (e) {
-      logger.error(`无法处理 ammContext appendContext`);
+      logger.error(`can't handle ammContext appendContext`);
       logger.error(e);
     }
   }
@@ -31,7 +31,7 @@ class AmmContextManager {
         }
       );
     } catch (e) {
-      logger.error(`无法处理 ammContext appendContext`);
+      logger.error(`can't handle ammContext appendContext`);
       logger.error(e);
     }
   }

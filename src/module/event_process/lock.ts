@@ -51,7 +51,7 @@ class EventProcessLock extends BaseEventProcess {
           // Expiration time 5 minutes
           return [true, ""];
         }
-        return [false, `时间过期:${awaytime / 100}Sec`];
+        return [false, `expired:${awaytime / 100}Sec`];
       },
     },
     {
@@ -123,7 +123,7 @@ class EventProcessLock extends BaseEventProcess {
         JSON.stringify({
           orderId,
         })
-      ); // 把orderId返回
+      ); // return orderId
       _.set(msg, "pre_business.locked", true);
       _.set(msg, "pre_business.err_msg", "");
       logger.info(`new orderId:${orderId}`);
@@ -152,19 +152,20 @@ class EventProcessLock extends BaseEventProcess {
           lockMsg: _.get(msg, "pre_business.err_msg", ""),
           systemContext: ammContext.systemContext,
           swapInfo: ammContext.swapInfo,
-          step: 1, // 标记已经处于lock状态
+          step: 1,
           systemOrder,
           "lockInfo.fee": ammContext.lockInfo.fee,
           "lockInfo.time": new Date().getTime(),
           "lockInfo.price": ammContext.quoteInfo.origPrice,
           "lockInfo.nativeTokenPrice":
             ammContext.quoteInfo.native_token_usdt_price,
-          "lockInfo.dstTokenPrice": ammContext.quoteInfo.usd_price,
+          "lockInfo.dstTokenPrice": ammContext.quoteInfo.dst_usd_price,
           "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price,
         },
       }
     );
   }
+
   private async setMemoryContext(
     msg: IEVENT_LOCK_QUOTE,
     ammContext: AmmContext
@@ -205,6 +206,7 @@ class EventProcessLock extends BaseEventProcess {
     ammContext.chainOptInfo.dstChainPayNativeTokenAmountNumber =
       dstChainPayNativeTokenAmountNumber;
   }
+
   private verificationLockValue(
     ammContext: AmmContext,
     msg: IEVENT_LOCK_QUOTE
@@ -227,7 +229,7 @@ class EventProcessLock extends BaseEventProcess {
       formula,
       "dstTokenValue calculate"
     );
-    logger.info(`dstToken兑换量价值多少个srcToken？:`, dstTokenToSrcTokenValue);
+    logger.info(`dstNativeToken = srcTokenCount:`, dstTokenToSrcTokenValue);
 
     const dstNativeAmountRaw = _.get(
       msg,
@@ -244,18 +246,18 @@ class EventProcessLock extends BaseEventProcess {
       "dstNativeTokenValue calculate"
     );
     logger.info(
-      `dstNativeToken兑换量价值多少个srcToken？:`,
+      `dstNativeToken = srcTokenCount:`,
       dstNativeTokenToSrcTokenValue
     );
     const feeFormula = `1-(${dstTokenToSrcTokenValue}+${dstNativeTokenToSrcTokenValue})/${ammContext.swapInfo.inputAmountNumber}`;
     const fee = SystemMath.execNumber(feeFormula, "fee calculate");
-    logger.info("实际swap的Fee", fee);
+    logger.info("swap fee:", fee);
     ammContext.lockInfo.fee = fee.toString();
     if (
       ammContext.bridgeItem.fee_manager.getQuotationPriceFee() - fee >
       0.001
     ) {
-      throw "实际swap的Fee不正确";
+      throw "swap fee overflow";
     }
   }
 
@@ -282,7 +284,7 @@ class EventProcessLock extends BaseEventProcess {
   }
 
   /**
-   * Description Check the price difference between Quote and Lock
+   * Check the price difference between Quote and Lock
    * @date 1/18/2023 - 2:24:09 PM
    *
    * @private
@@ -309,7 +311,7 @@ class EventProcessLock extends BaseEventProcess {
     const curBN = new BigNumber(curPrice);
     const spreadBN = historyBN.minus(curBN).div(historyBN);
     const spread = spreadBN.toString();
-    logger.info(`当前的锁定价差是:${spread}`);
+    logger.info(`locked spread is:${spread}`);
 
     logger.info(`Lock quote spread ${spread.toString()}`);
     if (spreadBN.gt(new BigNumber(0.003))) {
@@ -364,12 +366,11 @@ class EventProcessLock extends BaseEventProcess {
    * Description Verify whether the hash of the quotation appears in the historical quotation
    * the historical quotation will be saved for a period of time
    * @date 2/3/2023 - 4:10:25 PM
-   * @todo 协调加上hash
    * @public
    * @async
    * @param {AmmContext} ammContext "ammContext"
    * @param {IEVENT_LOCK_QUOTE} msg "msg"
-   * @returns {*} "" 失败时直接抛出异常
+   * @returns {*} "" throw error when error
    */
   public async verificationHistory(
     ammContext: AmmContext,

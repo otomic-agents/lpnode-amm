@@ -5,7 +5,7 @@ import {
   ISpotBalanceItemBinance,
   IOrderTypeBinance,
   ISpotOrderResponseBinance,
-} from "../../../interface/cex_binance"; // 引入binance 接口返回和 enum的定义
+} from "../../../interface/cex_binance";
 import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
 import { logger } from "../../../sys_lib/logger";
 import * as _ from "lodash";
@@ -36,6 +36,10 @@ class BinanceSpot implements IStdExchangeSpot {
   }
 
   public async fetchBalance(): Promise<void> {
+    if (this.apiKey === "" || this.apiSecret === "") {
+      logger.warn(`apiKey not found`);
+      return;
+    }
     try {
       const queryStr = {
         recvWindow: 5000,
@@ -92,7 +96,7 @@ class BinanceSpot implements IStdExchangeSpot {
     } catch (e) {
       const err: any = e;
       logger.debug(err.toString());
-      throw new Error(`请求${url}发生了错误，Error:${err.toString()}`);
+      throw new Error(`${url} request error,Error:${err.toString()}`);
     }
   }
 
@@ -246,6 +250,7 @@ class BinanceSpot implements IStdExchangeSpot {
   public fetchMarkets(): Map<string, ISpotSymbolItemBinance> {
     return this.spotSymbolsInfo;
   }
+
   public async createMarketOrder(
     orderId: string,
     stdSymbol: string,
@@ -270,8 +275,8 @@ class BinanceSpot implements IStdExchangeSpot {
     const orderData = {
       symbol,
       side,
-      type: IOrderTypeBinance.Market, //  市价单
-      // timeInForce: ITimeInForceBinance.FOK, // 立即成交或者拒绝
+      type: IOrderTypeBinance.Market,
+      // timeInForce: ITimeInForceBinance.FOK,
       recvWindow: 5000,
       newClientOrderId: orderId,
       timestamp: new Date().getTime(),
@@ -285,7 +290,7 @@ class BinanceSpot implements IStdExchangeSpot {
     );
     let lostAmount = "";
     const origAmount = amount?.toString();
-    logger.debug(`用户 【${this.apiKey}】下单:`);
+    logger.debug(`User 【${this.apiKey}】create order:`);
     console.dir(orderData, { depth: 5 });
     lostAmount = _.get(orderData, "lostAmount", "");
     delete orderData["lostAmount"];
@@ -296,7 +301,7 @@ class BinanceSpot implements IStdExchangeSpot {
     let orderUrl = `${this.apiBaseUrl}/api/v3/order`;
     if (simulation === true) {
       orderUrl = `${this.apiBaseUrl}/api/v3/order/test`;
-      logger.warn("使用仿真模式，进行处理，不提交到orderbook");
+      logger.warn("simulation order ");
     }
     try {
       result = await axios.request({
@@ -308,14 +313,14 @@ class BinanceSpot implements IStdExchangeSpot {
         data: postStr,
         httpsAgent: httpsKeepAliveAgent,
       });
-      _.set(result, "data.stdSymbol", stdSymbol); // 结果中设置Stdsymbol
+      _.set(result, "data.stdSymbol", stdSymbol);
       _.set(result, "data.inputInfo", {
         amount: _.get(orderData, "quantity", ""),
         lostAmount,
         origAmount,
       });
 
-      logger.debug("下单完成", "下单返回的信息:");
+      logger.debug("order complete", "result:");
       console.log("_______________________________");
       const execResult = this.formatMarketResponse(_.get(result, "data", {}));
       console.dir(_.get(result, "data.fills", {}), ConsoleDirDepth5);
@@ -324,7 +329,7 @@ class BinanceSpot implements IStdExchangeSpot {
       return execResult;
     } catch (e) {
       const errMsg = _.get(e, "response.data.msg", undefined);
-      logger.error(`创建订单到Binance发生了错误`, errMsg);
+      logger.error(`create Binance order err:`, errMsg);
       if (errMsg) {
         throw new Error(errMsg);
       }
@@ -359,7 +364,7 @@ class BinanceSpot implements IStdExchangeSpot {
       _.set(struct, "lostAmount", new BigNumber(lostAmount).toString());
     }
     if (qty !== undefined) {
-      throw new Error(`暂时没有通过测试`);
+      throw new Error(`test error`);
       // _.set(
       //   struct,
       //   "quoteOrderQty",
@@ -369,7 +374,7 @@ class BinanceSpot implements IStdExchangeSpot {
   }
 
   /**
-   * Description 返回定义好的订单格式
+   * format order
    * @date 1/17/2023 - 9:03:56 PM
    *
    * @private
@@ -395,7 +400,6 @@ class BinanceSpot implements IStdExchangeSpot {
       symbol: retData.symbol,
       stdSymbol: _.get(retData, "stdSymbol", ""),
       amount: (() => {
-        // 订单原始设置的量
         const origQty = _.get(retData, "origQty", undefined);
         if (!origQty) {
           return 0;
@@ -409,21 +413,19 @@ class BinanceSpot implements IStdExchangeSpot {
         return Number(this.formatBigNumberPrecision(stdSymbol, executedQty));
       })(),
       remaining: (() => {
-        // 剩余未执行的量
         const origQty = new BigNumber(_.get(retData, "origQty", "0"));
         const executedQty = new BigNumber(_.get(retData, "executedQty", "0"));
         const remaining = origQty.minus(executedQty);
         return Number(this.formatBigNumberPrecision(stdSymbol, remaining));
       })(),
       clientOrderId: retData.clientOrderId,
-      timestamp: _.get(retData, "workingTime", 0), // 添加到orderbook时的时间戳
+      timestamp: _.get(retData, "workingTime", 0),
       lastTradeTimestamp: _.get(retData, "transactTime", 0),
       average: (() => {
-        // 成交均价
         const cummulativeQuoteQty = new BigNumber(
           _.get(retData, "cummulativeQuoteQty", "0")
-        ); // 累计成交金额
-        const executedQty = new BigNumber(_.get(retData, "executedQty", "0")); // 交易的订单数量
+        );
+        const executedQty = new BigNumber(_.get(retData, "executedQty", "0"));
         return Number(
           cummulativeQuoteQty.div(executedQty).toFixed(8).toString()
         );
@@ -488,7 +490,7 @@ class BinanceSpot implements IStdExchangeSpot {
   }
 
   /**
-   * Description 返回现货的余额的一个Map
+   * Description get spot balance Map
    * @date 2/2/2023 - 4:49:20 PM
    *
    * @public
@@ -507,7 +509,7 @@ class BinanceSpot implements IStdExchangeSpot {
   }
 
   /**
-   * Description 处理下单时的单位问题
+   * order  precision
    * @date 2023/2/13 - 15:29:45
    *
    * @private
@@ -519,11 +521,11 @@ class BinanceSpot implements IStdExchangeSpot {
   private formatPrecision(stdSymbol: string, valNaumber: number): string {
     const symbolInfo = this.getSymbolInfoByStdSymbol(stdSymbol);
     if (!symbolInfo) {
-      throw new Error("没有找到symbolInfo，无法格式化数值");
+      throw new Error("symbolInfo not found");
     }
     const assetPrecision = _.get(symbolInfo, "quoteAssetPrecision", undefined);
     if (!assetPrecision || !_.isFinite(assetPrecision)) {
-      throw new Error(`没有找到正确的下单单位`);
+      throw new Error(`quoteAssetPrecision not found`);
     }
     const value = new BigNumber(valNaumber);
     const val = value.toFixed(parseInt(assetPrecision.toString())).toString();
@@ -531,7 +533,7 @@ class BinanceSpot implements IStdExchangeSpot {
   }
 
   /**
-   * Description 处理下单时的单位问题
+   * order  precision
    * @date 2023/2/13 - 15:25:47
    *
    * @private
@@ -542,16 +544,16 @@ class BinanceSpot implements IStdExchangeSpot {
   private formatBigNumberPrecision(stdSymbol: string, value: any): string {
     const symbolInfo = this.getSymbolInfoByStdSymbol(stdSymbol);
     if (!symbolInfo) {
-      throw new Error("没有找到symbolInfo，无法格式化数值");
+      throw new Error("symbolInfo not found");
     }
     const assetPrecision = _.get(symbolInfo, "quoteAssetPrecision", undefined);
     if (!assetPrecision || !_.isFinite(assetPrecision)) {
-      throw new Error(`没有找到正确的下单单位`);
+      throw new Error(`quoteAssetPrecision not found`);
     }
 
     const val = value.toFixed(parseInt(assetPrecision.toString())).toString();
     logger.warn(
-      "amount cex precision 已经转换",
+      "amount cex precision converted",
       value.toString(),
       val.toString()
     );
