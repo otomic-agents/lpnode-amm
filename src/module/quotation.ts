@@ -235,6 +235,10 @@ class Quotation {
         minHedgeCount = SystemMath.execNumber(`${minHedgeCount} * 200%`); // 向上浮动10% ，保证最小量
       }
     }
+    logger.info("native_token_min");
+    logger.info({
+      最小对冲需要的量: minHedgeCount,
+    });
     const minCount = SystemMath.max([minHedgeCount]);
 
     Object.assign(sourceObject.quote_data, {
@@ -303,14 +307,23 @@ class Quotation {
       ammContext.walletInfo.walletName,
       "0x0"
     );
-    let nativeTokenMax = SystemMath.min([
+    const minSourceData = [
       SystemMath.execNumber(`${nativeTokenBalance}*70%`), // lp 目标链钱包中，有多少余额 ,留下30% 用来换币
       maxCexTradeCount, // trade 中最大能交易多少个gasToken
       maxCount, // 配置中最大能swap多少个gasToken
       inputValueSwapGasCount, // 输入的量中最多能满足多大的swap gasToken
       maxSwapGasCount, // 最大价值中能换取多少gasToken (受到对冲配置影响, 关闭时受余额影响，开启时，受Hedge模式影响)
       orderbookLiquidity, // orderbook 流动性能提供的最大swap 量 (level 5)
-    ]);
+    ];
+    let nativeTokenMax = SystemMath.min(minSourceData);
+    logger.info({
+      目标Des余额: minSourceData[0],
+      Trade最大交易: minSourceData[1],
+      配置中最大能换多少个: minSourceData[2],
+      输入的价值能换多少个: minSourceData[3],
+      "最大量换算的最大值（受到对冲配置的影响）": minSourceData[4],
+      orderbook的流动性: minSourceData[5],
+    });
     if (!_.isFinite(nativeTokenMax)) {
       logger.error(`Error in calculating the maximum amount of tokens`);
       nativeTokenMax = 0;
@@ -811,8 +824,8 @@ class Quotation {
     logger.debug(
       hedgeCapacity,
       dstBalanceMaxSwap,
-      "⏩⏩⏩⏩⏩⏩⏩⏩⏩",
-      capacity
+      capacity,
+      "⏩⏩⏩⏩⏩⏩⏩⏩⏩"
     );
     logger.debug(
       `最大价格应该报价为`,

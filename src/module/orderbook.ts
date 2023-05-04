@@ -25,7 +25,8 @@ class Orderbook {
       if (timeNow - orderbookItem.timestamp > 1000 * 30) {
         logger.warn(
           `order book 过期.`,
-          (timeNow - orderbookItem.timestamp) / 1000
+          (timeNow - orderbookItem.timestamp) / 1000,
+          "秒"
         );
         return undefined;
       }
@@ -67,7 +68,7 @@ class Orderbook {
       await this.requestSpotOrderbook(); // Update and set up Spotorderbook
       this.spotOrderbookOnceLoaded = true;
     } catch (e) {
-      //
+      logger.error(`同步orderbook发生了错误`, e);
     }
 
     setTimeout(() => {
