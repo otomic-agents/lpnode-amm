@@ -105,6 +105,7 @@ class Quotation {
       quote_data: this.getDefaultPriceStruct(),
     };
     quoteInfo.quote_data.quote_hash = quoteHash;
+    await orderbook.refreshOrderbook();
     try {
       ammContext.quoteInfo.mode = this.getSwapType(ammContext);
       if (ammContext.hedgeEnabled) {

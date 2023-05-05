@@ -85,6 +85,7 @@ interface ICexCoinConfig {
   addressLower: string;
   symbol: string;
   precision: number; // 币在Dex上的精度
+  tokenName: string;
 }
 
 interface IMarketOrderbookRet {

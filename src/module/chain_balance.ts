@@ -14,6 +14,7 @@ import { AsyncEach } from "../sys_lib/async_each";
 import { eventBus } from "../sys_lib/event.bus";
 import { IBridgeTokenConfigItem } from "../interface/interface";
 import { systemRedisBus } from "../system_redis_bus";
+import { statusReport } from "../status_report";
 
 // const var_dump = require("var_dump");
 
@@ -180,6 +181,7 @@ class ChainBalance {
       balance: number;
       balanceRaw: string;
       decimals: number | undefined;
+      symbol: string | any;
     }[] = [];
     // eslint-disable-next-line array-callback-return
     Object.keys(this.chainWalletBalance).map((chainId) => {
@@ -196,6 +198,16 @@ class ChainBalance {
             walletName,
             balanceId,
             token: _.get(item, "token", ""),
+            symbol: _.attempt(() => {
+              const symbol = dataConfig.getSymbolInfoByToken(
+                _.get(item, "token", ""),
+                Number(chainId.replace("Cid_", ""))
+              );
+              // logger.warn(`查询到了symbolInfo`, symbol);
+              const marketSymbol = _.get(symbol, "symbol", "--");
+              const symbolName = _.get(symbol, "tokenName", "--");
+              return `tokenName:${symbolName},market:${marketSymbol}`;
+            }),
             balance: _.get(item, "balance", 0),
             balanceRaw: _.get(item, "source", ""),
             decimals: _.get(item, "decimals", undefined),
@@ -203,6 +215,7 @@ class ChainBalance {
         });
       });
     });
+    statusReport.appendStatus("dex_balance", balanceList);
     console.table(balanceList);
   }
 

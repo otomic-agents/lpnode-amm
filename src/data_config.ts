@@ -300,11 +300,8 @@ class DataConfig {
       marketName: string;
       chainId: number;
       precision: number;
-    }[] = await tokensModule
-      .find({
-        ammName: _.get(process.env, "APP_NAME", ""),
-      })
-      .lean();
+      tokenName: string;
+    }[] = await tokensModule.find({}).lean();
     // 同步的内容一定放在一起，保证同步币对，不会影响其它地方的报价
     this.tokenToSymbolMap = new Map();
     tokenList.map((it) => {
@@ -320,6 +317,7 @@ class DataConfig {
         coinType: it.coinType,
         symbol: it.marketName,
         precision: it.precision,
+        tokenName: it.tokenName,
       });
       return null;
     });
@@ -386,6 +384,16 @@ class DataConfig {
       return undefined;
     }
     return [token0Symbol, token1Symbol];
+  }
+  public getSymbolInfoByToken(token: string, chainId: number) {
+    const uniqAddress = this.convertAddressToUniq(token, chainId);
+    const key = `${chainId}_${uniqAddress}`;
+    const tokenSymbol = this.tokenToSymbolMap.get(key);
+    if (!tokenSymbol) {
+      logger.warn("没有找到需要查询的token", chainId, token);
+      return undefined;
+    }
+    return tokenSymbol;
   }
 
   public convertAddressToUniq(address: string, chainId: number): string {
