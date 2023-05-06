@@ -12,6 +12,7 @@ class FeeManager {
   }
 
   getQuotationPriceFee(): number {
+    // logger.debug(`来GetFee了`, this.bridgeItem);
     return 0.004;
   }
 

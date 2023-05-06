@@ -20,7 +20,26 @@ console.log(formatStepSize("0.013884994", "0.01000000"));
 
 async function main() {
   await dataConfig.prepareConfigResource(); // 提前创建配置
-  await accountManager.init();
+  // await accountManager.init();
+  await accountManager.loadAccounts([
+    {
+      accountId: "a002",
+      exchangeName: "binance",
+      spotAccount: {
+        apiKey:
+          "NzhXa9logqSx3Pnaejsa9siBtAnY5wPAmpyA7WN797BCGaaPxL8uWL178oWmYOLq",
+        apiSecret: "***************",
+      },
+      usdtFutureAccount: {
+        apiKey: "",
+        apiSecret: "",
+      },
+      coinFutureAccount: {
+        apiKey: "",
+        apiSecret: "",
+      },
+    },
+  ]);
   // setTimeout(async () => {
   //   const result = await accountManager
   //     .getAccount("a001")
@@ -29,14 +48,17 @@ async function main() {
   // }, 10000);
 
   setTimeout(async () => {
+    // logger.debug(
+    //   accountManager.getAccount("a002")?.balance.getAllSpotBalance()
+    // );
     const result = await accountManager
-      .getAccount("a001")
-      ?.order.spotBuy(
+      .getAccount("a002")
+      ?.order.spotSell(
         "C020983",
-        "BNB/USDT",
-        new BigNumber(0.0118987).toString(),
+        "ETH/USDT",
+        new BigNumber(0.01).toString(),
         undefined,
-        true
+        false
       );
     logger.debug(result);
   }, 10000);

@@ -24,14 +24,21 @@ class AccountManager {
   public reportStatusToStatusStore() {
     const balanceStore = {};
     this.accountInsList.forEach((stdAccount, accountId) => {
-      _.set(balanceStore, `${accountId}.spotBalance`, stdAccount.balance.getAllSpotBalance());
+      _.set(
+        balanceStore,
+        `${accountId}.spotBalance`,
+        stdAccount.balance.getAllSpotBalance()
+      );
     });
-    statusReport.appendStatus("cexBalance", balanceStore).then(() => {
-      //
-    }).catch((e) => {
-      logger.error(`报告状态发生了错误`, e);
-      logger.error(e);
-    });
+    statusReport
+      .appendStatus("cexBalance", balanceStore)
+      .then(() => {
+        //
+      })
+      .catch((e) => {
+        logger.error(`报告状态发生了错误`, e);
+        logger.error(e);
+      });
   }
 
   /**
@@ -50,6 +57,14 @@ class AccountManager {
     const accounts: ICexAccount[] = dataConfig.getHedgeAccountList();
     console.log(JSON.stringify(accounts));
     await AsyncEach(accounts, async (accountItem: ICexAccount) => {
+      const accountIns = new StdAccount(accountItem);
+      logger.debug(`Store Account instance`, accountItem.accountId);
+      await accountIns.init(); // 初始化Account
+      this.accountInsList.set(accountItem.accountId, accountIns);
+    });
+  }
+  public async loadAccounts(accountList: ICexAccount[]) {
+    await AsyncEach(accountList, async (accountItem: ICexAccount) => {
       const accountIns = new StdAccount(accountItem);
       logger.debug(`Store Account instance`, accountItem.accountId);
       await accountIns.init(); // 初始化Account
