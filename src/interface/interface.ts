@@ -26,6 +26,7 @@ interface IBridgeTokenConfigItem {
   lp_wallet_info: LpWalletManager;
   symbol_info: SymbolManager;
   hedge_info: BridgeHedgeInfo;
+  fee: string;
 }
 
 enum ISwapStep {
@@ -103,6 +104,9 @@ interface IHedgeClass {
   worker: {
     prepareOrder(ammContext: AmmContext): Promise<any>;
   };
+
+  getHedgeFeeSymbol(): string; // 获取当前对冲fee的币
+
   checkMinHedge(
     ammContext: AmmContext,
     unitPrice: number,
@@ -124,6 +128,7 @@ interface IHedgeClass {
 
   checkHedgeCond(ammContext: AmmContext); // 检查是否可以完成对冲
   preExecOrder(ammContext: AmmContext): Promise<boolean>;
+
   hedge(info: ISpotHedgeInfo); // 设置对冲信息
 
   lockHedgeBalance(ammContext: AmmContext, accountId: string); //  锁定用户余额
@@ -154,6 +159,7 @@ interface IBalanceLock {
   lockedTime: number;
   lockedId: string;
 }
+
 // 回答
 // Hedge 完成
 enum EFlowStatus {
@@ -164,6 +170,7 @@ enum EFlowStatus {
   HedgeCompletion = "HedgeCompletion",
   NoHedge = "NoHedge",
 }
+
 export {
   ISpotHedgeInfo,
   IBridgeTokenConfigItem,

@@ -1,12 +1,7 @@
 /* eslint-disable arrow-parens */
 import _ from "lodash";
 import { dataConfig } from "../../data_config";
-import {
-  ICoinType,
-  IHedgeClass,
-  IHedgeType,
-  ISpotHedgeInfo,
-} from "../../interface/interface";
+import { ICoinType, IHedgeClass, IHedgeType, ISpotHedgeInfo, } from "../../interface/interface";
 import { logger } from "../../sys_lib/logger";
 import { accountManager } from "../exchange/account_manager";
 import BigNumber from "bignumber.js";
@@ -19,6 +14,7 @@ import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
 import { EthUnit } from "../../utils/eth";
 import { SystemMath } from "../../utils/system_math";
 import { ConsoleDirDepth5 } from "../../utils/console";
+import { ICexExchangeList } from "../../interface/std_difi";
 
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
@@ -64,6 +60,18 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.info(`开始初始化账户，因为配置了对冲..`);
       await this.initAccount();
     }
+  }
+
+  public getHedgeFeeSymbol() {
+    const accountIns = accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount);
+    if (!accountIns) {
+      throw `account ins not initialized`;
+    }
+    const exchangeName = accountIns.getExchangeName();
+    if (exchangeName === ICexExchangeList.binance) {
+      return "BNB";
+    }
+    throw "no compatible exchange";
   }
 
   private async initAccount() {
@@ -383,6 +391,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
     return true;
   }
+
   public async preExecOrder(ammContext: AmmContext): Promise<boolean> {
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount
@@ -615,8 +624,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.warn(`Cex has no balance`, tokenInfo[0].symbol);
       return 0;
     }
-    const minCount: any = SystemMath.min([srcTokenCexBalance, maxTradeCount]);
-    return minCount;
+    return SystemMath.min([srcTokenCexBalance, maxTradeCount]);
   }
 
   private async calculateCapacity_bb(ammContext: AmmContext): Promise<number> {

@@ -5,6 +5,7 @@ import { BinanceExchange } from "./cex_exchange/binance";
 import { StdOrder } from "./std_order";
 import { logger } from "../../sys_lib/logger";
 import { StdInfo } from "./std_info";
+
 /**
  * 用于描述 Account 账号，
  * Exchange 可以拥有多个Account ，每个Account 组合两个角色 Balance Order
@@ -18,6 +19,10 @@ class StdAccount {
 
   constructor(option: ICexAccount) {
     this.accountInfo = option;
+  }
+
+  public getExchangeName() {
+    return this.accountInfo.exchangeName;
   }
 
   /**
@@ -67,9 +72,11 @@ class StdAccount {
       )}`
     );
   }
+
   private async initOrder(cexExchange: IStdExchange) {
     this.order = new StdOrder(cexExchange);
   }
+
   private async initInfo(cexExchange: IStdExchange) {
     this.info = new StdInfo(cexExchange);
   }
@@ -89,8 +96,10 @@ class StdAccount {
     await this.balance.syncUsdtFutureBalance();
     await this.balance.syncCoinFutureBalance();
   }
+
   public getSpotStatus() {
     // this.cexExchange.getSpotStatus();
   }
 }
+
 export { StdAccount };

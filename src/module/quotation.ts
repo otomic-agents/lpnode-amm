@@ -116,10 +116,13 @@ class Quotation {
         logger.info(`The cex order limit has been met`);
         await hedgeIns.checkSwapAmount(ammContext); // 余额和对冲额检查 ,CEX 有没有足够的量，卖出左侧，或者花费左侧币
       }
+      // 同步报价，所有price 在一个orderbook切片上
       this.process_quote_type(ammContext, quoteInfo); // 处理换币的模式 quote_orderbook_type
       this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice usd_price mode
+      this.price_hedge_fee_price(ammContext, quoteInfo); // 处理hedge 目标账户fee币对的价格
       this.price_src_token(ammContext, quoteInfo); // src_usd_price
       this.price_native_token(ammContext, quoteInfo); // native_token_usdt_price native_token_price  native_token_orig_price native_token_symbol
+      // --
       await this.amount_check(ammContext); // format check
       this.renderInfo(ammContext, quoteInfo); // assetName assetTokenName assetChainInfo
       await this.min_amount(ammContext, quoteInfo); // min gas + min hedge check
@@ -419,6 +422,25 @@ class Quotation {
     ammContext.quoteInfo = sourceObject.quote_data;
   }
 
+  /**
+   * 对hedge账号可能收取的fee 的asset 进行报价
+   * @param ammContext
+   * @param sourceObject
+   */
+  public price_hedge_fee_price(ammContext: AmmContext, sourceObject: any) {
+    if (ammContext.hedgeEnabled) {
+      const hedgeFeeSymbol = ammContext.bridgeItem.hedge_info.getHedgeIns().getHedgeFeeSymbol();
+      const { stdSymbol, asks } = this.quotationPrice.getCoinStableCoinOrderBookByCoinName(hedgeFeeSymbol);
+      if (stdSymbol && _.isArray(asks)) {
+        const [[price]] = asks;
+        Object.assign(sourceObject.quote_data, {
+          hedge_fee_asset_price: price,
+          hedge_fee_asset: hedgeFeeSymbol,
+        });
+      }
+    }
+  }
+
   private price_native_token(ammContext: AmmContext, sourceObject: any) {
     const { asks: nativeTokenAsks } =
       this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
@@ -573,9 +595,7 @@ class Quotation {
     if (ammContext.hedgeEnabled) {
       quoteOrderbookType = "getCoinStableCoinExecuteOrderbook";
     }
-    const { stdSymbol, bids, asks, timestamp } = this.quotationPrice[
-      quoteOrderbookType
-    ](
+    const { stdSymbol, bids, asks, timestamp } = this.quotationPrice[quoteOrderbookType](
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId,
       ammContext.swapInfo.inputAmountNumber
@@ -934,6 +954,7 @@ class Quotation {
     );
     return dstTokenDexBalanceToSrcTokenCountNumber;
   }
+
   /**
    * 分析价格是否有效
    * @param ammContext
@@ -963,6 +984,7 @@ class Quotation {
   private async storeQuoteHistory(quoteHash: string, data: any) {
     await quotationListHistory.store(quoteHash, data);
   }
+
   private initStatus() {
     //
   }

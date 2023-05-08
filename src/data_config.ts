@@ -385,6 +385,7 @@ class DataConfig {
     }
     return [token0Symbol, token1Symbol];
   }
+
   public getSymbolInfoByToken(token: string, chainId: number) {
     const uniqAddress = this.convertAddressToUniq(token, chainId);
     const key = `${chainId}_${uniqAddress}`;
@@ -494,6 +495,7 @@ class DataConfig {
       dstToken: string;
       msmqName: string;
       walletName: string;
+      fee: string;
       dstClientUri: string;
       enableHedge: boolean;
     }[] = await bridgesModule.find(findOption).lean();
@@ -521,6 +523,7 @@ class DataConfig {
           name: item.walletName, // 把钱包地址也初始化，报价的时候要能够处理余额
           balance: {},
         },
+        fee: item.fee,
         dst_chain_client_uri: item.dstClientUri,
         enable_hedge: _.attempt(() => {
           if (item.enableHedge) {
@@ -550,6 +553,7 @@ class DataConfig {
     }
     console.table(this.bridgeTokenList);
   }
+
   private hedgeAvailable(): boolean {
     if (this.getHedgeConfig().hedgeType === IHedgeType.Null) {
       return false;

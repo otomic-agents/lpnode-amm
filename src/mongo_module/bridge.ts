@@ -1,4 +1,5 @@
 import { Schema } from "mongoose";
+
 const mongoose = require("mongoose");
 import { Mdb } from "../module/database/mdb";
 
@@ -14,6 +15,7 @@ const bridgesSchema = new Schema({
   tokenName: String,
   ammName: String,
   enableHedge: Boolean,
+  fee: String
 });
 export const bridgesModule = mongoConn.model(
   "bridgesModule",
