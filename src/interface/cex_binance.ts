@@ -142,6 +142,10 @@ interface IUsdtFutureBalanceItemBinance {
   updateTime: number; // 1617939110373;
 }
 
+interface IUsdtFutureAccountPositionsItemBinance{
+  symbol:string
+}
+
 // 币本位余额的定义
 interface ICoinFutureBalanceItemBinance {
   accountAlias: string; // "SgsR"; // 账户唯一识别码
@@ -170,4 +174,5 @@ export {
   IUsdtFutureSymbolItemBinance,
   ICoinFutureBalanceItemBinance,
   ICoinFutureSymbolItemBinance,
+  IUsdtFutureAccountPositionsItemBinance
 };

@@ -44,6 +44,11 @@ class StdBalance {
     return balanceItem;
   }
 
+  public async getUsdtFuturePositions() {
+    const positions = await this.stdExchange.exchangeUsdtFuture.fetchPositions();
+    logger.debug(positions);
+  }
+
   public getAllSpotBalance() {
     const itemList: { free: string; asset: string; locked: string }[] = [];
     this.spotBalance.forEach((value) => {
@@ -95,6 +100,7 @@ class StdBalance {
       this.syncSpotBalance();
     }, 1000 * 30);
   }
+
   private async reportSpotBalance() {
     console.log(`cex account info:`);
     const balanceList: any[] = [];

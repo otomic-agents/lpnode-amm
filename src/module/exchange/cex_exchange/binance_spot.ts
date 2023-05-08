@@ -36,6 +36,10 @@ class BinanceSpot implements IStdExchangeSpot {
   }
 
   public async fetchBalance(): Promise<void> {
+    if (this.apiKey === "" || this.apiSecret === "") {
+      logger.warn(`没有初始化 apiKey 不加载余额`);
+      return;
+    }
     try {
       const queryStr = {
         recvWindow: 5000,
@@ -246,6 +250,7 @@ class BinanceSpot implements IStdExchangeSpot {
   public fetchMarkets(): Map<string, ISpotSymbolItemBinance> {
     return this.spotSymbolsInfo;
   }
+
   public async createMarketOrder(
     orderId: string,
     stdSymbol: string,

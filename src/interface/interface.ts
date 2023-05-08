@@ -7,6 +7,7 @@ import { SymbolManager } from "../module/bridge_extend/symbol_manager";
 import { BridgeHedgeInfo } from "../module/bridge_extend/bridge_hedge_info";
 
 interface IBridgeTokenConfigItem {
+  id: string;
   bridge_name: string; // tokenBridge的name
   src_chain_id: number;
   dst_chain_id: number;

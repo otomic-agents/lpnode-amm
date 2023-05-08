@@ -486,6 +486,7 @@ class DataConfig {
     const findOption = { ammName: appName };
     logger.debug(`findOption`, findOption);
     const lpConfigList: {
+      _id: string;
       bridgeName: string;
       srcChainId: number;
       dstChainId: number;
@@ -509,6 +510,7 @@ class DataConfig {
     }
     for (const item of lpConfigList) {
       const formatedItem: any = {
+        id: item._id,
         bridge_name: item.bridgeName,
         src_chain_id: item.srcChainId,
         dst_chain_id: item.dstChainId,

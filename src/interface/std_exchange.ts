@@ -26,7 +26,9 @@ interface IStdExchangeSpot {
     stdSymbol: string,
     price: number
   ): Promise<[number, number]>;
+
   spotGetTradeMinMaxValue(stdSymbol: string): Promise<[number, number]>;
+
   spotGetTradeMinNotional(stdSymbol: string): Promise<number>;
 
   createMarketOrder(
@@ -43,9 +45,13 @@ interface IStdExchangeSpot {
 interface IStdExchangeUsdtFuture {
   initMarkets(): Promise<void>;
 
+  fetchOrdersBySymbol(symbol: string): Promise<any>;
+
   fetchMarkets(): Map<string, IUsdtFutureSymbolItem>;
 
   fetchBalance(): Promise<any>;
+
+  fetchPositions(): Promise<any>;
 
   createMarketOrder(
     orderId: string,

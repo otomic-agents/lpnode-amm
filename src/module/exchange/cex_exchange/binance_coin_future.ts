@@ -13,17 +13,20 @@ import {
 } from "../../../interface/std_difi";
 import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
 import { binanceConfig } from "./binance_config";
+
 class BinanceCoinFuture implements IStdExchangeCoinFuture {
   private apiKey: string;
   private apiSecret: string;
   private apiBaseUrl = "";
   private balance: Map<string, ICoinFutureBalanceItemBinance> = new Map();
   private symbolsInfo: Map<string, ICoinFutureSymbolItemBinance> = new Map();
+
   constructor(accountInfo: { apiKey: string; apiSecret: string }) {
     this.apiKey = accountInfo.apiKey;
     this.apiSecret = accountInfo.apiSecret;
     this.apiBaseUrl = binanceConfig.getCoinFutureBaseApi();
   }
+
   public async initMarkets() {
     const url = `${this.apiBaseUrl}/dapi/v1/exchangeInfo`;
     try {
@@ -45,6 +48,7 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
       throw new Error(`请求${url}发生了错误，Error:${err.toString()}`);
     }
   }
+
   private setExchangeSymbolInfo(symbols: ICoinFutureSymbolItemBinance[]) {
     for (const item of symbols) {
       if (
@@ -59,6 +63,7 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     }
     logger.debug(`symbol list count: 【${this.symbolsInfo.size}】`);
   }
+
   public fetchMarkets(): Map<string, ICoinFutureSymbolItem> {
     const ret: Map<string, ICoinFutureSymbolItem> = new Map();
     this.symbolsInfo.forEach((value, key) => {
@@ -76,7 +81,12 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     });
     return ret;
   }
+
   public async fetchBalance(): Promise<void> {
+    if (this.apiKey === "" || this.apiSecret === "") {
+      logger.warn(`账户没有同步，不初始化余额`, "binance_coin_future___fetchBalance");
+      return;
+    }
     // /dapi/v1/balance
     try {
       const queryStr = {
@@ -106,11 +116,13 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
       }
     }
   }
+
   private saveBalanceList(balanceList: ICoinFutureBalanceItemBinance[]) {
     for (const item of balanceList) {
       this.balance.set(item.asset, item);
     }
   }
+
   public getBalance(): Map<string, ICoinFutureBalanceItem> {
     const ret: Map<string, ICoinFutureBalanceItem> = new Map();
     this.balance.forEach((value, key) => {
@@ -127,4 +139,5 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     return ret;
   }
 }
+
 export { BinanceCoinFuture };
