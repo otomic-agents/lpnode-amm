@@ -479,7 +479,7 @@ class Quotation {
       native_token_usdt_price: new BigNumber(usdPrice).toString(),
     });
   }
-
+  
   private price_src_token(ammContext: AmmContext, sourceObject: any) {
     const { bids: srcTokenBids } =
       this.quotationPrice.getCoinStableCoinOrderBookByCoinName(

@@ -1,7 +1,12 @@
 /* eslint-disable arrow-parens */
 import _ from "lodash";
 import { dataConfig } from "../../data_config";
-import { ICoinType, IHedgeClass, IHedgeType, ISpotHedgeInfo, } from "../../interface/interface";
+import {
+  ICoinType,
+  IHedgeClass,
+  IHedgeType,
+  ISpotHedgeInfo,
+} from "../../interface/interface";
 import { logger } from "../../sys_lib/logger";
 import { accountManager } from "../exchange/account_manager";
 import BigNumber from "bignumber.js";
@@ -15,6 +20,7 @@ import { EthUnit } from "../../utils/eth";
 import { SystemMath } from "../../utils/system_math";
 import { ConsoleDirDepth5 } from "../../utils/console";
 import { ICexExchangeList } from "../../interface/std_difi";
+import { hedgeJobModule } from "../../mongo_module/hedge_job";
 
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
@@ -25,6 +31,13 @@ if (!appName) {
 }
 const queueName = `SYSTEM_HEDGE_QUEUE_${appName}`;
 const hedgeQueue = new Bull(queueName, {
+  settings: {
+    backoffStrategies: {
+      hedge(attemptsMade, err) {
+        return 10000 + Math.random() * 500;
+      },
+    },
+  },
   redis: { port: 6379, host: redisConfig.host, password: redisConfig.pass },
 });
 
@@ -45,12 +58,19 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     logger.debug(`Start consuming the hedging queue......`);
     // Start processing the hedge queue
     hedgeQueue.process(async (job, done) => {
+      const optAttempts = _.get(job, "opts.attempts", 0);
+      const attemptCount = _.get(job.attemptsMade, 0);
       try {
         await this.worker.worker(job.data);
-      } catch (e) {
-        logger.error(`An error occurred while processing the queue`, e);
-      } finally {
         done();
+      } catch (e) {
+        const err: any = e;
+        done(new Error(err.toString()));
+        if (optAttempts >= 0 && attemptCount === optAttempts - 1) {
+          // 已经是最后一次尝试并且失败
+          await hedgeJobModule.create({ jobRaw: job });
+        }
+        logger.error(`An error occurred while processing the queue`, e);
       }
     });
     if (
@@ -63,7 +83,9 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   }
 
   public getHedgeFeeSymbol() {
-    const accountIns = accountManager.getAccount(dataConfig.getHedgeConfig().hedgeAccount);
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
     if (!accountIns) {
       throw `account ins not initialized`;
     }
@@ -690,7 +712,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   public async writeJob(hedgeInfo: ISpotHedgeInfo) {
     logger.info(`Write information to Job.....`);
-    hedgeQueue.add(hedgeInfo);
+    hedgeQueue.add(hedgeInfo, { attempts: 2, backoff: { type: "hedge" } });
   }
 }
 

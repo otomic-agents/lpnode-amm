@@ -158,13 +158,14 @@ class EventProcessLock extends BaseEventProcess {
           "lockInfo.time": new Date().getTime(),
           "lockInfo.price": ammContext.quoteInfo.origPrice,
           "lockInfo.nativeTokenPrice":
-            ammContext.quoteInfo.native_token_usdt_price,
-          "lockInfo.dstTokenPrice": ammContext.quoteInfo.usd_price,
-          "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price,
+          ammContext.quoteInfo.native_token_usdt_price,
+          "lockInfo.dstTokenPrice": ammContext.quoteInfo.usd_price, // 这个是没有fee的情况下
+          "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price, // 这个是没有fee的情况下
         },
       }
     );
   }
+
   private async setMemoryContext(
     msg: IEVENT_LOCK_QUOTE,
     ammContext: AmmContext
@@ -205,6 +206,7 @@ class EventProcessLock extends BaseEventProcess {
     ammContext.chainOptInfo.dstChainPayNativeTokenAmountNumber =
       dstChainPayNativeTokenAmountNumber;
   }
+
   private verificationLockValue(
     ammContext: AmmContext,
     msg: IEVENT_LOCK_QUOTE
