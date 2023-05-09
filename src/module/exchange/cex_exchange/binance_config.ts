@@ -9,7 +9,7 @@ class BinanceConfig {
     const envStr = _.get(process.env, "NODE_ENV", "dev");
     if (envStr === "production" || envStr === "prod") {
       this.baseApi = {
-        spot: "https://api.binance.com",
+        spot: "https://testnet.binance.vision",
         usdtFuture: "https://fapi.binance.com",
         coinFuture: "https://dapi.binance.com",
       };
