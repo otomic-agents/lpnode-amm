@@ -429,8 +429,13 @@ class Quotation {
    */
   public price_hedge_fee_price(ammContext: AmmContext, sourceObject: any) {
     if (ammContext.hedgeEnabled) {
-      const hedgeFeeSymbol = ammContext.bridgeItem.hedge_info.getHedgeIns().getHedgeFeeSymbol();
-      const { stdSymbol, asks } = this.quotationPrice.getCoinStableCoinOrderBookByCoinName(hedgeFeeSymbol);
+      const hedgeFeeSymbol = ammContext.bridgeItem.hedge_info
+        .getHedgeIns()
+        .getHedgeFeeSymbol();
+      const { stdSymbol, asks } =
+        this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
+          hedgeFeeSymbol
+        );
       if (stdSymbol && _.isArray(asks)) {
         const [[price]] = asks;
         Object.assign(sourceObject.quote_data, {
@@ -479,7 +484,7 @@ class Quotation {
       native_token_usdt_price: new BigNumber(usdPrice).toString(),
     });
   }
-  
+
   private price_src_token(ammContext: AmmContext, sourceObject: any) {
     const { bids: srcTokenBids } =
       this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
@@ -595,7 +600,9 @@ class Quotation {
     if (ammContext.hedgeEnabled) {
       quoteOrderbookType = "getCoinStableCoinExecuteOrderbook";
     }
-    const { stdSymbol, bids, asks, timestamp } = this.quotationPrice[quoteOrderbookType](
+    const { stdSymbol, bids, asks, timestamp } = this.quotationPrice[
+      quoteOrderbookType
+    ](
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId,
       ammContext.swapInfo.inputAmountNumber
