@@ -69,7 +69,18 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
         if (optAttempts >= 0 && attemptCount === optAttempts - 1) {
           // 已经是最后一次尝试并且失败
           logger.error(`对冲多次依然失败`, e);
-          await hedgeJobModule.create({ jobRaw: job });
+          try {
+            await hedgeJobModule.create({
+              jobRaw: {
+                id: _.get(job, "id", ""),
+                opts: _.get(job, "opts"),
+                data: _.get(job, "data"),
+                attemptsMade: _.get(job, "attemptsMade"),
+              },
+            });
+          } catch (writeErr) {
+            logger.error(writeErr);
+          }
         }
         logger.error(`An error occurred while processing the queue`, e);
       }
