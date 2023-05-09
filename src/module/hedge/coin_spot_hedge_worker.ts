@@ -19,6 +19,7 @@ interface IHedgeOrderItem {
 
 class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
   public async worker(call: { orderId: number; ammContext: AmmContext }) {
+    throw new Error("TestError");
     call.ammContext.bridgeItem = dataConfig.findItemByMsmqName(
       call.ammContext.systemInfo.msmqName
     );
