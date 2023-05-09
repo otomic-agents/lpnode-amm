@@ -59,7 +59,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     // Start processing the hedge queue
     hedgeQueue.process(async (job, done) => {
       const optAttempts = _.get(job, "opts.attempts", 0);
-      const attemptCount = _.get(job.attemptsMade, 0);
+      const attemptCount = _.get(job, "attemptsMade", 0);
       try {
         await this.worker.worker(job.data);
         done();
