@@ -1,7 +1,8 @@
 import { IBridgeTokenConfigItem } from "../../interface/interface";
 import BigNumber from "bignumber.js";
 import { logger } from "../../sys_lib/logger";
-
+import { dataConfig } from "../../data_config";
+import * as _ from "lodash";
 // import { logger } from "../../sys_lib/logger";
 
 class FeeManager {
@@ -23,7 +24,16 @@ class FeeManager {
       return Number(fee);
     }
     logger.warn(`没有获取到Fee的配置，使用默认值替代`);
-    return 0.004;
+    const defaultFee = _.get(
+      dataConfig.getBridgeBaseConfig(),
+      "defaultFee",
+      undefined
+    );
+    if (!defaultFee) {
+      logger.error(`无法正确加载默认的fee`);
+      throw new Error("无法正确加载默认的fee");
+    }
+    return defaultFee;
   }
 
   private keepLatestFee() {

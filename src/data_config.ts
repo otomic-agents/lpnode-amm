@@ -549,6 +549,9 @@ class DataConfig {
     }
     console.table(this.bridgeTokenList);
   }
+  public async getBridgeBaseConfig() {
+    return _.get(this.baseConfig, "bridgeBaseConfig", undefined);
+  }
   private async loadBridgeConfig() {
     if (!_.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined)) {
       logger.debug("bridgeBaseConfig.enabledHedge Can not be empty");
