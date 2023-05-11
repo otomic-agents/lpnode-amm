@@ -38,10 +38,8 @@ class Main extends App {
 
   public async main() {
     try {
-      Mdb.getInstance()
-        .getMongoDb("main"); // 初始化数据库链接
-      await Mdb.getInstance()
-        .awaitDbConn("main");
+      Mdb.getInstance().getMongoDb("main"); // 初始化数据库链接
+      await Mdb.getInstance().awaitDbConn("main");
       logger.debug(`database connection ready...`, "..");
     } catch (e) {
       logger.error("Error initializing database connection", e);
@@ -51,8 +49,18 @@ class Main extends App {
       logger.warn(`忽略token的reload事件，之后会自动重载`);
       logger.info(msg);
     });
-    systemRedisBus.on("configResourceUpdate", async () => {
-      logger.warn(`配置被admin_panel更新，需要重启程序`);
+    systemRedisBus.on("configResourceUpdate", async (message: any) => {
+      logger.debug(message);
+      if (
+        _.get(message, "appName", "") !==
+        _.get(process.env, "APP_NAME", undefined)
+      ) {
+        logger.debug(
+          `Not this program's message configResourceUpdate  skip process`
+        );
+        return;
+      }
+      logger.warn(`The configuration is updated by admin_panel,need restart`);
       await TimeSleepMs(3000);
       process.exit(1);
     });
@@ -95,13 +103,11 @@ class Main extends App {
   }
 }
 
-
 const mainIns: Main = new Main();
 mainIns
   .main()
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  .then(() => {
-  })
+  .then(() => {})
   .catch((e: any) => {
     logger.error("main process error", _.get(e, "message", "message"));
   });
