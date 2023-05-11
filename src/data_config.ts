@@ -538,7 +538,7 @@ class DataConfig {
     const hedgeTokenList = _.filter(this.bridgeTokenList, (item) => {
       return item.enable_hedge === true;
     });
-    this.loadBridgeConfig(); // 加载bridgeconfig
+    await this.loadBridgeConfig(); // 加载bridgeconfig
     if (_.isArray(hedgeTokenList) && hedgeTokenList.length >= 1) {
       logger.info(`需要检查对冲配置`, "🌎");
       if (!this.hedgeAvailable()) {
@@ -549,12 +549,10 @@ class DataConfig {
     }
     console.table(this.bridgeTokenList);
   }
-  private loadBridgeConfig() {
+  private async loadBridgeConfig() {
     if (!_.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined)) {
       logger.debug("bridgeBaseConfig.enabledHedge Can not be empty");
-      setTimeout(() => {
-        process.exit();
-      }, 3000);
+      await TimeSleepForever("bridgeBaseConfig.enabledHedge Can not be empty");
       return;
     }
     const bridgeConfig = _.get(this.baseConfig, "bridgeConfig", []);
