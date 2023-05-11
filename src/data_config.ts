@@ -28,6 +28,7 @@ const Web3 = require("web3");
 const web3 = new Web3();
 
 class DataConfig {
+  private baseConfig: any;
   private hedgeConfig: IHedgeConfig = {
     hedgeType: IHedgeType.Null,
     hedgeAccount: "",
@@ -153,6 +154,7 @@ class DataConfig {
 
   private async initBaseConfig(baseConfig: any) {
     console.log(baseConfig);
+    this.baseConfig = baseConfig;
     try {
       this.checkBaseConfig(baseConfig);
     } catch (e) {
@@ -495,9 +497,7 @@ class DataConfig {
       dstToken: string;
       msmqName: string;
       walletName: string;
-      fee: string;
       dstClientUri: string;
-      enableHedge: boolean;
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
     logger.info(`加载到了${lpConfigList.length}个BridgeConfig`);
@@ -523,14 +523,9 @@ class DataConfig {
           name: item.walletName, // 把钱包地址也初始化，报价的时候要能够处理余额
           balance: {},
         },
-        fee: item.fee,
+        fee: undefined,
         dst_chain_client_uri: item.dstClientUri,
-        enable_hedge: _.attempt(() => {
-          if (item.enableHedge) {
-            return true;
-          }
-          return false;
-        }),
+        enable_hedge: false,
       };
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const context = this;
@@ -543,6 +538,7 @@ class DataConfig {
     const hedgeTokenList = _.filter(this.bridgeTokenList, (item) => {
       return item.enable_hedge === true;
     });
+    this.loadBridgeConfig(); // 加载bridgeconfig
     if (_.isArray(hedgeTokenList) && hedgeTokenList.length >= 1) {
       logger.info(`需要检查对冲配置`, "🌎");
       if (!this.hedgeAvailable()) {
@@ -552,6 +548,46 @@ class DataConfig {
       }
     }
     console.table(this.bridgeTokenList);
+  }
+  private loadBridgeConfig() {
+    if (!_.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined)) {
+      logger.debug("bridgeBaseConfig.enabledHedge Can not be empty");
+      setTimeout(() => {
+        process.exit();
+      }, 3000);
+      return;
+    }
+    const bridgeConfig = _.get(this.baseConfig, "bridgeConfig", []);
+    const defHedgeSetting = _.get(
+      this.baseConfig,
+      "bridgeBaseConfig.enabledHedge",
+      false
+    );
+    const defFeeSetting = _.get(
+      this.baseConfig,
+      "bridgeBaseConfig.defaultFee",
+      false
+    );
+    logger.debug(
+      `系统设置的默认值是:`,
+      defHedgeSetting,
+      defFeeSetting,
+      "🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻"
+    );
+    this.bridgeTokenList = this.bridgeTokenList.map((it) => {
+      const itemConfig = _.find(bridgeConfig, { bridgeId: it.id.toString() });
+      if (itemConfig) {
+        it.fee = _.get(itemConfig, "fee", undefined);
+        if (it.fee === undefined) {
+          logger.warn(`fee错误`);
+        }
+        it.enable_hedge = _.get(itemConfig, "enableHedge", defHedgeSetting);
+      } else {
+        it.fee = _.get(itemConfig, "fee", defFeeSetting);
+        it.enable_hedge = _.get(itemConfig, "enableHedge", defHedgeSetting);
+      }
+      return it;
+    });
   }
 
   private hedgeAvailable(): boolean {

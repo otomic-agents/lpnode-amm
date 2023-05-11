@@ -14,8 +14,6 @@ const bridgesSchema = new Schema({
   precision: Number,
   tokenName: String,
   ammName: String,
-  enableHedge: Boolean,
-  fee: String
 });
 export const bridgesModule = mongoConn.model(
   "bridgesModule",

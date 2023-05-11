@@ -110,7 +110,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
           executeFun = "spotSell";
         }
         if (order.amountNumber === 0) {
-          logger.warn("忽略这个,amount为0", order.symbol, order.side);
+          logger.warn("skip amount zero order", order.symbol, order.side);
           continue;
         }
         logger.debug(
@@ -141,7 +141,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         }
       }
     } catch (e) {
-      logger.error(`仿真发生了错误`, e);
+      logger.error(`simulation error`, e);
       throw e;
     }
   }
