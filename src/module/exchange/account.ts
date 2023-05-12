@@ -95,6 +95,7 @@ class StdAccount {
     await this.balance.syncSpotBalance();
     await this.balance.syncUsdtFutureBalance();
     await this.balance.syncCoinFutureBalance();
+    await this.balance.syncUsdtFuturePositionRisk();
   }
 
   public getSpotStatus() {

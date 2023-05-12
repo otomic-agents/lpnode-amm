@@ -84,7 +84,10 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
 
   public async fetchBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
-      logger.warn(`账户没有同步，不初始化余额`, "binance_coin_future___fetchBalance");
+      logger.warn(
+        `账户没有同步，不初始化余额`,
+        "binance_coin_future___fetchBalance"
+      );
       return;
     }
     // /dapi/v1/balance

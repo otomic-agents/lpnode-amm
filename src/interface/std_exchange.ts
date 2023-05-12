@@ -8,6 +8,7 @@ import {
   IUsdtFutureBalanceItem,
   ICoinFutureBalanceItem,
   ICoinFutureSymbolItem,
+  IUsdtFutureAccountPositionsRiskItem,
 } from "./std_difi";
 import BigNumber from "bignumber.js";
 
@@ -51,8 +52,8 @@ interface IStdExchangeUsdtFuture {
 
   fetchBalance(): Promise<any>;
 
-  fetchPositions(): Promise<any>;
-
+  fetchPositionRisk(): Promise<any>;
+  getPositionRisk(): Map<string, IUsdtFutureAccountPositionsRiskItem>;
   createMarketOrder(
     orderId: string,
     stdSymbol: string,

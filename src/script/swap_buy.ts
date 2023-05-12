@@ -13,7 +13,7 @@ import { dataConfig } from "../data_config";
 import { accountManager } from "../module/exchange/account_manager";
 import { logger } from "../sys_lib/logger";
 import { formatStepSize } from "../module/exchange/utils";
-
+import * as _ from "lodash";
 appEnv.initConfig(); // 初始化基本配置
 
 console.log(formatStepSize("0.013884994", "0.01000000"));
@@ -26,15 +26,14 @@ async function main() {
       accountId: "a002",
       exchangeName: "binance",
       spotAccount: {
-        apiKey:
-          "",
+        apiKey: "",
         apiSecret: "",
       },
       usdtFutureAccount: {
         apiKey:
-          "3563f1b46cb80f0cc5cafe42ee092b8d2341b7bbfa2a84f3c8521dd7826b200b",
+          "NzhXa9logqSx3Pnaejsa9siBtAnY5wPAmpyA7WN797BCGaaPxL8uWL178oWmYOLq",
         apiSecret:
-          "39034f6cacb2521eceb5dbb10d4d7f91a6b4c6c547da9c91439fd7dd86abe5b0",
+          "c8qoWHR1TwkwfoiV4lMAoa1b1AyW454jbdGzezeBKDpIG4TjIaeTtz6QtjbvGeFs",
       },
       coinFutureAccount: {
         apiKey: "",
@@ -47,14 +46,16 @@ async function main() {
   }, 1000);
   setTimeout(async () => {
     const result = await accountManager
-      .getAccount("a002")?.balance.getUsdtFuturePositions();
-    logger.debug(result);
+      .getAccount("a002")
+      ?.balance.getUsdtFutureAllPositionRisk();
+    console.log(_.find(result, { symbol: "ETH-USDT-SWAP" }));
   }, 3000);
-  setTimeout(async () => {
-    const result = await accountManager
-      .getAccount("a002")?.order.getUsdtFutureOrdersBySymbol("ETH/USDT");
-    logger.debug(result);
-  }, 3000);
+  // setTimeout(async () => {
+  //   const result = await accountManager
+  //     .getAccount("a002")
+  //     ?.order.getUsdtFutureOrdersBySymbol("ETH/USDT");
+  //   logger.debug(result);
+  // }, 3000);
 
   // setTimeout(async () => {
   //   // logger.debug(

@@ -2,15 +2,19 @@ import axios from "axios";
 import {
   IUsdtFutureSymbolItemBinance,
   IUsdtFutureBalanceItemBinance,
-  IOrderTypeBinance,
-  IUsdtFutureAccountPositionsItemBinance,
+  // IOrderTypeBinance,
+  IUsdtFutureAccountPositionsRiskItemBinance,
 } from "../../../interface/cex_binance";
 import { logger } from "../../../sys_lib/logger";
 import { signatureObject } from "../utils";
 import * as _ from "lodash";
 import { IStdExchangeUsdtFuture } from "../../../interface/std_exchange";
 import BigNumber from "bignumber.js";
-import { ISide, IUsdtFutureSymbolItem } from "../../../interface/std_difi";
+import {
+  ISide,
+  IUsdtFutureAccountPositionsRiskItem,
+  IUsdtFutureSymbolItem,
+} from "../../../interface/std_difi";
 import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
 import { binanceConfig } from "./binance_config";
 
@@ -21,12 +25,23 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
   protected symbolsInfo: Map<string, IUsdtFutureSymbolItemBinance> = new Map();
   protected balance: Map<string, IUsdtFutureBalanceItemBinance> = new Map();
 
+  protected positionRisk: Map<string, IUsdtFutureAccountPositionsRiskItem> =
+    new Map();
+
   constructor(accountInfo: { apiKey: string; apiSecret: string }) {
     this.apiKey = accountInfo.apiKey;
     this.apiSecret = accountInfo.apiSecret;
     this.apiBaseUrl = binanceConfig.getUsdtFutureBaseApi();
   }
 
+  /**
+   * sync account balance
+   * @date 2023/5/12 - 14:16:00
+   *
+   * @public
+   * @async
+   * @returns {Promise<void>} ""
+   */
   public async fetchBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(
@@ -68,7 +83,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
     }
   }
 
-  public async fetchPositions() {
+  public async fetchPositionRisk() {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(
         `账户没有初始化，不同步余额`,
@@ -82,7 +97,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
         timestamp: new Date().getTime(),
       };
       const signedStr = signatureObject(queryStr, this.apiSecret);
-      const requestUrl = `${this.apiBaseUrl}/fapi/v2/account?${signedStr}`;
+      const requestUrl = `${this.apiBaseUrl}/fapi/v2/positionRisk?${signedStr}`;
       // logger.debug(`request account api`, requestUrl);
       const result = await axios.request({
         url: requestUrl,
@@ -92,13 +107,13 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
         },
       });
       // @ts-ignore
-      const accountInfo: IUsdtFutureAccountPositionsItemBinance[] = _.get(
+      const riskList: IUsdtFutureAccountPositionsRiskItemBinance[] = _.get(
         result,
         "data",
         {}
       );
-      // logger.debug(JSON.stringify(accountInfo));
-      // this.saveBalanceList(balanceList);
+
+      await this.savePositionRisk(riskList);
     } catch (e) {
       const error: any = e;
       const errMsg = _.get(e, "response.data.msg", undefined);
@@ -108,6 +123,67 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
         logger.error(error.toString());
       }
     }
+  }
+  private async savePositionRisk(
+    riskList: IUsdtFutureAccountPositionsRiskItemBinance[]
+  ) {
+    const positionsInfo: {
+      [key: string]: IUsdtFutureAccountPositionsRiskItem;
+    } = {};
+    for (const item of riskList) {
+      const stdSymbol = this.getStdSymbol(item.symbol);
+      if (stdSymbol === "") {
+        logger.warn(item.symbol);
+        continue;
+      }
+      const positionSide = item.positionSide;
+      const positionData = {
+        qty: _.get(item, "positionAmt", ""),
+        availQty: _.get(item, "positionAmt", ""),
+        avgCost: _.get(item, "entryPrice", ""),
+        leverage: _.get(item, "leverage", ""),
+        liquidationPrice: _.get(item, "liquidationPrice", ""),
+        lastPrice: "0",
+        markPrice: _.get(item, "markPrice", ""),
+      };
+      _.set(positionsInfo, `${stdSymbol}.fetchTimestamp`, new Date().getTime());
+      _.set(positionsInfo, `${stdSymbol}.symbol`, stdSymbol);
+      if (positionSide === "SHORT") {
+        _.set(positionsInfo, `${stdSymbol}.SHORT`, positionData);
+      }
+      if (positionSide === "LONG") {
+        _.set(positionsInfo, `${stdSymbol}.LONG`, positionData);
+      }
+      if (positionSide === "BOTH") {
+        const positionAmt = Number(_.get(item, "positionAmt", "0"));
+        if (positionAmt > 0) {
+          _.set(positionsInfo, `${stdSymbol}.LONG`, positionData);
+        }
+        if (positionAmt < 0) {
+          _.set(positionsInfo, `${stdSymbol}.SHORT`, positionData);
+        }
+        if (positionAmt === 0) {
+          _.set(positionsInfo, `${stdSymbol}.LONG`, positionData);
+          _.set(positionsInfo, `${stdSymbol}.SHORT`, positionData);
+        }
+      }
+    }
+    for (const key of Object.keys(positionsInfo)) {
+      this.positionRisk.set(key, positionsInfo[key]);
+    }
+  }
+
+  public getPositionRisk(): Map<string, IUsdtFutureAccountPositionsRiskItem> {
+    return this.positionRisk;
+  }
+  private getStdSymbol(symbol: string): string {
+    let stdSymbol = "";
+    this.symbolsInfo.forEach((value) => {
+      if (value.symbol === symbol) {
+        stdSymbol = value.stdSymbol;
+      }
+    });
+    return stdSymbol;
   }
 
   public async fetchOrdersBySymbol(symbol: string): Promise<any> {
@@ -134,13 +210,12 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
           "X-MBX-APIKEY": this.apiKey,
         },
       });
-      const accountInfo: IUsdtFutureAccountPositionsItemBinance[] = _.get(
+      const accountInfo: IUsdtFutureAccountPositionsRiskItemBinance[] = _.get(
         result,
         "data",
         {}
       );
       logger.debug(JSON.stringify(accountInfo));
-      // this.saveBalanceList(balanceList);
     } catch (e) {
       const error: any = e;
       const errMsg = _.get(e, "response.data.msg", undefined);
@@ -155,30 +230,44 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
 
   private saveBalanceList(balanceList: IUsdtFutureBalanceItemBinance[]) {
     for (const item of balanceList) {
-      // logger.debug(item);
+      _.set(item, "total", item.crossWalletBalance);
+      _.set(item, "free", item.availableBalance);
+      _.set(item, "timestamp", new Date().getTime());
       this.balance.set(item.asset, item);
     }
   }
 
   public getBalance(): Map<string, IUsdtFutureBalanceItemBinance> {
     const ret: Map<string, IUsdtFutureBalanceItemBinance> = new Map();
+
     this.balance.forEach((value, key) => {
       ret.set(key, {
         accountAlias: value.accountAlias, // "FzmYFzsRfWTisR",
         asset: value.asset, // value.asset,
         balance: value.balance, // "0.04377417",
         crossWalletBalance: value.crossWalletBalance, // "0.04377417",
+        total: value.crossWalletBalance,
+        free: value.availableBalance,
         crossUnPnl: value.crossUnPnl, // "0.00000000",
         availableBalance: value.availableBalance, // "0.56178156",
         maxWithdrawAmount: value.maxWithdrawAmount, // "0.04377417",
         marginAvailable: value.marginAvailable, // true,
         updateTime: value.updateTime, // 1675678261600,
+        timestamp: value.timestamp,
       });
     });
     return ret;
   }
 
-  public async initMarkets() {
+  /**
+   * Initialize transaction pair information
+   * @date 2023/5/12 - 13:33:34
+   *
+   * @public
+   * @async
+   * @returns {*} "void"
+   */
+  public async initMarkets(): Promise<void> {
     const url = `${this.apiBaseUrl}/fapi/v1/exchangeInfo`;
     try {
       logger.debug(`request symbol info url: ${url}`);
@@ -196,15 +285,18 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
     } catch (e) {
       const err: any = e;
       logger.debug(err.toString());
-      throw new Error(`请求${url}发生了错误，Error:${err.toString()}`);
+      throw new Error(`request ${url} Error:${err.toString()}`);
     }
   }
 
   private setExchangeSymbolInfo(symbols: IUsdtFutureSymbolItemBinance[]) {
     for (const item of symbols) {
-      if (item.status === "TRADING" && item.contractType === "PERPETUAL") {
-        // 先只放永续合约
-        const stdSymbol = `${item.baseAsset}/${item.quoteAsset}`;
+      if (
+        !["CLOSE", "PENDING_TRADING"].includes(item.status) &&
+        item.contractType === "PERPETUAL"
+      ) {
+        const stdSymbol = `${item.baseAsset}-${item.quoteAsset}-SWAP`;
+        // logger.debug(`set swap info`, stdSymbol);
         _.set(item, "stdSymbol", stdSymbol);
         this.symbolsInfo.set(item.stdSymbol, item);
       }
@@ -236,31 +328,32 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
     amount: BigNumber,
     side: ISide
   ): Promise<any> {
-    logger.debug(orderId, stdSymbol, amount, side);
+    throw new Error(`not yet implemented`);
+    // logger.debug(orderId, stdSymbol, amount, side);
 
-    const orderData = {
-      symbol: "ETHUSDT",
-      positionSide: "BOTH",
-      side: "SELL",
-      quantity: 0.6,
-      recvWindow: 5000,
-      type: IOrderTypeBinance.Market,
-      newClientOrderId: orderId,
-      timestamp: new Date().getTime(),
-    };
-    const postStr = signatureObject(orderData, this.apiSecret);
-    const orderUrl = `${this.apiBaseUrl}/fapi/v1/order`;
-    const result = await axios.request({
-      url: orderUrl,
-      method: "POST",
-      headers: {
-        "X-MBX-APIKEY": this.apiKey,
-      },
-      data: postStr,
-      httpsAgent: httpsKeepAliveAgent,
-    });
-    logger.info(result);
-    process.exit();
+    // const orderData = {
+    //   symbol: "ETHUSDT",
+    //   positionSide: "BOTH",
+    //   side: "SELL",
+    //   quantity: 0.6,
+    //   recvWindow: 5000,
+    //   type: IOrderTypeBinance.Market,
+    //   newClientOrderId: orderId,
+    //   timestamp: new Date().getTime(),
+    // };
+    // const postStr = signatureObject(orderData, this.apiSecret);
+    // const orderUrl = `${this.apiBaseUrl}/fapi/v1/order`;
+    // const result = await axios.request({
+    //   url: orderUrl,
+    //   method: "POST",
+    //   headers: {
+    //     "X-MBX-APIKEY": this.apiKey,
+    //   },
+    //   data: postStr,
+    //   httpsAgent: httpsKeepAliveAgent,
+    // });
+    // logger.info(result);
+    // process.exit();
   }
 }
 

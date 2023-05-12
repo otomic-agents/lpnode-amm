@@ -6,6 +6,7 @@ import {
   ICexAccount,
   ICoinFutureBalanceItem,
   ISpotBalanceItem,
+  IUsdtFutureAccountPositionsRiskItem,
   IUsdtFutureBalanceItem,
 } from "../../interface/std_difi";
 import { logger } from "../../sys_lib/logger";
@@ -17,6 +18,10 @@ class StdBalance {
   private accountInfo: ICexAccount;
   private spotBalance: Map<string, ISpotBalanceItem> = new Map();
   private usdtFutureBalance: Map<string, IUsdtFutureBalanceItem> = new Map();
+  private usdtFuturePositionRisk: Map<
+    string,
+    IUsdtFutureAccountPositionsRiskItem
+  >;
   private coinFutureBalance: Map<string, ICoinFutureBalanceItem> = new Map();
 
   // private coinFutureBalance:Map<string ,IFutureUsdtBalanceItem> = new Map()
@@ -44,11 +49,6 @@ class StdBalance {
     return balanceItem;
   }
 
-  public async getUsdtFuturePositions() {
-    const positions = await this.stdExchange.exchangeUsdtFuture.fetchPositions();
-    logger.debug(positions);
-  }
-
   public getAllSpotBalance() {
     const itemList: { free: string; asset: string; locked: string }[] = [];
     this.spotBalance.forEach((value) => {
@@ -56,21 +56,27 @@ class StdBalance {
     });
     return itemList;
   }
+  public showSpotBalance() {
+    this.spotBalance.forEach((item, k) => {
+      console.log(k, JSON.stringify(item));
+    });
+  }
 
   public getUsdtFutureBalance(
     symbol: string
   ): IUsdtFutureBalanceItem | undefined {
     return this.usdtFutureBalance.get(symbol);
   }
+  public getUsdtFutureAllBalance() {
+    const list: IUsdtFutureBalanceItem[] = [];
+    this.usdtFutureBalance.forEach((value) => {
+      list.push(value);
+    });
+    return list;
+  }
 
   public getCoinFutureBalance(symbol: string) {
     return this.coinFutureBalance.get(symbol);
-  }
-
-  public showSpotBalance() {
-    this.spotBalance.forEach((item, k) => {
-      console.log(k, JSON.stringify(item));
-    });
   }
 
   public async withdrawApply() {
@@ -101,6 +107,28 @@ class StdBalance {
     }, 1000 * 30);
   }
 
+  public async syncUsdtFuturePositionRisk() {
+    await this.stdExchange.exchangeUsdtFuture.fetchPositionRisk();
+    this.usdtFuturePositionRisk =
+      this.stdExchange.exchangeUsdtFuture.getPositionRisk();
+    logger.debug(`syncUsdtFuturePositionRisk Complete.... Set to StdBalance`);
+
+    setTimeout(() => {
+      this.syncUsdtFuturePositionRisk().catch((e) => {
+        logger.error(e);
+      });
+    }, 1000 * 30);
+  }
+  public getUsdtFutureAllPositionRisk() {
+    const itemList: IUsdtFutureAccountPositionsRiskItem[] = [];
+    this.usdtFuturePositionRisk.forEach((value) => {
+      itemList.push(value);
+    });
+    // console.log(JSON.stringify(itemList));
+    return itemList;
+    //
+  }
+
   private async reportSpotBalance() {
     console.log(`cex account info:`);
     const balanceList: any[] = [];
@@ -127,6 +155,10 @@ class StdBalance {
     setTimeout(() => {
       this.syncUsdtFutureBalance();
     }, 1000 * 30);
+  }
+
+  public async syncUsdtFuturePositions() {
+    //
   }
 
   public async syncCoinFutureBalance() {

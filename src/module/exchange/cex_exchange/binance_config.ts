@@ -16,7 +16,7 @@ class BinanceConfig {
     } else {
       this.baseApi = {
         spot: "https://testnet.binance.vision",
-        usdtFuture: "https://testnet.binancefuture.com",
+        usdtFuture: "https://fapi.binance.com",
         coinFuture: "https://testnet.binancefuture.com",
       };
     }

@@ -68,6 +68,29 @@ interface ICoinFutureSymbolItem {
   quoteAssetPrecision: number;
 }
 
+interface IUsdtFutureAccountPositionsRiskItem {
+  symbol: string;
+  fetchTimestamp: string;
+  LONG?: {
+    qty: string;
+    availQty: string;
+    avgCost: string;
+    leverage: string;
+    liquidationPrice: string;
+    lastPrice: string;
+    markPrice: string;
+  };
+  SHORT?: {
+    qty: string;
+    availQty: string;
+    avgCost: string;
+    leverage: string;
+    liquidationPrice: string;
+    lastPrice: string;
+    markPrice: string;
+  };
+}
+
 // 订单相关定义______________________________________
 enum ISide {
   BUY = "BUY",
@@ -125,4 +148,5 @@ export {
   IUsdtFutureBalanceItem,
   ICoinFutureBalanceItem,
   ICoinFutureSymbolItem,
+  IUsdtFutureAccountPositionsRiskItem,
 };

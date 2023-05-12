@@ -12,9 +12,9 @@ WORKDIR /data/lp_main/
 RUN apt-get update
 RUN yes|apt-get install libusb-1.0-0-dev
 RUN yes|apt-get install libudev-dev
-RUN npm i 
-# build 
+RUN npm i
+# build
 RUN npx gulp
 # CMD [ "node", "main.js" ]
-CMD [ "node", "dist/main.js" ]
+CMD [ "node","--enable-source-maps", "dist/main.js" ]
 

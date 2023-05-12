@@ -8,6 +8,7 @@
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-var-requires": "off",
     "array-bracket-spacing": "off",
+    "arrow-parens": "off",
     "newline-per-chained-call": "off",
     "dot-notation": "off",
     "comma-dangle": "off",
@@ -23,6 +24,7 @@
     ],
     "linebreak-style": [0, "unix", "windows"],
     "quotes": "off",
+    "@typescript-eslint/indent": "off",
     "semi": ["error", "always"],
     "strict": ["error", "global"],
     "global-require": 0

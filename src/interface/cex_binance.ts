@@ -140,10 +140,26 @@ interface IUsdtFutureBalanceItemBinance {
   maxWithdrawAmount: string; // "23.72469206"; // 最大可转出余额
   marginAvailable: boolean; // true; // 是否可用作联合保证金
   updateTime: number; // 1617939110373;
+  total: string; // 全仓余额
+  free: string; // 全仓可用余额
+  timestamp: number;
 }
-
-interface IUsdtFutureAccountPositionsItemBinance{
-  symbol:string
+interface IUsdtFutureAccountPositionsRiskItemBinance {
+  symbol: string; // "SUSHIUSDT";
+  positionAmt: string; // "0";
+  entryPrice: string; // "0.0";
+  markPrice: string; // "0.00000000";
+  unRealizedProfit: string; // "0.00000000";
+  liquidationPrice: string; // "0";
+  leverage: string; // "1";
+  maxNotionalValue: string; // "1.0E7";
+  marginType: string; // "cross"
+  isolatedMargin: string; // "0.00000000";
+  isAutoAddMargin: string;
+  positionSide: string; // "LONG";
+  notional: string; // "0";
+  isolatedWallet: string; // "0";
+  updateTime: number; // 0;
 }
 
 // 币本位余额的定义
@@ -174,5 +190,5 @@ export {
   IUsdtFutureSymbolItemBinance,
   ICoinFutureBalanceItemBinance,
   ICoinFutureSymbolItemBinance,
-  IUsdtFutureAccountPositionsItemBinance
+  IUsdtFutureAccountPositionsRiskItemBinance,
 };
