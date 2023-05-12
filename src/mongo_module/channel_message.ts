@@ -8,8 +8,15 @@ const channelMessageSchema = new Schema({
   channelName: String,
   message: Object,
 
+  createAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
-
+channelMessageSchema.index(
+  { createAt: 1 },
+  { expireAfterSeconds: 3600 * 24 * 7 }
+);
 
 export const channelMessageModule = mongoConn.model(
   "channelMessageModule",

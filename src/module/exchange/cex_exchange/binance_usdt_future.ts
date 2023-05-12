@@ -2,7 +2,8 @@ import axios from "axios";
 import {
   IUsdtFutureSymbolItemBinance,
   IUsdtFutureBalanceItemBinance,
-  IOrderTypeBinance, IUsdtFutureAccountPositionsItemBinance,
+  IOrderTypeBinance,
+  IUsdtFutureAccountPositionsItemBinance,
 } from "../../../interface/cex_binance";
 import { logger } from "../../../sys_lib/logger";
 import { signatureObject } from "../utils";
@@ -28,7 +29,10 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
 
   public async fetchBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
-      logger.warn(`账户没有初始化，不同步余额`, "binance_usdt_future___fetchBalance");
+      logger.warn(
+        `账户没有初始化，不同步余额`,
+        "binance_usdt_future___fetchBalance"
+      );
       return;
     }
     try {
@@ -66,7 +70,10 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
 
   public async fetchPositions() {
     if (this.apiKey === "" || this.apiSecret === "") {
-      logger.warn(`账户没有初始化，不同步余额`, "binance_usdt_future___fetchPositions");
+      logger.warn(
+        `账户没有初始化，不同步余额`,
+        "binance_usdt_future___fetchPositions"
+      );
       return;
     }
     try {
@@ -101,12 +108,14 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
         logger.error(error.toString());
       }
     }
-
   }
 
   public async fetchOrdersBySymbol(symbol: string): Promise<any> {
     if (this.apiKey === "" || this.apiSecret === "") {
-      logger.warn(`账户没有初始化，无法获取订单列表`, "binance_usdt_future___fetchOrders");
+      logger.warn(
+        `账户没有初始化，无法获取订单列表`,
+        "binance_usdt_future___fetchOrders"
+      );
       return "";
     }
     try {
@@ -146,9 +155,8 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
 
   private saveBalanceList(balanceList: IUsdtFutureBalanceItemBinance[]) {
     for (const item of balanceList) {
-      logger.debug(item);
+      // logger.debug(item);
       this.balance.set(item.asset, item);
-
     }
   }
 
