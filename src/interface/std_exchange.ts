@@ -74,6 +74,7 @@ interface IStdExchangeCoinFuture {
 }
 
 interface IStdExchange {
+  exchangeName: string;
   exchangeSpot: IStdExchangeSpot;
   exchangeUsdtFuture: IStdExchangeUsdtFuture;
   exchangeCoinFuture: IStdExchangeCoinFuture;

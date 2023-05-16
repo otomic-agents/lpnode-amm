@@ -10,6 +10,7 @@ import {
   IUsdtFutureBalanceItem,
 } from "../../interface/std_difi";
 import { logger } from "../../sys_lib/logger";
+import { exchangeRedisStore } from "./redis_store";
 // @ts-ignore
 const cTable = require("console.table");
 
@@ -111,6 +112,14 @@ class StdBalance {
     await this.stdExchange.exchangeUsdtFuture.fetchPositionRisk();
     this.usdtFuturePositionRisk =
       this.stdExchange.exchangeUsdtFuture.getPositionRisk();
+
+    for (const [key, value] of this.usdtFuturePositionRisk) {
+      const redisKey =
+        `${this.stdExchange.exchangeName}_PositionRisk_USDT_SWAP`.toUpperCase();
+      const subKey = `${key}`.toUpperCase();
+      logger.debug(redisKey, subKey);
+      await exchangeRedisStore.hset(redisKey, subKey, JSON.stringify(value));
+    }
     logger.debug(`syncUsdtFuturePositionRisk Complete.... Set to StdBalance`);
 
     setTimeout(() => {

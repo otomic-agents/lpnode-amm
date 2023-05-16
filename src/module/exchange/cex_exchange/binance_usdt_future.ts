@@ -295,7 +295,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
         !["CLOSE", "PENDING_TRADING"].includes(item.status) &&
         item.contractType === "PERPETUAL"
       ) {
-        const stdSymbol = `${item.baseAsset}-${item.quoteAsset}-SWAP`;
+        const stdSymbol = `${item.baseAsset}-${item.quoteAsset}-SWAP:USDT`;
         // logger.debug(`set swap info`, stdSymbol);
         _.set(item, "stdSymbol", stdSymbol);
         this.symbolsInfo.set(item.stdSymbol, item);

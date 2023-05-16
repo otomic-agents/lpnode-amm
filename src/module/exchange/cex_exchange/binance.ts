@@ -14,6 +14,7 @@ class BinanceExchange implements IStdExchange {
   public exchangeSpot: IStdExchangeSpot;
   public exchangeUsdtFuture: IStdExchangeUsdtFuture;
   public exchangeCoinFuture: IStdExchangeCoinFuture;
+  public exchangeName = "binance";
   private spotAccount: {
     apiKey: string;
     apiSecret: string;

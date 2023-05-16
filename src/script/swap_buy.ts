@@ -48,7 +48,7 @@ async function main() {
     const result = await accountManager
       .getAccount("a002")
       ?.balance.getUsdtFutureAllPositionRisk();
-    console.log(_.find(result, { symbol: "ETH-USDT-SWAP" }));
+    // console.log(_.find(result, { symbol: "ETH-USDT-SWAP" }));
   }, 3000);
   // setTimeout(async () => {
   //   const result = await accountManager
