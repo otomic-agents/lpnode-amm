@@ -11,11 +11,10 @@ function getUnitStr(unit: number) {
       return item;
     }
   }
-  throw new Error(`没有找到类型`);
+  throw new Error(`type not found`);
 }
 
 class EthUnit {
-
   static toWei(input: string, unit: number) {
     const weiStr = getUnitStr(unit);
     logger.debug(input, weiStr);
@@ -23,11 +22,9 @@ class EthUnit {
   }
 
   static fromWei(input: string, unit: number) {
-
     const weiStr = getUnitStr(unit);
     logger.debug(input, weiStr);
     return web3.utils.fromWei(input, weiStr);
-
   }
 
   static fromWeiToNumber(input: string, unit: number) {
@@ -36,9 +33,6 @@ class EthUnit {
     const ret = web3.utils.fromWei(input, weiStr);
     return Number(new BigNumber(ret).toFixed(8).toString());
   }
-
 }
 
-export {
-  EthUnit
-};
+export { EthUnit };

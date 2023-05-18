@@ -4,7 +4,7 @@ import { coinSpotHedge } from "./hedge/coin_spot_hedge";
 
 class HedgeManager {
   public async init() {
-    await coinSpotHedge.init(); // 开始处理对冲队列
+    await coinSpotHedge.init();
     logger.debug(`init HedgeManager`);
   }
 
@@ -12,7 +12,9 @@ class HedgeManager {
     if (hedgeType === IHedgeType.CoinSpotHedge) {
       return coinSpotHedge;
     }
-    throw new Error(`没有找到对应的对冲实现${hedgeType}`);
+    throw new Error(
+      `No corresponding hedging implementation found:${hedgeType}`
+    );
   }
 }
 

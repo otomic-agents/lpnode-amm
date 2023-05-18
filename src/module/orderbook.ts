@@ -1,6 +1,5 @@
 /**
  * It is used to synchronize the order book data of Cex market service. The current market service already supports spot currency perpetual and U perpetual
- * 2023年01月13日19:22:05
  */
 import {
   IMarketOrderbookRet,
@@ -36,7 +35,7 @@ class Orderbook {
   }
 
   public async init(): Promise<void> {
-    logger.debug("初始化Orderbook..");
+    logger.debug("Initialize Orderbook..");
     this.startOrderbookGc();
     _.attempt(async () => {
       await this.syncSpotOrderbook();
@@ -68,7 +67,7 @@ class Orderbook {
       await this.requestSpotOrderbook(); // Update and set up Spotorderbook
       this.spotOrderbookOnceLoaded = true;
     } catch (e) {
-      logger.error(`同步orderbook发生了错误`, e);
+      logger.error(`synchronizing orderbook error:`, e);
     }
 
     setTimeout(() => {
@@ -110,7 +109,7 @@ class Orderbook {
       const url = `http://${orderbookServiceHost}:${orderbookServicePort}/api/spotOrderbook`;
       // logger.info(`request orderbook Url:`, url);
       const result = await axios.get(url);
-      const code = _.get(result, "data.code", { code: 1 }); // 获取axios的data
+      const code = _.get(result, "data.code", { code: 1 });
       const data: IMarketOrderbookRet = _.get(result, "data.data", {});
       if (code !== 0) {
         logger.error("An error occurred while obtaining the orderbook");

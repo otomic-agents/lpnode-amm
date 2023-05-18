@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 import { logger } from "../../sys_lib/logger";
 
 class StdOrder {
-  private stdExchange: IStdExchange; // cex 所的引用
+  private stdExchange: IStdExchange;
   public constructor(cexExchange: IStdExchange) {
     this.stdExchange = cexExchange;
   }
@@ -92,7 +92,6 @@ class StdOrder {
   }
 
   public async getUsdtFutureOrdersBySymbol(symbol: string) {
-
     return this.stdExchange.exchangeUsdtFuture.fetchOrdersBySymbol(symbol);
   }
 

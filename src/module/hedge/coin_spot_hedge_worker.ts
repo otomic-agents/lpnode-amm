@@ -45,7 +45,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         executeFun = "spotSell";
       }
       if (order.amountNumber === 0) {
-        logger.warn("忽略这个,amount为0", order.symbol, order.side);
+        logger.warn("skip amount zero", order.symbol, order.side);
         continue;
       }
       logger.debug(
@@ -93,7 +93,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         flowStatus: EFlowStatus.HedgeCompletion,
       });
     } catch (e) {
-      logger.error(`更新对冲记录失败`, e);
+      logger.error(`Failed to update hedge record`, e);
     }
   }
 
@@ -308,14 +308,14 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     orderId: number;
     ammContext: AmmContext;
   }) {
-    logger.warn(call.ammContext.systemOrder.balanceLockedId, "💘💘💘💘💘💘");
-    // 删除本次报价的锁定余额
+    logger.warn(call.ammContext.systemOrder.balanceLockedId, "💘");
+    // Delete the locked balance of this quote
     const freeRet = await balanceLockModule
       .deleteOne({
         quoteHash: call.ammContext.quoteInfo.quote_hash,
       })
       .lean();
-    logger.info(freeRet, "🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓🆓");
+    logger.info(freeRet, "🆓");
   }
 }
 

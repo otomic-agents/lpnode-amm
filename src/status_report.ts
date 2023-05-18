@@ -40,7 +40,7 @@ class StatusReport {
   private async storeData() {
     const statusKey = _.get(process.env, "STATUS_KEY", undefined);
     if (!statusKey) {
-      logger.error(`没有找到需要设置状态的Key`);
+      logger.error(`can't find status key`);
       return;
     }
     statusRedis

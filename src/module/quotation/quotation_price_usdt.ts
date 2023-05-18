@@ -24,7 +24,7 @@ class QuotationPrice {
       chainId
     );
     if (!stdCoinSymbol) {
-      logger.error(`获取Token对应的StdCoinSymbol失败，请检查基础配置${token}`);
+      logger.error(`token symbol error`);
       return {
         stdSymbol: null,
         bids: [[0, 0]],
@@ -51,7 +51,7 @@ class QuotationPrice {
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
-      logger.error(`获取orderbook失败...`);
+      logger.error(`failed to get orderbook...`);
       return {
         stdSymbol: null,
         bids: [[0, 0]],
@@ -67,7 +67,7 @@ class QuotationPrice {
       return [Number(it[0]), Number(it[1])];
     });
     if (retBids.length <= 2 || retAsks.length <= 2) {
-      logger.debug(`orderbook的深度不够`, stdSymbol);
+      logger.debug(`the depth of the orderbook is not enough`, stdSymbol);
       return {
         stdSymbol: null,
         bids: [[0, 0]],
@@ -96,7 +96,7 @@ class QuotationPrice {
       chainId
     );
     if (!stdCoinSymbol) {
-      logger.error(`获取Token对应的StdCoinSymbol失败，请检查基础配置${token}`);
+      logger.error(`wrong token symbol:${token}`);
       return {
         stdSymbol: null,
         bids: 0,
@@ -123,7 +123,7 @@ class QuotationPrice {
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
-      logger.error(`获取orderbook失败...`);
+      logger.error(`failed to get orderbook...`);
       return {
         stdSymbol: null,
         bids: 0,
@@ -163,7 +163,9 @@ class QuotationPrice {
       chainId
     );
     if (!stdCoinSymbol) {
-      logger.error(`获取Token对应的StdCoinSymbol失败，请检查基础配置${token}`);
+      logger.error(
+        `Failed to get the StdCoinSymbol corresponding to Token, please check the basic configuration:${token}`
+      );
       return {
         stdSymbol: null,
         bids: [[0, 0]],
@@ -190,7 +192,7 @@ class QuotationPrice {
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
-      logger.error(`获取orderbook失败...`);
+      logger.error(`Failed to get orderbook...`);
       return {
         stdSymbol: null,
         bids: [[0, 0]],
@@ -228,7 +230,7 @@ class QuotationPrice {
       });
       // console.log(execResult, orderbook_asks);
       if (left_amount > 0) {
-        throw "orderbook 无法满足报价";
+        throw "orderbook unable to meet the offer";
       }
       return [
         [
@@ -266,7 +268,7 @@ class QuotationPrice {
       });
       // console.log(execResult, orderbook_bids);
       if (left_amount > 0) {
-        throw "orderbook 无法满足报价";
+        throw "orderbook unable to meet the offer";
       }
       return [
         [
@@ -298,7 +300,7 @@ class QuotationPrice {
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
-      logger.error(`获取orderbook失败...${stdSymbol}`);
+      logger.error(`failed to get orderbook...${stdSymbol}`);
       return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     }
     const { bids, asks } = orderbookItem;
@@ -328,7 +330,7 @@ class QuotationPrice {
     }
     const orderbookItem = orderbook.getSpotOrderbook(stdSymbol);
     if (!orderbookItem) {
-      logger.error(`获取orderbook失败...${stdSymbol}`);
+      logger.error(`failed to get orderbook...${stdSymbol}`);
       return {
         stdSymbol: null,
         bids: 0,
@@ -377,8 +379,8 @@ class QuotationPrice {
       asks: [[tokenUsdtPrice]],
     } = this.getCoinStableCoinOrderBookByCoinName(gasSymbol);
     if (!_.isFinite(tokenUsdtPrice) || tokenUsdtPrice === 0) {
-      logger.error(`没有找到U价，报价失败 ${gasSymbol}`);
-      throw new Error(`目标链Gas币Usdt 价值获取失败，无法报价${gasSymbol}`);
+      logger.error(`failed to get price :${gasSymbol}`);
+      throw new Error(`failed to get price :${gasSymbol}`);
     }
     return tokenUsdtPrice;
   }
@@ -390,8 +392,10 @@ class QuotationPrice {
     const { asks: askLiquidity } =
       this.getCoinStableCoinOrderBookLiquidityByCoinName(gasSymbol);
     if (!_.isFinite(askLiquidity) || askLiquidity === 0) {
-      logger.error(`没有找到流动性信息 ${gasSymbol}`);
-      throw new Error(`目标链Gas币Usdt 流动性获取失败`);
+      logger.error(`no liquidity information found ${gasSymbol}`);
+      throw new Error(
+        `DstChainNativeToken/USDT no liquidity information found`
+      );
     }
     return askLiquidity;
   }

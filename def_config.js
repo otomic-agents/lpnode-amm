@@ -19,7 +19,7 @@ const data = {
       relay_api_key: "96OZBSog7PeRHBn"
     },
     {
-      bridge: { // 测试环境 ETH-ETH
+      bridge: {
         src_chain_id: 9006,
         dst_chain_id: 9006,
         src_token: "0x61D35C6B6a7568542acA42448B47690650C69bb9",

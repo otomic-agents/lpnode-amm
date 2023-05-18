@@ -119,23 +119,23 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   }
 
   /**
-   * Description 检查左侧的币是否有余额
+   * check srcTokenBalance on hedge account
    * @date 2023/4/13 - 15:04:07
    *
    * @public
    * @async
-   * @param {AmmContext} ammContext "系统上下文"
-   * eth-usdt  cex 要有足额的eth 卖掉
-   * usdt-eth  cex 要有足额的usdt 买eth
-   * eth-avax  cex 要有足额的eth 卖掉
-   * eth-eth   不限制
-   * usdt-usdt 不限制
+   * @param {AmmContext} ammContext "context"
+   * eth-usdt  cex There must be enough | sell eth
+   * usdt-eth  cex There must be enough usdt | buy eth
+   * eth-avax  cex There must be enough eth | ell eth  bue avax
+   * eth-eth   not limited
+   * usdt-usdt not limited
    * @returns {*} bool or throw
    */
   public async checkSwapAmount(ammContext: AmmContext) {
     const skipMode = ["11", "ss"];
     if (skipMode.includes(ammContext.quoteInfo.mode)) {
-      logger.debug(`不进行swapAmount检查，mode:${ammContext.quoteInfo.mode}`);
+      logger.debug(`No swapAmount check,mode:${ammContext.quoteInfo.mode}`);
       return true;
     }
     const symbol = ammContext.baseInfo.srcToken.symbol;
@@ -146,7 +146,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
       ?.balance.getSpotBalance(symbol);
     if (!balance) {
-      throw new Error(`获取余额失败`);
+      throw new Error(`failed to get balance`);
     }
     const free = Number(balance.free);
     const inputAmount = ammContext.swapInfo.inputAmountNumber;
@@ -165,7 +165,10 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   ): Promise<boolean> {
     const stdSymbol = this.getOptStdSymbol(ammContext);
     if (stdSymbol === false) {
-      logger.debug(ammContext.bridgeItem.std_symbol, "不需要进行对冲，不检查");
+      logger.debug(
+        ammContext.bridgeItem.std_symbol,
+        "No hedging required, skip"
+      );
       return true;
     }
     const accountIns = accountManager.getAccount(
@@ -436,7 +439,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
     try {
       const orderList = await this.worker.prepareOrder(ammContext);
-      console.log(`需要预先执行的订单`);
+      console.log(`orders requiring pre-execution`);
       console.dir(orderList, ConsoleDirDepth5);
       await this.worker.simulationExec(orderList);
       return true;
@@ -458,11 +461,11 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
         "record.asset": symbol,
       })
       .lean();
-    logger.warn(`找到了${result.length}条锁定记录`);
+    logger.warn(`Found ${result.length} locked records`);
     result.forEach((item) => {
       locked = locked.plus(new BigNumber(item.record.locked));
     });
-    logger.warn(accountId, "已经锁定的余额", locked.toString());
+    logger.warn(accountId, "locked balance", locked.toString());
     return locked;
   }
 
@@ -476,12 +479,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
    * @returns {Promise<number>} "Quote Max"
    */
   public async calculateCapacity(ammContext: AmmContext): Promise<number> {
-    // ETH-USDT //  min(The maximum amount sold ETH,目标链钱包最大余额价值多少 ETH)
-    // USDT-ETH // min(目标链钱包的最大余额,ETH, USDT 能购买的最大ETH量)
-    // USDT-USDT // min(目标链钱包的最大余额)
-    // ETH-ETH // min(目标链钱包的最大余额)
-    // ETH-AVAX // 还没有计算
-    // 目标Token ，在链上的最大余额
     const tokenInfo = dataConfig.getCexStdSymbolInfoByToken(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.dstToken.address,
@@ -541,7 +538,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     const maxTradeValue = SystemMath.min([coinMaxValue, gasTokenCoinMaxValue]);
     const maxTradeCount = SystemMath.execNumber(
       `${maxTradeValue}/${ammContext.quoteInfo.src_usd_price}*99.7%`,
-      "最大交易尺寸"
+      "Maximum Transaction Size"
     );
     const srcTokenCexBalance = accountIns.balance.getSpotBalance(
       tokenInfo[0].symbol
@@ -636,7 +633,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
-      logger.error(`没有完成account的初始化`);
+      logger.error(`did not complete account initialization`);
       return 0;
     }
     const [, gasTokenCoinMaxValue] =
@@ -662,14 +659,11 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   }
 
   private async calculateCapacity_bb(ammContext: AmmContext): Promise<number> {
-    /**
-     * 只要左侧可以卖掉，右侧就一定能买足量的币，因此不用考虑右侧币的余额，以及USDT的余额
-     */
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
-      logger.error(`没有完成account的初始化`);
+      logger.error(`did not complete account initialization`);
       return 0;
     }
     const aStdSymbol =
@@ -698,7 +692,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     const srcTokenCexBalance = accountIns.balance.getSpotBalance(
       tokenInfo[0].symbol
     );
-    const srcBalanceCount = Number(srcTokenCexBalance?.free); // 这个是左侧可以卖的最大量
+    const srcBalanceCount = Number(srcTokenCexBalance?.free);
     if (!srcBalanceCount || !_.isFinite(srcBalanceCount)) {
       return 0;
     }
@@ -718,7 +712,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     const hedgeInfo: ISpotHedgeInfo = JSON.parse(stringify(hedgeData));
     console.log("Basic Information on Current Hedging");
     this.writeJob(hedgeInfo).then(() => {
-      logger.debug(`已经写入到对冲的队列`, hedgeData.orderId);
+      logger.debug(`Already written to the hedged queue`, hedgeData.orderId);
     });
   }
 

@@ -3,10 +3,10 @@ interface SystemRecord {
   bridgeConfig: any;
   lockAmount: string;
   hash: string;
-  timestamp: number; // 订单创建的时间
+  timestamp: number; // create time
   transferOutTimestamp?: number;
   transferConfirmTimestamp?: number;
-  hedgeTimestamp: number; // 订单对冲的时间
+  hedgeTimestamp: number; // hedge time
   id: string;
   baseInfo?: {
     srcChain: {
@@ -29,27 +29,27 @@ interface SystemRecord {
     };
   };
   quoteInfo: {
-    amount: string; // 兑换的数量
-    quoteHash: string; // 报价时的hash
-    price: string; // 报价的价格
+    amount: string; // input amount
+    quoteHash: string; // quote hash
+    price: string;
     capacity: string;
-    nativeTokenPrice: string; // 原生币的价格
+    nativeTokenPrice: string;
   };
   transferOutInfo?: {
-    amount: string; // 转入的量
+    amount: string; // tranfer out amount
   };
   TransferInInfo: {
-    amount: string; // B链存入的token数量
+    amount: string;
   };
   hedgeInfo?: {
     status: number;
     errorMessage: string;
-    targetPrice: string; // 对冲的目标价
-    orderInfo: any; // 对冲单
+    targetPrice: string;
+    orderInfo: any;
     gasInfo: {
       gasPrice: string;
       gas: string;
-      gasUsedUsd: string; // gas  的U价
+      gasUsedUsd: string;
     };
   };
 }

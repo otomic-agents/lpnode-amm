@@ -4,11 +4,10 @@ import { logger } from "../../sys_lib/logger";
 
 class EventAdaptor {
   /**
-   * Description 从EventLock Data中获取Token 信息对
    * @date 1/18/2023 - 12:03:08 PM
    *
    * @public
-   * @param {*} sourceMessage 原始信息
+   * @param {*} sourceMessage original information
    * @returns {string} ""
    */
   public getTokenSymbolFromEventLock(sourceMessage: any): string {

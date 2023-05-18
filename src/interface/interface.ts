@@ -118,20 +118,20 @@ interface IHedgeClass {
     srcPrice: number,
     dstPrice: number,
     gasTokenPrice: number
-  ): Promise<number>; // 输入多少的左侧量，才能保证基本的对冲量限制
+  ): Promise<number>;
 
   checkSwapAmount(ammContext: AmmContext): Promise<boolean>;
 
   getHedgeAccountState(): Promise<number>;
 
-  getSwapMax(ammContext: AmmContext): Promise<BigNumber>; // 返回可以swap的最大量
+  getSwapMax(ammContext: AmmContext): Promise<BigNumber>; // Returns the maximum amount that can be swapped
 
-  checkHedgeCond(ammContext: AmmContext); // 检查是否可以完成对冲
+  checkHedgeCond(ammContext: AmmContext); // check Hedge Cond
   preExecOrder(ammContext: AmmContext): Promise<boolean>;
 
-  hedge(info: ISpotHedgeInfo); // 设置对冲信息
+  hedge(info: ISpotHedgeInfo);
 
-  lockHedgeBalance(ammContext: AmmContext, accountId: string); //  锁定用户余额
+  lockHedgeBalance(ammContext: AmmContext, accountId: string);
 
   writeJob(hedgeinfo: ISpotHedgeInfo);
 

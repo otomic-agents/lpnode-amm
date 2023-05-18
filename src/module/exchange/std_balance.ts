@@ -15,7 +15,7 @@ import { exchangeRedisStore } from "./redis_store";
 const cTable = require("console.table");
 
 class StdBalance {
-  private stdExchange: IStdExchange; // cex 所的引用
+  private stdExchange: IStdExchange;
   private accountInfo: ICexAccount;
   private spotBalance: Map<string, ISpotBalanceItem> = new Map();
   private usdtFutureBalance: Map<string, IUsdtFutureBalanceItem> = new Map();
@@ -89,7 +89,7 @@ class StdBalance {
   }
 
   /**
-   * Description 同步Cex现货的余额信息,并开启定时
+   * Synchronize the balance information
    * @date 1/17/2023 - 9:04:34 PM
    *
    * @public
@@ -148,7 +148,6 @@ class StdBalance {
   }
 
   /**
-   * Description 同步U本位合约余额信息,并开启定时 ，并把数据适配为标准数据格式
    * @date 1/17/2023 - 9:04:34 PM
    *
    * @public
