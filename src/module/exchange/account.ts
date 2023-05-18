@@ -81,12 +81,12 @@ class StdAccount {
   }
 
   /**
-   * Description 初始化balance类，并定时同步余额
+   * Initialize the balance class
    * @date 1/17/2023 - 8:53:26 PM
    *
    * @private
    * @async
-   * @param {IStdExchange} cexExchange "标准交易所"
+   * @param {IStdExchange} cexExchange "Exchange"
    * @returns {Promise<void>} ""
    */
   private async initBalance(cexExchange: IStdExchange): Promise<void> {

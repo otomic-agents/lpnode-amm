@@ -39,7 +39,7 @@ class EventAdaptor {
       0
     );
     if (srcChainId === 0 || dstChainId === 0) {
-      logger.error("获取链信息失败");
+      logger.error("Failed to get chain information");
       return [0, 0];
     }
     return [srcChainId, dstChainId];

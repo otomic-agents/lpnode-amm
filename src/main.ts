@@ -8,7 +8,6 @@ if (envFile) {
 }
 
 // process.exit();
-import { App } from "./app";
 
 import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
@@ -31,11 +30,7 @@ import { hedgeManager } from "./module/hedge_manager";
 import { systemRedisBus } from "./system_redis_bus";
 import { statusReport } from "./status_report";
 
-class Main extends App {
-  public constructor() {
-    super();
-  }
-
+class Main {
   public async main() {
     try {
       Mdb.getInstance().getMongoDb("main"); // Initialize database connection

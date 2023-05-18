@@ -67,8 +67,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
         const err: any = e;
         done(new Error(err.toString()));
         if (optAttempts >= 0 && attemptCount === optAttempts - 1) {
-          // 已经是最后一次尝试并且失败
-          logger.error(`对冲多次依然失败`, e);
+          logger.error(`last attempt failed`, e);
           try {
             await hedgeJobModule.create({
               jobRaw: {
@@ -89,7 +88,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       dataConfig.getHedgeConfig().hedgeType === IHedgeType.CoinSpotHedge &&
       dataConfig.getHedgeConfig().hedgeAccount !== ""
     ) {
-      logger.info(`开始初始化账户，因为配置了对冲..`);
+      logger.info(`initialize account`);
       await this.initAccount();
     }
   }
@@ -112,7 +111,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     try {
       await accountManager.init();
       // this.accountStatus = 1;
-      logger.info(`账号已经初始化完毕，可以正常处理报价了.`);
+      logger.info(`account has been initialized`);
     } catch (e) {
       logger.error(e);
     }
@@ -322,7 +321,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
    *
    * @private
    * @async
-   * @param {string} amountStr "原始的量"
+   * @param {string} amountStr "orig amount"
    * @param {number} precision "precision"
    * @returns {Promise<number>} "lock Amount"
    */
@@ -527,7 +526,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
-      logger.error(`没有完成account的初始化`);
+      logger.error(`did not complete account initialization`);
       return 0;
     }
     const [, coinMaxValue] = await accountIns.order.getSpotTradeMinMaxValue(
@@ -581,7 +580,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       return 0;
     }
     const minCount: any = SystemMath.min([srcTokenCexBalance, maxTradeCount]);
-    logger.debug(`spot hedge 最大供应量 `, minCount);
+    logger.debug(`spot hedge maximum supply `, minCount);
     return minCount;
   }
 
@@ -590,7 +589,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
-      logger.warn(`account ins 没有初始化`);
+      logger.warn(`account ins not initialized`);
       return 0;
     }
     const stdSymbol =

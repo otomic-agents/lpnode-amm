@@ -369,8 +369,8 @@ class Quotation {
    * @date 1/31/2023 - 5:30:29 PM
    *
    * @private
-   * @param {AmmContext} ammContext "报价的项"
-   * @param {any} sourceObject "价格"
+   * @param {AmmContext} ammContext "Context"
+   * @param {any} sourceObject ""
    * @returns {*} ""
    */
   public price(ammContext: AmmContext, sourceObject: any) {

@@ -23,9 +23,9 @@ class Orderbook {
       const timeNow = new Date().getTime();
       if (timeNow - orderbookItem.timestamp > 1000 * 30) {
         logger.warn(
-          `order book 过期.`,
+          `order book expired.`,
           (timeNow - orderbookItem.timestamp) / 1000,
-          "秒"
+          "sec"
         );
         return undefined;
       }

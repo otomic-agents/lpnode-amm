@@ -1,7 +1,7 @@
 /**
  * binance interface define
  */
-// 现货Symbol info
+// spot Symbol info
 interface ISpotSymbolItemBinance {
   symbol: string;
   status: "TRADING";
@@ -17,25 +17,25 @@ interface ISpotSymbolItemBinance {
 // USDT Symbol info
 interface IUsdtFutureSymbolItemBinance {
   stdSymbol: string;
-  symbol: string; // "BLZUSDT"; // 交易对
-  pair: string; // "BLZUSDT"; // 标的交易对
-  contractType: string; // "PERPETUAL"; // 合约类型
-  deliveryDate: string; // 4133404800000; // 交割日期
-  onboardDate: string; // 1598252400000; // 上线日期
-  status: string; // "TRADING"; // 交易对状态
-  maintMarginPercent: string; // "2.5000"; // 请忽略
-  requiredMarginPercent: string; // "5.0000"; // 请忽略
-  baseAsset: string; // "BLZ"; // 标的资产
-  quoteAsset: string; // "USDT"; // 报价资产
-  marginAsset: string; // "USDT"; // 保证金资产
-  pricePrecision: number; // 5; // 价格小数点位数(仅作为系统精度使用，注意同tickSize 区分）
-  quantityPrecision: number; // 0; // 数量小数点位数(仅作为系统精度使用，注意同stepSize 区分）
-  baseAssetPrecision: number; // 8; // 标的资产精度
-  quotePrecision: number; // 8; // 报价资产精度
+  symbol: string; // "BLZUSDT";
+  pair: string; // "BLZUSDT";
+  contractType: string; // "PERPETUAL";
+  deliveryDate: string; // 4133404800000;
+  onboardDate: string; // 1598252400000;
+  status: string; // "TRADING";
+  maintMarginPercent: string; // "2.5000";
+  requiredMarginPercent: string; // "5.0000";
+  baseAsset: string; // "BLZ";
+  quoteAsset: string; // "USDT";
+  marginAsset: string; // "USDT";
+  pricePrecision: number; // 5;
+  quantityPrecision: number; // 0;
+  baseAssetPrecision: number; // 8;
+  quotePrecision: number; // 8;
   underlyingType: string; // "COIN";
   underlyingSubType: string[]; // ["STORAGE"];
   settlePlan: number; // 0;
-  triggerProtect: string; // "0.15"; // 开启"priceProtect"的条件订单的触发阈值
+  triggerProtect: string; // "0.15";
   orderTypes: string[];
   timeInForce: string[];
 }
@@ -146,7 +146,6 @@ interface IUsdtFutureAccountPositionsRiskItemBinance {
   updateTime: number; // 0;
 }
 
-// 币本位余额的定义
 interface ICoinFutureBalanceItemBinance {
   accountAlias: string; // "SgsR";
   asset: string; // "BTC";

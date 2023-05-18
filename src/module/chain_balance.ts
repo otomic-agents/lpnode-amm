@@ -50,7 +50,10 @@ class ChainBalance {
     systemRedisBus.on("bridgeUpdate", async () => {
       await dataConfig.syncBridgeConfigFromLocalDatabase();
       this.bridgeItemList = dataConfig.getBridgeTokenList();
-      logger.info(`更新chainBalance中的bridge列表`, this.bridgeItemList.length);
+      logger.info(
+        `update bridgeList [chainBalance]`,
+        this.bridgeItemList.length
+      );
     });
     this.intervalSyncBalance();
     setInterval(() => {
@@ -71,7 +74,7 @@ class ChainBalance {
     }, 1000 * 10);
   }
 
-  // 获取连上的钱包情况
+  // get chain wallet info
   private async getChainWalletInfo(chainList: IChainListItem[]) {
     const eachFun = async (item: IChainListItem) => {
       let reqUrl = `${item.clientUri}/lpnode/get_wallets`;
@@ -203,7 +206,6 @@ class ChainBalance {
                 _.get(item, "token", ""),
                 Number(chainId.replace("Cid_", ""))
               );
-              // logger.warn(`查询到了symbolInfo`, symbol);
               const marketSymbol = _.get(symbol, "symbol", "--");
               const symbolName = _.get(symbol, "tokenName", "--");
               return `tokenName:${symbolName},market:${marketSymbol}`;

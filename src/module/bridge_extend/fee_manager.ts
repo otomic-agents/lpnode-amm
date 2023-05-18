@@ -23,15 +23,15 @@ class FeeManager {
       logger.info(`fee`, fee);
       return Number(fee);
     }
-    logger.warn(`没有获取到Fee的配置，使用默认值替代`);
+    logger.warn(`default fee`);
     const defaultFee = _.get(
       dataConfig.getBridgeBaseConfig(),
       "defaultFee",
       undefined
     );
     if (!defaultFee) {
-      logger.error(`无法正确加载默认的fee`);
-      throw new Error("无法正确加载默认的fee");
+      logger.error(`default Fee fee error`);
+      throw new Error("default Fee fee error");
     }
     return defaultFee;
   }

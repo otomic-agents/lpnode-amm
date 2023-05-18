@@ -96,8 +96,8 @@ interface IMarketOrderbookRet {
 }
 
 enum IHedgeType {
-  Null = "Null", // 不进行对冲
-  CoinSpotHedge = "CoinSpotHedge", // 币本金 现货对冲
+  Null = "Null",
+  CoinSpotHedge = "CoinSpotHedge",
 }
 
 interface IHedgeClass {
@@ -105,7 +105,7 @@ interface IHedgeClass {
     prepareOrder(ammContext: AmmContext): Promise<any>;
   };
 
-  getHedgeFeeSymbol(): string; // 获取当前对冲fee的币
+  getHedgeFeeSymbol(): string;
 
   checkMinHedge(
     ammContext: AmmContext,
@@ -160,8 +160,6 @@ interface IBalanceLock {
   lockedId: string;
 }
 
-// 回答
-// Hedge 完成
 enum EFlowStatus {
   Init = "Init",
   AnswerOffer = "AnswerOffer",

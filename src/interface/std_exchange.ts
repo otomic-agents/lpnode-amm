@@ -39,7 +39,7 @@ interface IStdExchangeSpot {
     quoteOrderQty: BigNumber | undefined,
     side: ISide,
     simulation: boolean
-  ): Promise<ISpotOrderResult>; // 简单市价单
+  ): Promise<ISpotOrderResult>; // market order
   getBalance(): Map<string, ISpotBalanceItem>;
 }
 
@@ -59,7 +59,7 @@ interface IStdExchangeUsdtFuture {
     stdSymbol: string,
     amount: BigNumber,
     side: ISide
-  ): Promise<ISpotOrderResult>; // 简单市价单
+  ): Promise<ISpotOrderResult>; // market order
   getBalance(): Map<string, IUsdtFutureBalanceItem>;
 }
 

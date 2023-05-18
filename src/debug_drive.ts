@@ -268,7 +268,7 @@ class DebugDrive {
     logger.debug(`.....`);
     redisPub.publish("bridge-B-C", mockLockEvent);
     await this.sleep(1000 * 10);
-    logger.debug(`Mock`, "用户点击Lock ，并 TxOut.....");
+    logger.debug(`Mock`, "user client Lock , TxOut.....");
     redisPub.publish("bridge-B-C", mockTxOutEvent);
 
     await this.sleep(1000 * 10);

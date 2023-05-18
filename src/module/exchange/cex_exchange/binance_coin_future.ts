@@ -130,13 +130,13 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     const ret: Map<string, ICoinFutureBalanceItem> = new Map();
     this.balance.forEach((value, key) => {
       ret.set(key, {
-        accountAlias: value.accountAlias, // "SgsR"; // 账户唯一识别码
+        accountAlias: value.accountAlias, // "SgsR";
         asset: value.asset, // "BTC"; // 资产
-        balance: value.balance, // "0.00250000"; // 账户余额
-        withdrawAvailable: value.withdrawAvailable, // "0.00250000"; // 最大可提款金额,同`GET /dapi/account`中"maxWithdrawAmount"
-        crossWalletBalance: value.crossWalletBalance, // "0.00241969"; // 全仓账户余额
-        crossUnPnl: value.crossUnPnl, // "0.00000000"; // 全仓持仓未实现盈亏
-        availableBalance: value.availableBalance, // "0.00241969"; // 可用下单余额
+        balance: value.balance, // "0.00250000";
+        withdrawAvailable: value.withdrawAvailable, // "0.00250000";
+        crossWalletBalance: value.crossWalletBalance, // "0.00241969";
+        crossUnPnl: value.crossUnPnl, // "0.00000000";
+        availableBalance: value.availableBalance, // "0.00241969";
       });
     });
     return ret;

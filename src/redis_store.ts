@@ -111,7 +111,7 @@ class RedisStore {
         this.getListKey() + `:PSTORE:INDEX:${indexKey}:${indexData.toString()}`;
       const exist = await dataRedis.exists(indexStoreKey);
       if (exist) {
-        throw new Error(`索引冲突 Key:${indexKey} Val:${indexData}`);
+        throw new Error(`index conflict Key:${indexKey} Val:${indexData}`);
       }
     }
 

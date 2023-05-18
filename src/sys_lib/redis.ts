@@ -19,7 +19,7 @@ class SysIoRedis {
       password: pass,
       retryStrategy(times: number) {
         logger.error(
-          `redis Host:${host},port:${port}正在进行第${times}次重新链接`
+          `redis Host:${host},port:${port} reconnect number ${times}`
         );
         const delay = Math.min(times * 50, 1000 * 10);
         return delay;
@@ -27,7 +27,7 @@ class SysIoRedis {
     });
 
     redisClient.on("error", (err: any) => {
-      logger.error("链接redis发生了错误", host, pass, err);
+      logger.error("connect redis error", host, pass, err);
     });
     return redisClient;
   }

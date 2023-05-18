@@ -189,7 +189,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
   public async fetchOrdersBySymbol(symbol: string): Promise<any> {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(
-        `账户没有初始化，无法获取订单列表`,
+        `The account has not been initialized, and the order list cannot be obtained`,
         "binance_usdt_future___fetchOrders"
       );
       return "";

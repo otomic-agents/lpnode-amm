@@ -72,12 +72,12 @@ class DataConfig {
   private bridgeTokenList: IBridgeTokenConfigItem[] = [];
 
   /**
-   * Description 准备admin的Config
+   * Prepare admin Config
    * @date 2023/3/21 - 16:06:24
    *
    * @public
    * @async
-   * @returns {*} "无返回"
+   * @returns {*} "void"
    */
   public async prepareConfigResource() {
     let configId: string | null;
@@ -299,9 +299,8 @@ class DataConfig {
 
   public async loadBaseConfig() {
     setInterval(() => {
-      // 自动定期刷新TokenList
       this.loadTokenToSymbol().catch((e) => {
-        logger.error("同步TokenList出错");
+        logger.error("synchronize TokenList error");
       });
     }, 1000 * 60 * 2);
     await this.loadTokenToSymbol();
@@ -394,7 +393,7 @@ class DataConfig {
     const token0Symbol = this.tokenToSymbolMap.get(key0);
     const token1Symbol = this.tokenToSymbolMap.get(key1);
     if (!token0Symbol || !token1Symbol) {
-      logger.warn(`没有找到需要查询的币对 【${token0}/${token1}】`);
+      logger.warn(`【${token0}/${token1}】not found`);
       return undefined;
     }
     return [token0Symbol, token1Symbol];
