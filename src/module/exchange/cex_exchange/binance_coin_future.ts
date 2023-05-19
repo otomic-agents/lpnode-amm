@@ -45,7 +45,7 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     } catch (e) {
       const err: any = e;
       logger.debug(err.toString());
-      throw new Error(`请求${url}发生了错误，Error:${err.toString()}`);
+      throw new Error(`${url} request Error:${err.toString()}`);
     }
   }
 
@@ -55,7 +55,6 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
         item.contractStatus === "TRADING" &&
         item.contractType === "PERPETUAL"
       ) {
-        // 先只放永续合约
         const stdSymbol = `${item.baseAsset}/${item.quoteAsset}`;
         _.set(item, "stdSymbol", stdSymbol);
         this.symbolsInfo.set(item.stdSymbol, item);
@@ -85,7 +84,7 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
   public async fetchBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(
-        `账户没有同步，不初始化余额`,
+        `The account is not synchronized and the balance is not initialized`,
         "binance_coin_future___fetchBalance"
       );
       return;
@@ -131,7 +130,7 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     this.balance.forEach((value, key) => {
       ret.set(key, {
         accountAlias: value.accountAlias, // "SgsR";
-        asset: value.asset, // "BTC"; // 资产
+        asset: value.asset, // "BTC";
         balance: value.balance, // "0.00250000";
         withdrawAvailable: value.withdrawAvailable, // "0.00250000";
         crossWalletBalance: value.crossWalletBalance, // "0.00241969";

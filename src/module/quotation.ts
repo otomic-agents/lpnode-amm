@@ -11,7 +11,6 @@ import { logger } from "../sys_lib/logger";
 import { orderbook } from "./orderbook";
 import * as crypto from "crypto";
 import BigNumber from "bignumber.js";
-import { gas } from "./gas";
 import { dataConfig } from "../data_config";
 import * as _ from "lodash";
 import { quotationListHistory } from "./quotation/quotation_history";
@@ -81,7 +80,7 @@ class Quotation {
       origTotalPrice: "",
       price: "", // return this.calculate(item, price);
       origPrice: "", // The original quotation of the currency, which is used to calculate the slippage after
-      usd_price: "", // The U price of the target currency
+      dst_usd_price: "", // dstToken/StableCoin
       min_amount: "", // Minimum required input
       gas: `0`,
       capacity: `0x${(50000000000000000000000).toString(16)}`, // The maximum supply that the system can provide
@@ -119,9 +118,11 @@ class Quotation {
       }
       // sync quote
       this.process_quote_type(ammContext, quoteInfo); //  quote_orderbook_type
-      this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice usd_price mode
-      this.price_hedge_fee_price(ammContext, quoteInfo); // Process the price of the hedge target account fee currency pair
       this.price_src_token(ammContext, quoteInfo); // src_usd_price
+      this.price_dst_token(ammContext, quoteInfo);
+      this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice dst_usd_price mode
+      this.price_hedge_fee_price(ammContext, quoteInfo); // Process the price of the hedge target account fee currency pair
+
       this.price_native_token(ammContext, quoteInfo); // native_token_usdt_price native_token_price  native_token_orig_price native_token_symbol
       // --
       await this.amount_check(ammContext); // format check
@@ -130,7 +131,6 @@ class Quotation {
       await this.calculate_capacity(ammContext, quoteInfo); // Calculate the maximum amount
       await this.native_token_min(ammContext, quoteInfo); // native_token_min
       await this.native_token_max(ammContext, quoteInfo); // native_token_max
-      this.calculate_gas(ammContext, quoteInfo);
 
       await this.analysis(ammContext, quoteInfo);
     } catch (e) {
@@ -158,7 +158,7 @@ class Quotation {
     const quoteInfo = {
       cmd: ILpCmd.CMD_UPDATE_QUOTE,
       quote_data: {
-        usd_price: "",
+        dst_usd_price: "",
         src_usd_price: "",
         price: "",
         origPrice: "",
@@ -374,21 +374,6 @@ class Quotation {
    * @returns {*} ""
    */
   public price(ammContext: AmmContext, sourceObject: any) {
-    const { asks: dstTokenAsks } =
-      this.quotationPrice.getCoinStableCoinOrderBook(
-        ammContext.baseInfo.dstToken.address,
-        ammContext.baseInfo.dstToken.chainId
-      );
-
-    const [[usdPrice]] = dstTokenAsks;
-    if (usdPrice === 0) {
-      logger.warn(
-        `No dstToken/USDT obtained, unable to quote ${ammContext.baseInfo.dstToken.symbol}/USDT`
-      );
-      throw new Error(
-        `No dstToken/USDT obtained, unable to quote ${ammContext.baseInfo.dstToken.symbol}/USDT`
-      );
-    }
     const [priceBn, origPrice, origTotalPriceBn] = this.calculatePrice(
       ammContext,
       sourceObject
@@ -398,7 +383,6 @@ class Quotation {
       origPrice,
       price: priceBn.toString(),
       origTotalPrice: origTotalPriceBn.toString(),
-      usd_price: usdPrice,
     });
     sourceObject.quote_data.mode = ammContext.quoteInfo.mode;
     ammContext.quoteInfo = sourceObject.quote_data;
@@ -483,6 +467,35 @@ class Quotation {
       src_usd_price: new BigNumber(price).toString(),
     });
     ammContext.quoteInfo = sourceObject.quote_data;
+  }
+
+  /**
+   * dstToken/StableCoin
+   * @date 2023/5/19 - 11:51:48
+   *
+   * @private
+   * @param {AmmContext} ammContext
+   * @param {*} sourceObject
+   */
+  private price_dst_token(ammContext: AmmContext, sourceObject: any) {
+    const { asks: dstTokenAsks } =
+      this.quotationPrice.getCoinStableCoinOrderBook(
+        ammContext.baseInfo.dstToken.address,
+        ammContext.baseInfo.dstToken.chainId
+      );
+
+    const [[dstUsdPrice]] = dstTokenAsks;
+    if (dstUsdPrice === 0) {
+      logger.warn(
+        `No dstToken/USDT obtained, unable to quote ${ammContext.baseInfo.dstToken.symbol}/USDT`
+      );
+      throw new Error(
+        `No dstToken/USDT obtained, unable to quote ${ammContext.baseInfo.dstToken.symbol}/USDT`
+      );
+    }
+    Object.assign(sourceObject.quote_data, {
+      dst_usd_price: dstUsdPrice,
+    });
   }
 
   private getSwapType(ammContext: AmmContext) {
@@ -759,31 +772,6 @@ class Quotation {
     });
   }
 
-  /**
-   * @private
-   * @param {AmmContext} ammContext address
-   * @param {*} sourceObject quoteinfo
-   * @returns {*} void
-   */
-  private calculate_gas(ammContext: AmmContext, sourceObject: any) {
-    const { bids: bid } = this.quotationPrice.getCoinStableCoinOrderBook(
-      ammContext.baseInfo.dstToken.address,
-      ammContext.baseInfo.dstToken.chainId
-    );
-    const [[usdPrice]] = bid;
-    if (usdPrice === 0) {
-      return "0";
-    }
-    const coinCount = new BigNumber(gas.getGasUsd()).div(
-      new BigNumber(usdPrice)
-    );
-
-    Object.assign(sourceObject.quote_data, {
-      gas: coinCount.toFixed(8).toString(),
-      gas_usd: gas.getGasUsd(),
-    });
-  }
-
   private renderInfo(ammContext: AmmContext, sourceObject: any) {
     const [{ symbol: token0 }, { symbol: token1 }] =
       dataConfig.getCexStdSymbolInfoByToken(
@@ -879,7 +867,7 @@ class Quotation {
     let bidPrice = bids;
     if (ammContext.quoteInfo.mode === "sb") {
       bidPrice = SystemMath.execNumber(
-        `${bids}* ${ammContext.quoteInfo.usd_price}`
+        `${bids}* ${ammContext.quoteInfo.dst_usd_price}`
       );
       logger.info(
         `Orderbook ${bids} ${ammContext.baseInfo.dstToken.symbol} can provide【${ammContext.baseInfo.srcToken.symbol} liquidity ${bidPrice}`

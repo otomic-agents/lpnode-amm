@@ -152,15 +152,15 @@ class EventProcessLock extends BaseEventProcess {
           lockMsg: _.get(msg, "pre_business.err_msg", ""),
           systemContext: ammContext.systemContext,
           swapInfo: ammContext.swapInfo,
-          step: 1, // 标记已经处于lock状态
+          step: 1,
           systemOrder,
           "lockInfo.fee": ammContext.lockInfo.fee,
           "lockInfo.time": new Date().getTime(),
           "lockInfo.price": ammContext.quoteInfo.origPrice,
           "lockInfo.nativeTokenPrice":
             ammContext.quoteInfo.native_token_usdt_price,
-          "lockInfo.dstTokenPrice": ammContext.quoteInfo.usd_price, // 这个是没有fee的情况下
-          "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price, // 这个是没有fee的情况下
+          "lockInfo.dstTokenPrice": ammContext.quoteInfo.dst_usd_price,
+          "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price,
         },
       }
     );

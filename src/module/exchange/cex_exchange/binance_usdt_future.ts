@@ -86,7 +86,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
   public async fetchPositionRisk() {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(
-        `账户没有初始化，不同步余额`,
+        `The account is not synchronized and the balance is not initialized`,
         "binance_usdt_future___fetchPositions"
       );
       return;

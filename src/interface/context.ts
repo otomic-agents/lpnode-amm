@@ -62,7 +62,7 @@ interface AmmContext {
     dstChainPayNativeTokenAmountNumber: number;
   };
   quoteInfo: {
-    usd_price: string;
+    dst_usd_price: string;
     quote_hash: string;
     mode: string;
     origPrice: string;

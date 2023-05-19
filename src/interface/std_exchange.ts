@@ -13,16 +13,16 @@ import {
 import BigNumber from "bignumber.js";
 
 interface IStdExchangeSpot {
-  initMarkets(): Promise<void>; // 初始化现货的交易对信息
-  fetchMarkets(): Map<string, ISpotSymbolItem>; // 获取现货交易对信息
-  fetchBalance(): Promise<any>; // 获取现货余额
-  withdrawApply(): Promise<any>; // 提款
-  capitalAll(): Promise<any>; // 查询提款列表
+  initMarkets(): Promise<void>;
+  fetchMarkets(): Map<string, ISpotSymbolItem>;
+  fetchBalance(): Promise<any>;
+  withdrawApply(): Promise<any>;
+  capitalAll(): Promise<any>;
   spotTradeCheck(
     stdSymbol: string,
     value: number,
     amount: number
-  ): Promise<boolean>; // 检查现货交易条件是否满足
+  ): Promise<boolean>;
   spotGetTradeMinMax(
     stdSymbol: string,
     price: number

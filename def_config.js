@@ -37,7 +37,7 @@ const data = {
       relay_api_key: "96OZBSog7PeRHBn"
     },
     {
-      bridge: { // 测试网配置成 AVAX-USDT
+      bridge: {
         src_chain_id: 9006,
         dst_chain_id: 9000,
         src_token: "0x7E477f81Fb9E7184190Ca53C8B9069532408Cc9B",
@@ -73,7 +73,7 @@ const data = {
       relay_api_key: "96OZBSog7PeRHBn"
     },
     {
-      bridge: { // 测试网配置为 ETH-USDT
+      bridge: {
         src_chain_id: 9006,
         dst_chain_id: 9000,
         src_token: "0x61D35C6B6a7568542acA42448B47690650C69bb9",
@@ -91,7 +91,7 @@ const data = {
       relay_api_key: "96OZBSog7PeRHBn"
     },
     {
-      bridge: { // 测试网 USDT-ETH
+      bridge: {
         src_chain_id: 9000,
         dst_chain_id: 9006,
         src_token: "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23",

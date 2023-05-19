@@ -16,10 +16,10 @@ interface IBridgeTokenConfigItem {
   msmq_name: string;
   std_symbol: string;
   wallet: {
-    name: string; // 目标链使用的钱包地址
-    balance: { [key: string]: number }; // 目标链钱包的余额
+    name: string;
+    balance: { [key: string]: number };
   };
-  dst_chain_client_uri: string; // 目标链客户端的链接地址
+  dst_chain_client_uri: string;
   enable_hedge: boolean;
   fee_manager: FeeManager;
   status_manager: StatusManager;
@@ -72,12 +72,12 @@ interface ILPConfigCache {
 }
 
 enum ILpCmd {
-  "EVENT_ASK_REPLY" = "EVENT_ASK_REPLY", // 询价的回答
-  "CMD_UPDATE_QUOTE" = "CMD_UPDATE_QUOTE", // 报价Cmd
-  "CALLBACK_LOCK_QUOTE" = "CALLBACK_LOCK_QUOTE", // 允许锁定报价Cmd
-  "CMD_TRANSFER_IN" = "CMD_TRANSFER_IN", // B链 转入 合约Cmd
-  "CMD_TRANSFER_IN_CONFIRM" = "CMD_TRANSFER_IN_CONFIRM", // B链发钱给用户Cmd
-  "CMD_TRANSFER_IN_REFUND" = "CMD_TRANSFER_IN_REFUND", // B链取消Tx In Cmd
+  "EVENT_ASK_REPLY" = "EVENT_ASK_REPLY",
+  "CMD_UPDATE_QUOTE" = "CMD_UPDATE_QUOTE",
+  "CALLBACK_LOCK_QUOTE" = "CALLBACK_LOCK_QUOTE",
+  "CMD_TRANSFER_IN" = "CMD_TRANSFER_IN",
+  "CMD_TRANSFER_IN_CONFIRM" = "CMD_TRANSFER_IN_CONFIRM",
+  "CMD_TRANSFER_IN_REFUND" = "CMD_TRANSFER_IN_REFUND",
 }
 
 interface ICexCoinConfig {
@@ -86,7 +86,7 @@ interface ICexCoinConfig {
   coinType: string;
   addressLower: string;
   symbol: string;
-  precision: number; // 币在Dex上的精度
+  precision: number;
   tokenName: string;
 }
 

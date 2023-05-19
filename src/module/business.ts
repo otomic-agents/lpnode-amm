@@ -149,7 +149,7 @@ class Business {
       },
       quoteInfo: {
         src_usd_price: "",
-        usd_price: "",
+        dst_usd_price: "",
         price: "",
         quote_hash: "",
         mode: "",

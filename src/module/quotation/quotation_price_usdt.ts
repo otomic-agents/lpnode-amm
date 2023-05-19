@@ -8,8 +8,17 @@ import { orderbook } from "../orderbook";
 import * as _ from "lodash";
 import { AmmContext } from "../../interface/context";
 import { SystemMath } from "../../utils/system_math";
+import { SystemError, SystemErrorDict } from "../system_error";
 
+/**
+ * Quote using orderbook
+ * @date 2023/5/19 - 11:15:41
+ *
+ * @class QuotationPrice
+ * @typedef {QuotationPrice}
+ */
 class QuotationPrice {
+  public readonly quoteStableCoin = "USDT";
   public getCoinStableCoinOrderBook(
     token: string,
     chainId: number
@@ -24,7 +33,11 @@ class QuotationPrice {
       chainId
     );
     if (!stdCoinSymbol) {
-      logger.error(`token symbol error`);
+      logger.error(
+        SystemError.getErrorMessage(
+          SystemErrorDict.baseInfo.stdCoinSymbolNotFount
+        )
+      );
       return {
         stdSymbol: null,
         bids: [[0, 0]],

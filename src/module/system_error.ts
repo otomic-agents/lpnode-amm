@@ -1,5 +1,11 @@
 import * as _ from "lodash";
 const SystemErrorDict = {
+  baseInfo: {
+    stdCoinSymbolNotFount: {
+      code: 20001,
+      message: "Coin Symbol not found",
+    },
+  },
   orderbook: {
     getError: {
       code: 10001,
