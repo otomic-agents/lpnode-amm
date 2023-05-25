@@ -554,7 +554,10 @@ class DataConfig {
     return _.get(this.baseConfig, "bridgeBaseConfig", undefined);
   }
   private async loadBridgeConfig() {
-    if (!_.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined)) {
+    if (
+      _.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined) ===
+      undefined
+    ) {
       logger.debug("bridgeBaseConfig.enabledHedge Can not be empty");
       await TimeSleepForever("bridgeBaseConfig.enabledHedge Can not be empty");
       return;
