@@ -37,7 +37,7 @@ class CexOrderbook implements IOrderbook {
   }
 
   public setSymbolsManager(symbolsManager: ISymbolsManager | undefined) {
-    throw new Error(`no need to implement`);
+    logger.info("do nothing");
   }
   public async init(): Promise<void> {
     logger.debug("Initialize Cex_orderbook..");

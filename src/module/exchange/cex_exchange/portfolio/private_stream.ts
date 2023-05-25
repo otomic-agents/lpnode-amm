@@ -1,2 +1,0 @@
-class PrivateStream {}
-export { PrivateStream };

@@ -60,6 +60,7 @@ async function main() {
         "ETH/USDT",
         new BigNumber(0.01).toString(),
         undefined,
+        "1800",
         false
       );
     logger.debug(result);

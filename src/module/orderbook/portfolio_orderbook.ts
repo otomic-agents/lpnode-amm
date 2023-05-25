@@ -16,7 +16,20 @@ class PortfolioOrderbook implements IOrderbook {
   protected spotSymbolsInfoByMarketName: Map<string, ISpotSymbolItemPortfolio> =
     new Map();
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
-    return this.spotOrderbook.get(stdSymbol);
+    const orderbookItem = this.spotOrderbook.get(stdSymbol);
+    if (orderbookItem) {
+      const timeNow = new Date().getTime();
+      if (timeNow - orderbookItem.timestamp > 1000 * 30) {
+        logger.warn(
+          `order book expired.`,
+          (timeNow - orderbookItem.timestamp) / 1000,
+          "sec"
+        );
+        return undefined;
+      }
+      return orderbookItem;
+    }
+    return undefined;
   }
   private async initMarkets() {
     const url = `https://cex-api.bttcdn.com/trade/getMarketInfo?exchange=2`;
@@ -101,7 +114,10 @@ class PortfolioOrderbook implements IOrderbook {
           stdSymbol: symbolInfo.stdSymbol,
           symbol: symbolInfo.market_name,
           lastUpdateId: 0,
-          timestamp: parseInt(_.get(itemValue, "time", 0)),
+          timestamp: (() => {
+            const millisecond = _.get(itemValue, "time", 0) * 1000;
+            return parseInt(millisecond.toString());
+          })(),
           incomingTimestamp: new Date().getTime(),
           stream: "",
           bids: this.convertAsksOrBidsToString(

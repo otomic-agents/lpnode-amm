@@ -258,6 +258,7 @@ class DataConfig {
     } catch (e) {
       const err: any = e;
       logger.error(`get config error:`, err.toString());
+      // await TimeSleepMs(3000);
     }
   }
 
