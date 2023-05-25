@@ -5,22 +5,22 @@ import {
   ISpotBalanceItemBinance,
   IOrderTypeBinance,
   ISpotOrderResponseBinance,
-} from "../../../interface/cex_binance";
-import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
-import { logger } from "../../../sys_lib/logger";
+} from "../../../../interface/cex_binance";
+import { httpsKeepAliveAgent } from "../../../../sys_lib/http_agent";
+import { logger } from "../../../../sys_lib/logger";
 import * as _ from "lodash";
-import { formatStepSize, signatureObject } from "../utils";
+import { formatStepSize, signatureObject } from "../../utils";
 import {
   ISide,
   ISpotBalanceItem,
   ISpotOrderResult,
-} from "../../../interface/std_difi";
+} from "../../../../interface/std_difi";
 import BigNumber from "bignumber.js";
-import { IStdExchangeSpot } from "../../../interface/std_exchange";
+import { IStdExchangeSpot } from "../../../../interface/std_exchange";
 import { binanceConfig } from "./binance_config";
 import { BinanceSpotRequest } from "./binance_spot_request";
-import { SystemMath } from "../../../utils/system_math";
-import { ConsoleDirDepth5 } from "../../../utils/console";
+import { SystemMath } from "../../../../utils/system_math";
+import { ConsoleDirDepth5 } from "../../../../utils/console";
 
 class BinanceSpot implements IStdExchangeSpot {
   private apiKey: string;
@@ -257,21 +257,30 @@ class BinanceSpot implements IStdExchangeSpot {
     amount: BigNumber | undefined,
     quoteOrderQty: BigNumber | undefined,
     side: ISide,
+    targetPrice: BigNumber | undefined,
     simulation = false
   ): Promise<ISpotOrderResult> {
     console.dir(this.spotSymbolsInfo.get(stdSymbol));
     const symbol = this.getSymbolByStdSymbol(stdSymbol);
 
     if (!symbol) {
-      logger.error(`无法找到交易的Symbol信息......FindOption`, stdSymbol);
-      throw new Error(`无法找到对应的交易对信息:${stdSymbol}`);
+      logger.error(
+        `he Symbol information of the transaction cannot be found......FindOption`,
+        stdSymbol
+      );
+      throw new Error(
+        `he Symbol information of the transaction cannot be found:${stdSymbol}`
+      );
     }
     const tradeInfo = this.spotSymbolsInfo.get(stdSymbol);
     if (!tradeInfo) {
-      logger.error(`无法找到交易信息......FindOption`, stdSymbol);
-      throw new Error(`无法找到交易信息:${stdSymbol}`);
+      logger.error(
+        `Unable to find transaction information......FindOption`,
+        stdSymbol
+      );
+      throw new Error(`Unable to find transaction information:${stdSymbol}`);
     }
-    logger.debug(`准备创建订单........`);
+    logger.debug(`let's create an order........`);
     const orderData = {
       symbol,
       side,
@@ -576,28 +585,29 @@ class BinanceSpot implements IStdExchangeSpot {
   }
 
   public async withdrawApply() {
-    const withdrawApplyUrl = `https://api.binance.com/sapi/v1/capital/withdraw/apply`;
-    const orderData = {
-      coin: "SHIB",
-      withdrawOrderId: "FRISTBSC",
-      network: "BSC",
-      address: "0x1E1f3324f5482bACeA3E07978278624F28e4ca4A",
-      amount: 20000,
-      walletType: 0,
-      recvWindow: 5000,
-      timestamp: new Date().getTime(),
-    };
-    const request = new BinanceSpotRequest();
-    try {
-      await request.post(
-        withdrawApplyUrl,
-        orderData,
-        this.apiKey,
-        this.apiSecret
-      );
-    } catch (e) {
-      logger.error(e);
-    }
+    throw new Error(`not implement`);
+    // const withdrawApplyUrl = `https://api.binance.com/sapi/v1/capital/withdraw/apply`;
+    // const orderData = {
+    //   coin: "SHIB",
+    //   withdrawOrderId: "FRISTBSC",
+    //   network: "BSC",
+    //   address: "0x1E1f3324f5482bACeA3E07978278624F28e4ca4A",
+    //   amount: 20000,
+    //   walletType: 0,
+    //   recvWindow: 5000,
+    //   timestamp: new Date().getTime(),
+    // };
+    // const request = new BinanceSpotRequest();
+    // try {
+    //   await request.post(
+    //     withdrawApplyUrl,
+    //     orderData,
+    //     this.apiKey,
+    //     this.apiSecret
+    //   );
+    // } catch (e) {
+    //   logger.error(e);
+    // }
   }
 }
 

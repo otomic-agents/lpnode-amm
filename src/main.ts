@@ -16,7 +16,7 @@ import { appEnv } from "./app_env";
 appEnv.initConfig();
 import { dataConfig } from "./data_config";
 import { Mdb } from "./module/database/mdb";
-import { orderbook } from "./module/orderbook";
+import { orderbook } from "./module/orderbook/orderbook";
 import { eventProcess } from "./event_process";
 import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
 import { quotation } from "./module/quotation";
@@ -29,6 +29,7 @@ import { chainBalance } from "./module/chain_balance";
 import { hedgeManager } from "./module/hedge_manager";
 import { systemRedisBus } from "./system_redis_bus";
 import { statusReport } from "./status_report";
+import { orderbookSymbolManager } from "./module/orderbook/orderbook_symbol_manager";
 
 class Main {
   public async main() {
@@ -85,9 +86,15 @@ class Main {
      * 2.loadChainConfig
      */
 
+    const orderbookType = _.get(process.env, "OrderbookType", undefined);
+    if (orderbookType === "portfolio") {
+      orderbookSymbolManager.init();
+    }
+
     await TimeSleepMs(300); // Show bridgeTokenList table
     await chainBalance.init(); // Initialize Dexchain balance
     await orderbook.init(); // Initialize the Orderbook handler, Cex Orderbook
+    orderbook.setSymbolsManager(orderbookSymbolManager);
     await hedgeManager.init();
     await eventProcess.process(); // Subscribe and start processing business events
     await quotation.init(); // Initialize the quote program

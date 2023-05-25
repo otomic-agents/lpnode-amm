@@ -117,19 +117,24 @@ interface ISpotOrderResult {
   timeInForce: string; // "GTC"; // 'GTC', 'IOC', 'FOK', 'PO'
   info: string; // original order info
 }
+enum ICexAccountApiType {
+  exchange = "exchange",
+  portfolio = "profolio",
+}
 // account define______________________________________
 interface ICexAccount {
   accountId: string;
   exchangeName: string; // binance huobi dex_bsc
-  spotAccount: {
+  apiType: ICexAccountApiType;
+  spotAccount?: {
     apiKey: string;
     apiSecret: string;
   };
-  usdtFutureAccount: {
+  usdtFutureAccount?: {
     apiKey: string;
     apiSecret: string;
   };
-  coinFutureAccount: {
+  coinFutureAccount?: {
     apiKey: string;
     apiSecret: string;
   };
@@ -148,4 +153,5 @@ export {
   ICoinFutureBalanceItem,
   ICoinFutureSymbolItem,
   IUsdtFutureAccountPositionsRiskItem,
+  ICexAccountApiType,
 };

@@ -4,18 +4,18 @@ import {
   IUsdtFutureBalanceItemBinance,
   // IOrderTypeBinance,
   IUsdtFutureAccountPositionsRiskItemBinance,
-} from "../../../interface/cex_binance";
-import { logger } from "../../../sys_lib/logger";
-import { signatureObject } from "../utils";
+} from "../../../../interface/cex_binance";
+import { logger } from "../../../../sys_lib/logger";
+import { signatureObject } from "../../utils";
 import * as _ from "lodash";
-import { IStdExchangeUsdtFuture } from "../../../interface/std_exchange";
+import { IStdExchangeUsdtFuture } from "../../../../interface/std_exchange";
 import BigNumber from "bignumber.js";
 import {
   ISide,
   IUsdtFutureAccountPositionsRiskItem,
   IUsdtFutureSymbolItem,
-} from "../../../interface/std_difi";
-import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
+} from "../../../../interface/std_difi";
+import { httpsKeepAliveAgent } from "../../../../sys_lib/http_agent";
 import { binanceConfig } from "./binance_config";
 
 class BinanceUsdtFuture implements IStdExchangeUsdtFuture {

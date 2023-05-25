@@ -20,6 +20,7 @@ import { dataRedis } from "./redis_bus";
 import { installModule } from "./mongo_module/install";
 import { statusReport } from "./status_report";
 import { extend_bridge_item } from "./data_config_bridge_extend";
+import { ICexAccountApiType } from "./interface/std_difi";
 
 const Web3 = require("web3");
 const web3 = new Web3();
@@ -38,17 +39,18 @@ class DataConfig {
   private chainTokenMap: Map<number, string> = new Map();
   private tokenToSymbolMap: Map<string, ICexCoinConfig> = new Map();
   private hedgeAccountList: {
+    apiType: ICexAccountApiType;
     accountId: string;
     exchangeName: string;
-    spotAccount: {
+    spotAccount?: {
       apiKey: string;
       apiSecret: string;
     };
-    usdtFutureAccount: {
+    usdtFutureAccount?: {
       apiKey: string;
       apiSecret: string;
     };
-    coinFutureAccount: {
+    coinFutureAccount?: {
       apiKey: string;
       apiSecret: string;
     };

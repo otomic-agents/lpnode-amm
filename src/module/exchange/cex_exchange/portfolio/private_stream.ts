@@ -1,0 +1,2 @@
+class PrivateStream {}
+export { PrivateStream };

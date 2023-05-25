@@ -5,6 +5,10 @@ const SystemErrorDict = {
       code: 20001,
       message: "Coin Symbol not found",
     },
+    typeError: {
+      code: 20002,
+      message: "incorrect type",
+    },
   },
   orderbook: {
     getError: {

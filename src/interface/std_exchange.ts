@@ -16,8 +16,8 @@ interface IStdExchangeSpot {
   initMarkets(): Promise<void>;
   fetchMarkets(): Map<string, ISpotSymbolItem>;
   fetchBalance(): Promise<any>;
-  withdrawApply(): Promise<any>;
-  capitalAll(): Promise<any>;
+  withdrawApply?(): Promise<any>;
+  capitalAll?(): Promise<any>;
   spotTradeCheck(
     stdSymbol: string,
     value: number,
@@ -38,6 +38,7 @@ interface IStdExchangeSpot {
     amount: BigNumber | undefined,
     quoteOrderQty: BigNumber | undefined,
     side: ISide,
+    targetPrice: BigNumber | undefined,
     simulation: boolean
   ): Promise<ISpotOrderResult>; // market order
   getBalance(): Map<string, ISpotBalanceItem>;

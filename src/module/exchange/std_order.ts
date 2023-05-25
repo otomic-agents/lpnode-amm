@@ -3,10 +3,13 @@ import { IStdExchange } from "../../interface/std_exchange";
 import { ISide } from "../../interface/std_difi";
 import BigNumber from "bignumber.js";
 import { logger } from "../../sys_lib/logger";
+import { StdOrderBase } from "./std_order_base";
 
-class StdOrder {
+class StdOrder extends StdOrderBase {
   private stdExchange: IStdExchange;
+
   public constructor(cexExchange: IStdExchange) {
+    super();
     this.stdExchange = cexExchange;
   }
 
@@ -15,6 +18,7 @@ class StdOrder {
     stdSymbol: string,
     amount: string | undefined,
     qty: string | undefined,
+    targetPrice: string | undefined,
     simulation = false
   ) {
     logger.debug(`spotBuy`, stdSymbol);
@@ -34,6 +38,12 @@ class StdOrder {
         return undefined;
       })(),
       ISide.BUY,
+      (() => {
+        if (!targetPrice) {
+          return new BigNumber(0);
+        }
+        return new BigNumber(targetPrice);
+      })(),
       simulation
     );
   }
@@ -59,6 +69,7 @@ class StdOrder {
     stdSymbol: string,
     amount: string | undefined,
     qty: string | undefined,
+    targetPrice: string | undefined,
     simulation = false
   ) {
     return this.stdExchange.exchangeSpot.createMarketOrder(
@@ -77,6 +88,12 @@ class StdOrder {
         return undefined;
       })(),
       ISide.SELL,
+      (() => {
+        if (!targetPrice) {
+          return new BigNumber(0);
+        }
+        return new BigNumber(targetPrice);
+      })(),
       simulation
     );
   }

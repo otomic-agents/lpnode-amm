@@ -1,6 +1,6 @@
 import axios from "axios";
-import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
-import { logger } from "../../../sys_lib/logger";
+import { httpsKeepAliveAgent } from "../../../../sys_lib/http_agent";
+import { logger } from "../../../../sys_lib/logger";
 import * as _ from "lodash";
 class BinanceFutureRequest {
   public async get(url: string) {

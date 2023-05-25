@@ -81,11 +81,11 @@ class StdBalance {
   }
 
   public async withdrawApply() {
-    return this.stdExchange.exchangeSpot.withdrawApply();
+    return;
   }
 
   public async capitalAll() {
-    return this.stdExchange.exchangeSpot.capitalAll();
+    return;
   }
 
   /**
