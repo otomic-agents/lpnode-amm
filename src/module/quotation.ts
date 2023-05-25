@@ -6,9 +6,10 @@ import {
   ICoinType,
   ILpCmd,
 } from "../interface/interface";
+const dayjs = require("dayjs");
 import { redisPub } from "../redis_bus";
 import { logger } from "../sys_lib/logger";
-import { orderbook } from "./orderbook";
+import { orderbook } from "./orderbook/orderbook";
 import * as crypto from "crypto";
 import BigNumber from "bignumber.js";
 import { dataConfig } from "../data_config";
@@ -60,16 +61,18 @@ class Quotation {
   }
 
   private async startQuotation() {
-    if (orderbook.spotOrderbookOnceLoaded === false) {
-      logger.warn("spot orderbook not yet initialized");
-      return;
-    }
+    const keepList: String[] = [];
     for (const item of this.bridgeTokenList) {
+      keepList.push(item.std_symbol);
       this.quotationKeep(item).then(() => {
         //
       });
     }
-    logger.info("keep quotation", new Date().getTime());
+    logger.info(
+      "keep quotation",
+      keepList.join(","),
+      dayjs().format("YYYY-MM-DDTHH:mm:ss SSS [Z] A")
+    );
     setTimeout(() => {
       this.startQuotation();
     }, 1000 * 30);
@@ -184,6 +187,7 @@ class Quotation {
     if (orderbook.spotOrderbookOnceLoaded) {
       return true;
     }
+    logger.debug("waiting spotOrderbookOnceLoaded");
     return false;
   }
 
@@ -253,7 +257,7 @@ class Quotation {
     }
 
     const nativeTokenPrice =
-      this.quotationPrice.getNativeTokenBidPrice(dstChainId);
+      this.quotationPrice.getNativeTokenBuyPrice(dstChainId);
     const inputValueSwapGasCount = SystemMath.execNumber(
       `${ammContext.swapInfo.inputAmount}*${sourceObject.quote_data.src_usd_price}/${nativeTokenPrice}`,
       "input usd value = gas token(number)"
@@ -322,7 +326,7 @@ class Quotation {
     if (Number(nativeTokenMax) < minNumber) {
       logger.error(`The maximum value cannot be less than the minimum value`);
       throw new Error(
-        `The maximum value cannot be less than the minimum value`
+        `The maximum value cannot be less than the minimum value max:${nativeTokenMax},min:${minNumber}`
       );
     }
     Object.assign(sourceObject.quote_data, {
@@ -554,22 +558,23 @@ class Quotation {
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
-    const priceBn = this.quotationPrice.getABPrice(
+    const priceBn = this.quotationPrice.getCoinCoinPrice(
       new BigNumber(1),
       srcTokenPrice,
       dstTokenPrice
     );
-    const withFee = 1 - ammContext.baseInfo.fee;
-    const targetPriceBN = priceBn.times(new BigNumber(withFee));
+    const targetPriceBN = SystemMath.exec(
+      `${priceBn} * (1-${ammContext.baseInfo.fee})`
+    );
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: srcTokenPrice,
         B: dstTokenPrice,
       },
     });
-    const totalOrigPrice = new BigNumber(
-      ammContext.swapInfo.inputAmountNumber
-    ).times(new BigNumber(priceBn));
+    const totalOrigPrice = SystemMath.exec(
+      `${ammContext.swapInfo.inputAmountNumber}*${priceBn}`
+    );
     return [
       targetPriceBN.toString(),
       priceBn.toString(),
@@ -629,18 +634,32 @@ class Quotation {
     ammContext: AmmContext,
     sourceObject: any = undefined
   ): [string, string, string] {
-    // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
-    // ETH/USDT
-
-    const priceBn = new BigNumber(1);
-    const withFee = 1 - ammContext.baseInfo.fee;
-    const targetPriceBN = priceBn.times(new BigNumber(withFee));
+    // USDT/BUSD
+    const srcTokenPrice = this.quotationPrice.getCoinStableCoinOrderBook(
+      ammContext.baseInfo.srcToken.address,
+      ammContext.baseInfo.srcToken.chainId
+    );
+    const dstTokenPrice = this.quotationPrice.getCoinStableCoinOrderBook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId
+    );
+    const priceBn = this.quotationPrice.getCoinCoinPrice(
+      new BigNumber(1),
+      srcTokenPrice,
+      dstTokenPrice
+    );
+    const targetPriceBN = SystemMath.exec(
+      `${priceBn} * (1-${ammContext.baseInfo.fee})`
+    );
     Object.assign(sourceObject.quote_data, {
-      orderbook: {},
+      orderbook: {
+        A: srcTokenPrice,
+        B: dstTokenPrice,
+      },
     });
-    const totalOrigPrice = new BigNumber(
-      ammContext.swapInfo.inputAmountNumber
-    ).times(new BigNumber(priceBn));
+    const totalOrigPrice = SystemMath.exec(
+      `${ammContext.swapInfo.inputAmountNumber}*${priceBn}`
+    );
     return [
       targetPriceBN.toString(),
       priceBn.toString(),
@@ -761,7 +780,7 @@ class Quotation {
         );
     }
     const configConvertInput = SystemMath.execNumber(
-      `20/${srcTokenPrice}*100.3%`
+      `10/${srcTokenPrice}*100.3%`
     );
     const minAmount = SystemMath.max([configConvertInput, minHedgeInputNumber]);
     if (minAmount === undefined) {
@@ -945,7 +964,7 @@ class Quotation {
     const input = ammContext.swapInfo.inputAmountNumber;
     if (input < min) {
       console.dir(sourceObject.quote_data, ConsoleDirDepth5);
-      logger.warn("The amount of input is too small");
+      logger.warn(`The amount of input is too small min:${min},input:${input}`);
       throw new Error(`The amount of input is too small`);
     }
     if (max <= input) {

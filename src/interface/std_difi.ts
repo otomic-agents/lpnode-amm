@@ -102,6 +102,7 @@ interface ISpotOrderResult {
   lostAmount: string;
   origAmount: string; // 的amount
   fee: { [key: string]: string };
+  price: string;
   symbol: string; // "ETHUSDT"
   stdSymbol: string; // "ETH/USDT";
   type: string; // 'market', 'limit'
@@ -117,25 +118,35 @@ interface ISpotOrderResult {
   timeInForce: string; // "GTC"; // 'GTC', 'IOC', 'FOK', 'PO'
   info: string; // original order info
 }
+enum ICexAccountApiType {
+  exchange = "exchange",
+  portfolio = "profolio",
+}
 // account define______________________________________
 interface ICexAccount {
   accountId: string;
   exchangeName: string; // binance huobi dex_bsc
-  spotAccount: {
+  apiType: ICexAccountApiType;
+  enablePrivateStream?: boolean;
+  enableTestBalance?: boolean;
+  spotAccount?: {
     apiKey: string;
     apiSecret: string;
   };
-  usdtFutureAccount: {
+  usdtFutureAccount?: {
     apiKey: string;
     apiSecret: string;
   };
-  coinFutureAccount: {
+  coinFutureAccount?: {
     apiKey: string;
     apiSecret: string;
   };
   des?: string;
 }
-
+enum IOrderExecModel {
+  SYNC = "SYNC",
+  ASYNC = "ASYNC",
+}
 export {
   ICexExchangeList,
   ISpotOrderResult,
@@ -148,4 +159,6 @@ export {
   ICoinFutureBalanceItem,
   ICoinFutureSymbolItem,
   IUsdtFutureAccountPositionsRiskItem,
+  ICexAccountApiType,
+  IOrderExecModel,
 };

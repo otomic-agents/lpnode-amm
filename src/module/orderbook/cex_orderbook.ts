@@ -4,14 +4,16 @@
 import {
   IMarketOrderbookRet,
   IOrderbookStoreItem,
-} from "../interface/interface";
-import { eventBus } from "../sys_lib/event.bus";
-import { logger } from "../sys_lib/logger";
+} from "../../interface/interface";
+import { IOrderbook } from "../../interface/orderbook";
+import { ISymbolsManager } from "../../interface/symbols_manager";
+import { eventBus } from "../../sys_lib/event.bus";
+import { logger } from "../../sys_lib/logger";
 
 const axios = require("axios");
 import * as _ from "lodash";
 
-class Orderbook {
+class CexOrderbook implements IOrderbook {
   private spotOrderbook: Map<string, IOrderbookStoreItem> = new Map();
   public spotOrderbookOnceLoaded = false;
 
@@ -34,8 +36,11 @@ class Orderbook {
     return undefined;
   }
 
+  public setSymbolsManager(symbolsManager: ISymbolsManager | undefined) {
+    logger.info("do nothing");
+  }
   public async init(): Promise<void> {
-    logger.debug("Initialize Orderbook..");
+    logger.debug("Initialize Cex_orderbook..");
     this.startOrderbookGc();
     _.attempt(async () => {
       await this.syncSpotOrderbook();
@@ -45,7 +50,7 @@ class Orderbook {
   }
 
   /**
-   * Description Regularly delete expired Orderbook data to avoid unexpected situations
+   * Description Regularly delete expired Cex_orderbook data to avoid unexpected situations
    * @date 1/17/2023 - 8:54:28 PM
    * @private
    * @returns {void} ""
@@ -76,7 +81,7 @@ class Orderbook {
   }
 
   /**
-   * Description Immediately refresh the Orderbook once
+   * Description Immediately refresh the Cex_orderbook once
    * @date 2023/2/8 - 14:06:47
    *
    * @public
@@ -143,5 +148,4 @@ class Orderbook {
   }
 }
 
-const orderbook: Orderbook = new Orderbook();
-export { orderbook };
+export { CexOrderbook };

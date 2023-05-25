@@ -62,7 +62,7 @@ class ChainBalance {
   }
 
   private intervalSyncBalance() {
-    logger.debug(`sync dex account balance`, "🟥");
+    logger.debug(`sync dex account balance`);
     const chainList: IChainListItem[] = this.uniqDstChain();
     this.getChainWalletInfo(chainList).then(async () => {
       logger.debug("emit", "balance:load:complete");
@@ -71,7 +71,7 @@ class ChainBalance {
     });
     setTimeout(() => {
       this.intervalSyncBalance();
-    }, 1000 * 10);
+    }, 1000 * 15);
   }
 
   // get chain wallet info
@@ -87,7 +87,6 @@ class ChainBalance {
         }
       }
       logger.debug(`request url ............${reqUrl}`);
-      logger.debug(`Request ClientService to get balance data`, reqUrl);
       try {
         const ret = await axios.request({
           url: reqUrl,
@@ -98,6 +97,7 @@ class ChainBalance {
           logger.error(`${reqUrl}`, serviceCode);
           throw new Error("The server returned an error. status !==200");
         }
+        // logger.debug("client response", _.get(ret, "data.data", {}));
         this.setRemoteInfoToLocalBalance(
           _.get(ret, "data.data", {}),
           item.chainId
@@ -254,7 +254,7 @@ class ChainBalance {
         });
       }
     }
-    console.table(ret);
+    // console.table(ret);
     return ret;
   }
 }

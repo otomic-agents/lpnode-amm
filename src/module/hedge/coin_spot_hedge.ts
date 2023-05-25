@@ -19,8 +19,13 @@ import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
 import { EthUnit } from "../../utils/eth";
 import { SystemMath } from "../../utils/system_math";
 import { ConsoleDirDepth5 } from "../../utils/console";
-import { ICexExchangeList } from "../../interface/std_difi";
+import {
+  ICexExchangeList,
+  IOrderExecModel,
+  ISpotOrderResult,
+} from "../../interface/std_difi";
 import { hedgeJobModule } from "../../mongo_module/hedge_job";
+import { AsyncOrderMonitor } from "./async_order_monitor";
 
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
@@ -48,14 +53,16 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   // @ts-ignore
   // private accountStatus = 0;
   public worker: CoinSpotHedgeWorker = new CoinSpotHedgeWorker();
-
+  public asyncOrderMonitor: AsyncOrderMonitor = new AsyncOrderMonitor();
   public constructor() {
+    logger.info("init CoinSpotHedge");
     super();
-    logger.info("CoinSpotHedge loaded.. ");
+    logger.info("CoinSpotHedge loaded");
   }
 
   public async init() {
     logger.debug(`Start consuming the hedging queue......`);
+
     // Start processing the hedge queue
     hedgeQueue.process(async (job, done) => {
       const optAttempts = _.get(job, "opts.attempts", 0);
@@ -88,8 +95,44 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       dataConfig.getHedgeConfig().hedgeType === IHedgeType.CoinSpotHedge &&
       dataConfig.getHedgeConfig().hedgeAccount !== ""
     ) {
-      logger.info(`initialize account`);
+      logger.info(
+        `initialize hedgeAccount account`,
+        dataConfig.getHedgeConfig().hedgeAccount
+      );
       await this.initAccount();
+    } else {
+      logger.debug(`no hedging required`);
+      return;
+    }
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      throw `account ins not initialized`;
+    }
+    if (accountIns.order.getSpotExecModel() === IOrderExecModel.ASYNC) {
+      accountIns
+        .getCexExchange()
+        // @ts-ignore
+        .on("spot_order_close", (orderData: ISpotOrderResult | undefined) => {
+          logger.debug(`forward event to asyncOrderMonitor 🍄`);
+          this.asyncOrderMonitor.onOrder(orderData);
+        });
+      accountIns
+        .getCexExchange()
+        // @ts-ignore
+        .on("client_spot_create_order", (orderId: string, orderData: any) => {
+          logger.debug(
+            `forward event to asyncOrderMonitor create event client create order `
+          );
+          this.asyncOrderMonitor.onClientCreateOrder(orderId, orderData);
+        });
+      accountIns
+        .getCexExchange()
+        // @ts-ignore
+        .on("spot_order_create_rejected", (orderId: string, rawData: any) => {
+          this.asyncOrderMonitor.onOrderFail(orderId, rawData);
+        });
     }
   }
 

@@ -22,6 +22,17 @@ class SetCtrl {
   }
 
   public async eventTest(req: any, res: any) {
+    // usdt-busd
+    eventProcess.onMessage(
+      JSON.stringify(req.body),
+      "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x6eD522603ab403D7acfCB2227A760A8C9dD7b371_9006_9006"
+    );
+    // busd-usdt
+    // eventProcess.onMessage(
+    //   JSON.stringify(req.body),
+    //   "0x6eD522603ab403D7acfCB2227A760A8C9dD7b371/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
+    // );
+
     // eth-usdt
     // eventProcess.onMessage(
     //   JSON.stringify(req.body),
@@ -49,10 +60,10 @@ class SetCtrl {
     // );
 
     // BNB -USDT
-    eventProcess.onMessage(
-      JSON.stringify(req.body),
-      "0xEc8303f11a6528fE67fbB41577892209E57578D6/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
-    );
+    // eventProcess.onMessage(
+    //   JSON.stringify(req.body),
+    //   "0xEc8303f11a6528fE67fbB41577892209E57578D6/0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9006_9006"
+    // );
     // T - USDT;
     // eventProcess.onMessage(
     //   JSON.stringify(req.body),

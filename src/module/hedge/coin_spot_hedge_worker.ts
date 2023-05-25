@@ -8,6 +8,7 @@ import _ from "lodash";
 import { ammContextManager } from "../amm_context_manager/amm_context_manager";
 import { EFlowStatus } from "../../interface/interface";
 import { dataConfig } from "../../data_config";
+import { IOrderExecModel } from "../../interface/std_difi";
 
 interface IHedgeOrderItem {
   orderId: string;
@@ -19,7 +20,6 @@ interface IHedgeOrderItem {
 
 class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
   public async worker(call: { orderId: number; ammContext: AmmContext }) {
-    // throw new Error("TestError");
     call.ammContext.bridgeItem = dataConfig.findItemByMsmqName(
       call.ammContext.systemInfo.msmqName
     );
@@ -34,6 +34,9 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
       );
     }
     const cexExePlan = optOrderList;
+    const hedgePlanClientOrderIdList = optOrderList.map((it) => {
+      return it.orderId;
+    });
     const cexExeResult: any[] = [];
     for (const order of optOrderList) {
       const actionSide = order.side;
@@ -57,6 +60,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
       const execRow = {
         plan: order,
         result: {},
+        commitResult: {},
         error: "",
         status: 0,
       };
@@ -67,13 +71,35 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
           new BigNumber(order.amountNumber).toString()
         );
         execRow.status = 1;
+        if (accountIns.order.getSpotExecModel() === IOrderExecModel.ASYNC) {
+          execRow.commitResult = execRow.result;
+          execRow.status = 2;
+        }
       } catch (e: any) {
         execRow.error = e.toString();
       } finally {
+        accountIns
+          .getCexExchange()
+          // @ts-ignore
+          .emit("client_spot_create_order", order.orderId, {
+            symbol: order.symbol,
+            side: order.side,
+            amount: order.amountNumber,
+          });
         cexExeResult.push(execRow);
       }
     }
+    let status = EFlowStatus.HedgeCompletion;
+    if (accountIns.order.getSpotExecModel() === IOrderExecModel.ASYNC) {
+      status = EFlowStatus.HedgeSubmitted;
+    }
+
     try {
+      await ammContextManager.appendContext(
+        call.ammContext.systemOrder.orderId,
+        "systemOrder.hedgePlanClientOrderIdList",
+        hedgePlanClientOrderIdList
+      );
       await ammContextManager.appendContext(
         call.ammContext.systemOrder.orderId,
         "systemOrder.hedgePlan",
@@ -90,13 +116,12 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         1
       );
       await ammContextManager.set(call.ammContext.systemOrder.orderId, {
-        flowStatus: EFlowStatus.HedgeCompletion,
+        flowStatus: status,
       });
     } catch (e) {
       logger.error(`Failed to update hedge record`, e);
     }
   }
-
   public async simulationExec(optOrderList: IHedgeOrderItem[]) {
     try {
       const accountIns = await this.getAccountIns();
@@ -131,8 +156,9 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
             order.orderId,
             order.symbol,
             new BigNumber(order.amountNumber).toString(),
-            undefined,
-            true
+            undefined, // qty
+            undefined, // target price
+            true // simulation
           );
           execRow.status = 1;
         } catch (e: any) {

@@ -1,20 +1,26 @@
 import * as _ from "lodash";
 import { IStdExchange } from "../../interface/std_exchange";
-import { ISide } from "../../interface/std_difi";
+import { IOrderExecModel, ISide } from "../../interface/std_difi";
 import BigNumber from "bignumber.js";
 import { logger } from "../../sys_lib/logger";
+import { StdOrderBase } from "./std_order_base";
 
-class StdOrder {
+class StdOrder extends StdOrderBase {
   private stdExchange: IStdExchange;
+
   public constructor(cexExchange: IStdExchange) {
+    super();
     this.stdExchange = cexExchange;
   }
-
+  public getSpotExecModel(): IOrderExecModel {
+    return this.stdExchange.exchangeSpot.getOrderExecModel();
+  }
   public async spotBuy(
     orderId: string,
     stdSymbol: string,
     amount: string | undefined,
     qty: string | undefined,
+    targetPrice: string | undefined,
     simulation = false
   ) {
     logger.debug(`spotBuy`, stdSymbol);
@@ -34,31 +40,21 @@ class StdOrder {
         return undefined;
       })(),
       ISide.BUY,
+      (() => {
+        if (!targetPrice) {
+          return new BigNumber(0);
+        }
+        return new BigNumber(targetPrice);
+      })(),
       simulation
     );
   }
-
-  public async spotTradeCheck(
-    stdSymbol: string,
-    value: number,
-    amount: number
-  ): Promise<boolean> {
-    if (!_.isFinite(value)) {
-      logger.error(`输入的量有问题.`, value);
-      return false;
-    }
-    return this.stdExchange.exchangeSpot.spotTradeCheck(
-      stdSymbol,
-      value,
-      amount
-    );
-  }
-
   public async spotSell(
     orderId: string,
     stdSymbol: string,
     amount: string | undefined,
     qty: string | undefined,
+    targetPrice: string | undefined,
     simulation = false
   ) {
     return this.stdExchange.exchangeSpot.createMarketOrder(
@@ -77,7 +73,28 @@ class StdOrder {
         return undefined;
       })(),
       ISide.SELL,
+      (() => {
+        if (!targetPrice) {
+          return new BigNumber(0);
+        }
+        return new BigNumber(targetPrice);
+      })(),
       simulation
+    );
+  }
+  public async spotTradeCheck(
+    stdSymbol: string,
+    value: number,
+    amount: number
+  ): Promise<boolean> {
+    if (!_.isFinite(value)) {
+      logger.error(`输入的量有问题.`, value);
+      return false;
+    }
+    return this.stdExchange.exchangeSpot.spotTradeCheck(
+      stdSymbol,
+      value,
+      amount
     );
   }
 
@@ -91,6 +108,13 @@ class StdOrder {
     //
   }
 
+  public async testSpotFormat(input: any) {
+    if (this.stdExchange.exchangeSpot.formatOrder) {
+      return this.stdExchange.exchangeSpot.formatOrder(input);
+    }
+    logger.debug(`format method not found`);
+    return undefined;
+  }
   public async getUsdtFutureOrdersBySymbol(symbol: string) {
     return this.stdExchange.exchangeUsdtFuture.fetchOrdersBySymbol(symbol);
   }
@@ -98,15 +122,15 @@ class StdOrder {
   // public async swapSell(){
   // }
   public async getSpotTradeMinMax(stdSymbol: string, price: number) {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinMax(stdSymbol, price);
+    return this.stdExchange.exchangeSpot.getTradeMinMax(stdSymbol, price);
   }
 
   public async getSpotTradeMinMaxValue(stdSymbol: string) {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinMaxValue(stdSymbol);
+    return this.stdExchange.exchangeSpot.getTradeMinMaxValue(stdSymbol);
   }
 
   public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinNotional(stdSymbol);
+    return this.stdExchange.exchangeSpot.getTradeMinNotional(stdSymbol);
   }
 }
 

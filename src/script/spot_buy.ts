@@ -13,6 +13,7 @@ import { dataConfig } from "../data_config";
 import { accountManager } from "../module/exchange/account_manager";
 import { logger } from "../sys_lib/logger";
 import { formatStepSize } from "../module/exchange/utils";
+import { ICexAccountApiType } from "../interface/std_difi";
 
 appEnv.initConfig(); // 初始化基本配置
 
@@ -23,6 +24,7 @@ async function main() {
   // await accountManager.init();
   await accountManager.loadAccounts([
     {
+      apiType: ICexAccountApiType.exchange,
       accountId: "a002",
       exchangeName: "binance",
       spotAccount: {
@@ -58,6 +60,7 @@ async function main() {
         "ETH/USDT",
         new BigNumber(0.01).toString(),
         undefined,
+        "1800",
         false
       );
     logger.debug(result);

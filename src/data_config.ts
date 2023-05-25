@@ -20,6 +20,7 @@ import { dataRedis } from "./redis_bus";
 import { installModule } from "./mongo_module/install";
 import { statusReport } from "./status_report";
 import { extend_bridge_item } from "./data_config_bridge_extend";
+import { ICexAccountApiType } from "./interface/std_difi";
 
 const Web3 = require("web3");
 const web3 = new Web3();
@@ -38,17 +39,18 @@ class DataConfig {
   private chainTokenMap: Map<number, string> = new Map();
   private tokenToSymbolMap: Map<string, ICexCoinConfig> = new Map();
   private hedgeAccountList: {
+    apiType: ICexAccountApiType;
     accountId: string;
     exchangeName: string;
-    spotAccount: {
+    spotAccount?: {
       apiKey: string;
       apiSecret: string;
     };
-    usdtFutureAccount: {
+    usdtFutureAccount?: {
       apiKey: string;
       apiSecret: string;
     };
-    coinFutureAccount: {
+    coinFutureAccount?: {
       apiKey: string;
       apiSecret: string;
     };
@@ -58,7 +60,9 @@ class DataConfig {
   } = {
     quotationInterval: 1000 * 10,
   };
-
+  public getBaseConfig() {
+    return this.baseConfig;
+  }
   public getTokenList() {
     const tokenList: any[] = [];
     for (const [uniqKey, item] of this.tokenToSymbolMap) {
@@ -156,7 +160,7 @@ class DataConfig {
   }
 
   private async initBaseConfig(baseConfig: any) {
-    console.log(baseConfig);
+    logger.info("baseConfig:", JSON.stringify(baseConfig));
     this.baseConfig = baseConfig;
     try {
       this.checkBaseConfig(baseConfig);
@@ -184,15 +188,16 @@ class DataConfig {
         Number(chainData.config.maxSwapNativeTokenValue)
       );
       logger.debug(
-        "set chain usd",
         chainData.chainId,
+        "minSwapNativeTokenValue:",
         Number(chainData.config.minSwapNativeTokenValue),
+        "maxSwapNativeTokenValue:",
         Number(chainData.config.maxSwapNativeTokenValue)
       );
     }
     let hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
     const hedgeAccount = _.get(baseConfig, "hedgeConfig.hedgeAccount", null);
-    if (!hedgeType || !hedgeAccount) {
+    if (!hedgeType) {
       logger.error(`Incorrect base configuration data`);
       await TimeSleepForever(
         "The basic configuration data is incorrect, waiting for reconfiguration"
@@ -204,7 +209,7 @@ class DataConfig {
     this.hedgeConfig.hedgeType = hedgeType;
     this.hedgeConfig.hedgeAccount = hedgeAccount;
     this.hedgeAccountList = _.get(baseConfig, "hedgeConfig.accountList", []);
-    if (hedgeAccount.length <= 0) {
+    if (hedgeAccount.length <= 0 && hedgeType!=="Null") {
       logger.error(
         `The basic configuration data is incorrect, please check the hedge account settings`
       );
@@ -240,7 +245,7 @@ class DataConfig {
     let result;
     const lpAdminPanelUrl = appEnv.GetLpAdminUrl();
     const url = `${lpAdminPanelUrl}/lpnode/lpnode_admin_panel/configResource/get`;
-    logger.info(`request :${url}`);
+    logger.info(`get configResource request :${url}`);
     try {
       result = await axios.request({
         url,
@@ -256,6 +261,7 @@ class DataConfig {
     } catch (e) {
       const err: any = e;
       logger.error(`get config error:`, err.toString());
+      // await TimeSleepMs(3000);
     }
   }
 
@@ -347,7 +353,7 @@ class DataConfig {
     }
     console.table(view);
 
-    await TimeSleepMs(1000 * 5);
+    await TimeSleepMs(100);
   }
 
   private async loadChainConfig() {
@@ -366,7 +372,7 @@ class DataConfig {
     });
     console.log("chain base data:");
     console.table(chainList);
-    await TimeSleepMs(5 * 1000);
+    await TimeSleepMs(100);
   }
 
   public getStdCoinSymbolInfoByToken(token: string, chainId: number) {
@@ -490,7 +496,7 @@ class DataConfig {
       process.exit(1);
     }
     const findOption = { ammName: appName };
-    logger.debug(`findOption`, findOption);
+    logger.debug(`syncBridgeConfigFromLocalDatabase,findOption:`, findOption);
     const lpConfigList: {
       _id: string;
       bridgeName: string;
@@ -503,7 +509,7 @@ class DataConfig {
       dstClientUri: string;
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
-    logger.info(`loaded ${lpConfigList.length}个BridgeConfig`);
+    logger.info(`loaded BridgeConfigs count: [${lpConfigList.length}] `);
     if (!lpConfigList || lpConfigList.length <= 0) {
       logger.warn(
         "Did not find any available BridgeItem",
@@ -554,7 +560,10 @@ class DataConfig {
     return _.get(this.baseConfig, "bridgeBaseConfig", undefined);
   }
   private async loadBridgeConfig() {
-    if (!_.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined)) {
+    if (
+      _.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined) ===
+      undefined
+    ) {
       logger.debug("bridgeBaseConfig.enabledHedge Can not be empty");
       await TimeSleepForever("bridgeBaseConfig.enabledHedge Can not be empty");
       return;
@@ -572,9 +581,10 @@ class DataConfig {
     );
     logger.debug(
       `system default value`,
+      "defHedgeSetting:",
       defHedgeSetting,
-      defFeeSetting,
-      "🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻"
+      "defFeeSetting:",
+      defFeeSetting
     );
     this.bridgeTokenList = this.bridgeTokenList.map((it) => {
       const itemConfig = _.find(bridgeConfig, { bridgeId: it.id.toString() });
@@ -621,6 +631,9 @@ class DataConfig {
       throw new Error("No chain base configuration found");
     }
     return tokenName;
+  }
+  public getChainTokenMap() {
+    return this.chainTokenMap;
   }
 
   public getBridgeTokenList(): IBridgeTokenConfigItem[] {
