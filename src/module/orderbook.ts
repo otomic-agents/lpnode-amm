@@ -7,7 +7,10 @@ import {
 } from "../interface/interface";
 import { eventBus } from "../sys_lib/event.bus";
 import { logger } from "../sys_lib/logger";
-
+const https = require("https");
+const ignoreSSLAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 const axios = require("axios");
 import * as _ from "lodash";
 
@@ -106,9 +109,23 @@ class Orderbook {
       if (!orderbookServiceHost) {
         throw "Unable to obtain orderbook service address";
       }
-      const url = `http://${orderbookServiceHost}:${orderbookServicePort}/api/spotOrderbook`;
+      let url = `http://${orderbookServiceHost}:${orderbookServicePort}/api/spotOrderbook`;
       // logger.info(`request orderbook Url:`, url);
-      const result = await axios.get(url);
+      const customMarketUrl = _.get(
+        process.env,
+        "CUSTOM_MARKET_URL",
+        undefined
+      );
+      if (customMarketUrl !== undefined) {
+        logger.warn(
+          `Replace the market service with a custom address`,
+          customMarketUrl
+        );
+        url = customMarketUrl;
+      }
+      const result = await axios.get(url, {
+        httpsAgent: ignoreSSLAgent,
+      });
       const code = _.get(result, "data.code", { code: 1 });
       const data: IMarketOrderbookRet = _.get(result, "data.data", {});
       if (code !== 0) {
