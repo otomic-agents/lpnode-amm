@@ -140,7 +140,10 @@ interface ICexAccount {
   };
   des?: string;
 }
-
+enum IOrderExecModel {
+  SYNC = "SYNC",
+  ASYNC = "ASYNC",
+}
 export {
   ICexExchangeList,
   ISpotOrderResult,
@@ -154,4 +157,5 @@ export {
   ICoinFutureSymbolItem,
   IUsdtFutureAccountPositionsRiskItem,
   ICexAccountApiType,
+  IOrderExecModel,
 };

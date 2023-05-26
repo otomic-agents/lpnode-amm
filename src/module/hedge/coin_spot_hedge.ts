@@ -19,8 +19,9 @@ import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
 import { EthUnit } from "../../utils/eth";
 import { SystemMath } from "../../utils/system_math";
 import { ConsoleDirDepth5 } from "../../utils/console";
-import { ICexExchangeList } from "../../interface/std_difi";
+import { ICexExchangeList, ISpotOrderResult } from "../../interface/std_difi";
 import { hedgeJobModule } from "../../mongo_module/hedge_job";
+import { AsyncOrderMonitor } from "./async_order_monitor";
 
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
@@ -48,7 +49,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   // @ts-ignore
   // private accountStatus = 0;
   public worker: CoinSpotHedgeWorker = new CoinSpotHedgeWorker();
-
+  public asyncOrderMonitor: AsyncOrderMonitor = new AsyncOrderMonitor();
   public constructor() {
     super();
     logger.info("CoinSpotHedge loaded.. ");
@@ -56,6 +57,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   public async init() {
     logger.debug(`Start consuming the hedging queue......`);
+
     // Start processing the hedge queue
     hedgeQueue.process(async (job, done) => {
       const optAttempts = _.get(job, "opts.attempts", 0);
@@ -91,6 +93,20 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       logger.info(`initialize account`);
       await this.initAccount();
     }
+    const accountIns = accountManager.getAccount(
+      dataConfig.getHedgeConfig().hedgeAccount
+    );
+    if (!accountIns) {
+      throw `account ins not initialized`;
+    }
+
+    accountIns
+      .getCexExchange()
+      // @ts-ignore
+      .on("spot_order_close", (orderData: ISpotOrderResult) => {
+        logger.debug(`forward event to asyncOrderMonitor 🍄🍄🍄🍄🍄`);
+        this.asyncOrderMonitor.onOrder(orderData);
+      });
   }
 
   public getHedgeFeeSymbol() {

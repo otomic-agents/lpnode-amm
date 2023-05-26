@@ -9,15 +9,17 @@ import {
   ICoinFutureBalanceItem,
   ICoinFutureSymbolItem,
   IUsdtFutureAccountPositionsRiskItem,
+  IOrderExecModel,
 } from "./std_difi";
 import BigNumber from "bignumber.js";
-
 interface IStdExchangeSpot {
   initMarkets(): Promise<void>;
   fetchMarkets(): Map<string, ISpotSymbolItem>;
   fetchBalance(): Promise<any>;
   withdrawApply?(): Promise<any>;
   capitalAll?(): Promise<any>;
+  getExecModel(): IOrderExecModel;
+  formatOrder?(input: any): ISpotOrderResult;
   spotTradeCheck(
     stdSymbol: string,
     value: number,
@@ -40,7 +42,9 @@ interface IStdExchangeSpot {
     side: ISide,
     targetPrice: BigNumber | undefined,
     simulation: boolean
-  ): Promise<ISpotOrderResult>; // market order
+  ): Promise<ISpotOrderResult | boolean>;
+  // A result result is returned when placing an order synchronously
+  // When placing an order asynchronously, it only displays whether the submission is successful
   getBalance(): Map<string, ISpotBalanceItem>;
 }
 

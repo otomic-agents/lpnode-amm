@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import { IStdExchange } from "../../interface/std_exchange";
-import { ISide } from "../../interface/std_difi";
+import { IOrderExecModel, ISide } from "../../interface/std_difi";
 import BigNumber from "bignumber.js";
 import { logger } from "../../sys_lib/logger";
 import { StdOrderBase } from "./std_order_base";
@@ -12,7 +12,9 @@ class StdOrder extends StdOrderBase {
     super();
     this.stdExchange = cexExchange;
   }
-
+  public getSpotExecModel(): IOrderExecModel {
+    return this.stdExchange.exchangeSpot.getExecModel();
+  }
   public async spotBuy(
     orderId: string,
     stdSymbol: string,
@@ -47,23 +49,6 @@ class StdOrder extends StdOrderBase {
       simulation
     );
   }
-
-  public async spotTradeCheck(
-    stdSymbol: string,
-    value: number,
-    amount: number
-  ): Promise<boolean> {
-    if (!_.isFinite(value)) {
-      logger.error(`输入的量有问题.`, value);
-      return false;
-    }
-    return this.stdExchange.exchangeSpot.spotTradeCheck(
-      stdSymbol,
-      value,
-      amount
-    );
-  }
-
   public async spotSell(
     orderId: string,
     stdSymbol: string,
@@ -97,6 +82,21 @@ class StdOrder extends StdOrderBase {
       simulation
     );
   }
+  public async spotTradeCheck(
+    stdSymbol: string,
+    value: number,
+    amount: number
+  ): Promise<boolean> {
+    if (!_.isFinite(value)) {
+      logger.error(`输入的量有问题.`, value);
+      return false;
+    }
+    return this.stdExchange.exchangeSpot.spotTradeCheck(
+      stdSymbol,
+      value,
+      amount
+    );
+  }
 
   public async swapBuy(stdSymbol: string, amount: BigNumber) {
     return this.stdExchange.exchangeUsdtFuture.createMarketOrder(
@@ -108,6 +108,13 @@ class StdOrder extends StdOrderBase {
     //
   }
 
+  public async testSpotFormat(input: any) {
+    if (this.stdExchange.exchangeSpot.formatOrder) {
+      return this.stdExchange.exchangeSpot.formatOrder(input);
+    }
+    logger.debug(`format method not found`);
+    return undefined;
+  }
   public async getUsdtFutureOrdersBySymbol(symbol: string) {
     return this.stdExchange.exchangeUsdtFuture.fetchOrdersBySymbol(symbol);
   }

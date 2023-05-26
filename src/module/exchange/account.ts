@@ -24,6 +24,9 @@ class StdAccount {
     _.set(option, "apiType", ICexAccountApiType.portfolio);
     this.accountInfo = option;
   }
+  public getCexExchange() {
+    return this.cexExchange;
+  }
 
   public getExchangeName() {
     return this.accountInfo.exchangeName;

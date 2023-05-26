@@ -88,7 +88,7 @@ class Main {
 
     const orderbookType = _.get(process.env, "ORDERBOOK_TYPE", undefined);
     if (orderbookType === "portfolio") {
-      logger.info(`Use portfolio orderbook`);
+      logger.info(`use portfolio orderbook`);
       orderbookSymbolManager.init();
     }
 
@@ -112,5 +112,6 @@ mainIns
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   .then(() => {})
   .catch((e: any) => {
+    logger.error(e);
     logger.error("main process error", _.get(e, "message", "message"));
   });

@@ -7,11 +7,11 @@ import { ISymbolsManager } from "../../interface/symbols_manager";
 import { PortfolioRequest } from "../exchange/cex_exchange/portfolio/request/portfolio_request";
 import * as _ from "lodash";
 import { ISpotSymbolItemPortfolio } from "../../interface/cex_portfolio";
+import { portfolioConfig } from "../exchange/cex_exchange/portfolio/portfolio_config";
 class PortfolioOrderbook implements IOrderbook {
   public spotOrderbookOnceLoaded = false;
   private spotOrderbook: Map<string, IOrderbookStoreItem> = new Map();
   private symbolsManager: ISymbolsManager | undefined = undefined;
-  private baseApiUrl = "https://cex-api.bttcdn.com/trade/getDepth";
   protected spotSymbolsInfo: Map<string, ISpotSymbolItemPortfolio> = new Map();
   protected spotSymbolsInfoByMarketName: Map<string, ISpotSymbolItemPortfolio> =
     new Map();
@@ -32,7 +32,7 @@ class PortfolioOrderbook implements IOrderbook {
     return undefined;
   }
   private async initMarkets() {
-    const url = `https://cex-api.bttcdn.com/trade/getMarketInfo?exchange=2`;
+    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=2`;
     const pr: PortfolioRequest = new PortfolioRequest();
     logger.info(url);
     const marketResult = await pr.get(url);
@@ -92,14 +92,14 @@ class PortfolioOrderbook implements IOrderbook {
       exchange: 2,
       market: spotSymbols.join(","),
     });
-    const url = `${this.baseApiUrl}?${qStr}`;
+    const url = `${portfolioConfig.getBaseApi("getDepth")}?${qStr}`;
     logger.debug("request", url);
     const pr: PortfolioRequest = new PortfolioRequest();
     const orderbookResponse = await pr.get(url);
     this.saveSpotOrderbook(_.get(orderbookResponse, "data", {}));
   }
   private saveSpotOrderbook(orderBookResult: any) {
-    logger.info(`save SpotOrderbook 🦑`);
+    logger.info(`save spotOrderbook 🦑`);
     const keys = Object.keys(orderBookResult);
     if (!_.isArray(keys) || keys.length === 0) {
       logger.debug(`empty return`);

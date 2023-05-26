@@ -11,6 +11,7 @@ import { logger } from "../../../../sys_lib/logger";
 import * as _ from "lodash";
 import { formatStepSize, signatureObject } from "../../utils";
 import {
+  IOrderExecModel,
   ISide,
   ISpotBalanceItem,
   ISpotOrderResult,
@@ -35,6 +36,9 @@ class BinanceSpot implements IStdExchangeSpot {
     this.apiBaseUrl = binanceConfig.getSpotBaseApi();
   }
 
+  public getExecModel() {
+    return IOrderExecModel.SYNC;
+  }
   public async fetchBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(`apiKey not found`);

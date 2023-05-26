@@ -9,6 +9,7 @@ import { portfolioConfig } from "./portfolio_config";
 import BigNumber from "bignumber.js";
 import * as _ from "lodash";
 import {
+  IOrderExecModel,
   ISide,
   ISpotBalanceItem,
   ISpotOrderResult,
@@ -21,23 +22,23 @@ class PortfolioSpot implements IStdExchangeSpot {
   public exchangeName: string;
   private accountId: string;
   private balance: Map<string, ISpotBalanceItemPortfolio> = new Map();
-
-  private apiBaseUrl = "";
+  protected spotSymbolsInfoByMarketName: Map<string, ISpotSymbolItemPortfolio> =
+    new Map();
   protected spotSymbolsInfo: Map<string, ISpotSymbolItemPortfolio> = new Map();
-
   public constructor(accountId: string) {
     this.accountId = accountId;
-    this.apiBaseUrl = portfolioConfig.apiBaseUrl;
   }
 
   public async initMarkets(): Promise<void> {
-    const url = `https://cex-api.bttcdn.com/trade/getMarketInfo?exchange=2`;
+    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=2`;
     const pr: PortfolioRequest = new PortfolioRequest();
     logger.info(url);
     const marketResult = await pr.get(url);
     this.saveMarkets(_.get(marketResult, "data", []));
   }
-
+  public getExecModel() {
+    return IOrderExecModel.ASYNC;
+  }
   private saveMarkets(symbolItemList: ISpotSymbolItemPortfolio[]): void {
     const spotSymbolsArray: ISpotSymbolItemPortfolio[] | undefined = _.filter(
       symbolItemList,
@@ -52,6 +53,7 @@ class PortfolioSpot implements IStdExchangeSpot {
       const stdSymbol = `${value.base_coin}/${value.quote_coin}`;
       _.set(value, "stdSymbol", stdSymbol);
       this.spotSymbolsInfo.set(stdSymbol, value);
+      this.spotSymbolsInfoByMarketName.set(value.market_name, value);
     });
   }
 
@@ -114,7 +116,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     );
   }
   public async fetchBalance(): Promise<void> {
-    const balanceUrl = `${this.apiBaseUrl}/trade/getAccount`;
+    const balanceUrl = portfolioConfig.getBaseApi("spotBalance");
     const pr: PortfolioRequest = new PortfolioRequest();
     logger.info(balanceUrl);
     const balanceResult = await pr.get(balanceUrl);
@@ -218,7 +220,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     side: ISide,
     targetPrice: BigNumber | undefined,
     simulation = false
-  ): Promise<ISpotOrderResult> {
+  ): Promise<boolean> {
     console.dir(this.spotSymbolsInfo.get(stdSymbol));
     const symbol = this.getSymbolByStdSymbol(stdSymbol);
 
@@ -247,33 +249,40 @@ class PortfolioSpot implements IStdExchangeSpot {
       exchange: 2,
       client_id: orderId,
       market: symbol,
-      price: targetPrice?.toString(8),
+      price: targetPrice?.toFixed(8).toString(),
       side: side.toLocaleLowerCase(),
       order_type: IOrderTypePortfolio.Market.toLocaleLowerCase(),
       post_only: false,
     };
     this.setAmountOrQty(stdSymbol, amount, quoteOrderQty, orderData, tradeInfo);
-    await this.sendOrderToPortfolio(orderData);
+    const ok = await this.sendOrderToPortfolio(orderData);
     logger.info("let's create an order", orderData);
-    const c: any = "";
-    return c;
+    return ok;
   }
-  private async sendOrderToPortfolio(orderData: any) {
-    /** {
-    code: 0,
-    data: {
-      status: 'success'
-    } */
-    // const pr: PortfolioRequest = new PortfolioRequest();
+
+  /**
+   * send order to portfolio service
+   * @date 2023/5/26 - 15:26:08
+   * @private
+   * @async
+   * @param {*} orderData "order data"
+   * @returns {Promise<boolean>} "succeed status"
+   */
+  private async sendOrderToPortfolio(orderData: any): Promise<boolean> {
+    const pr: PortfolioRequest = new PortfolioRequest();
     const qStr = querystring.stringify(orderData);
     logger.debug(qStr);
-    const requestUrl = `https://cex-api.bttcdn.com/trade/createOrder?${qStr}`;
+    const requestUrl = `${portfolioConfig.getBaseApi("createOrder")}?${qStr}`;
     logger.debug(requestUrl);
-    return true;
-    // const createOrderResponse = await pr.get(
-    //   `https://cex-api.bttcdn.com/trade/createOrder?${qStr}`
-    // );
-    // logger.debug(`create order response:`, createOrderResponse);
+    const createOrderResponse = await pr.get(
+      `${portfolioConfig.getBaseApi("createOrder")}?${qStr}`
+    );
+    logger.debug(`create order response:`, createOrderResponse);
+    const responseCode = _.get(createOrderResponse, "code", -1);
+    if (responseCode === 0) {
+      return true;
+    }
+    return false;
   }
 
   private setAmountOrQty(
@@ -344,6 +353,62 @@ class PortfolioSpot implements IStdExchangeSpot {
       });
     });
     return ret;
+  }
+  public formatOrder(input: any): ISpotOrderResult {
+    const marketName = _.get(input, "market", "");
+    const symbolInfo = this.spotSymbolsInfoByMarketName.get(marketName);
+    if (!symbolInfo) {
+      logger.error(
+        `formatOrder error: symbol not found`,
+        JSON.stringify(input)
+      );
+      throw new Error("formatOrder error: symbol not found");
+    }
+    const result = {
+      side: _.get(input, "side", "").toUpperCase(),
+      orderId: Number(_.get(input, "order_id", "0")),
+      lostAmount: "0",
+      origAmount: SystemMath.exec(`${_.get(input, "size", "0")} *1`)
+        .toFixed(8)
+        .toString(),
+      type: _.get(input, "order_type", "").toUpperCase(),
+      timeInForce: "GTC",
+      fee: {},
+      info: JSON.stringify(input),
+      symbol: _.get(input, "market", ""),
+      stdSymbol: symbolInfo.stdSymbol,
+      amount: _.get(input, "size", 0),
+      filled: _.get(input, "size_filled", 0),
+      remaining: (() => {
+        const amount = _.get(input, "size", 0);
+        const filled = _.get(input, "size_filled", 0);
+        return SystemMath.execNumber(`${amount}-${filled}`);
+      })(),
+      clientOrderId: "--",
+      timestamp: (() => {
+        const time = _.get(input, "timestamp", 0);
+        return parseInt((time * 1000).toString());
+      })(),
+      lastTradeTimestamp: (() => {
+        const time = _.get(input, "timestamp", 0);
+        return parseInt((time * 1000).toString());
+      })(),
+      average: ((): number => {
+        const quoteFilled = _.get(input, "quote_size_filled", 0);
+        const amount = _.get(input, "size", 0);
+        return SystemMath.execNumber(`${quoteFilled}/${amount}`);
+      })(),
+      averagePrice: (() => {
+        const quoteFilled = _.get(input, "quote_size_filled", 0);
+        const amount = _.get(input, "size", 0);
+        return SystemMath.exec(`${quoteFilled}/${amount}`)
+          .toFixed(8)
+          .toString();
+      })(),
+      status: "FILLED",
+    };
+    logger.info(result);
+    return result;
   }
 }
 

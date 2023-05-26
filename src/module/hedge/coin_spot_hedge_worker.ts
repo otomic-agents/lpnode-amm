@@ -8,6 +8,7 @@ import _ from "lodash";
 import { ammContextManager } from "../amm_context_manager/amm_context_manager";
 import { EFlowStatus } from "../../interface/interface";
 import { dataConfig } from "../../data_config";
+import { IOrderExecModel } from "../../interface/std_difi";
 
 interface IHedgeOrderItem {
   orderId: string;
@@ -19,7 +20,6 @@ interface IHedgeOrderItem {
 
 class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
   public async worker(call: { orderId: number; ammContext: AmmContext }) {
-    // throw new Error("TestError");
     call.ammContext.bridgeItem = dataConfig.findItemByMsmqName(
       call.ammContext.systemInfo.msmqName
     );
@@ -73,6 +73,11 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         cexExeResult.push(execRow);
       }
     }
+    let status = EFlowStatus.HedgeCompletion;
+    if (accountIns.order.getSpotExecModel() === IOrderExecModel.ASYNC) {
+      status = EFlowStatus.HedgeSubmitted;
+    }
+
     try {
       await ammContextManager.appendContext(
         call.ammContext.systemOrder.orderId,
@@ -90,13 +95,12 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         1
       );
       await ammContextManager.set(call.ammContext.systemOrder.orderId, {
-        flowStatus: EFlowStatus.HedgeCompletion,
+        flowStatus: status,
       });
     } catch (e) {
       logger.error(`Failed to update hedge record`, e);
     }
   }
-
   public async simulationExec(optOrderList: IHedgeOrderItem[]) {
     try {
       const accountIns = await this.getAccountIns();

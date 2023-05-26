@@ -23,6 +23,7 @@
     "@types/mathjs": "^9.4.2",
     "@types/md5": "^2.3.2",
     "@types/mongoose": "^5.11.97",
+    "@types/ws": "^8.5.4",
     "abi-decoder": "^2.4.0",
     "await-to-js": "^3.0.0",
     "axios": "^0.24.0",
@@ -63,6 +64,7 @@
     "typescript-eslint": "^0.0.1-alpha.0",
     "var_dump": "^1.0.5",
     "web3": "^1.6.1",
+    "ws": "^8.13.0",
     "yargs-parser": "^21.0.0"
   },
   "devDependencies": {

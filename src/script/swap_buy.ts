@@ -25,7 +25,7 @@ async function main() {
   await accountManager.loadAccounts([
     {
       apiType: ICexAccountApiType.portfolio,
-      accountId: "a001",
+      accountId: "binance_spot_bt_demo_trader",
       exchangeName: "binance",
     },
   ]);
@@ -79,11 +79,11 @@ async function main() {
     //     ?.order.getSpotTradeMinMaxValue("ETH/USDT")
     // );
     const orderResult = await accountManager
-      .getAccount("a001")
-      ?.order.spotBuy(
+      .getAccount("binance_spot_bt_demo_trader")
+      ?.order.spotSell(
         "00004",
         "ETH/USDT",
-        "0.007",
+        "0.008",
         undefined,
         "1785.00",
         false
