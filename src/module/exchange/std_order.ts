@@ -109,8 +109,8 @@ class StdOrder extends StdOrderBase {
   }
 
   public async testSpotFormat(input: any) {
-    if (this.stdExchange.exchangeSpot.formatOrder) {
-      return this.stdExchange.exchangeSpot.formatOrder(input);
+    if (this.stdExchange.exchangeSpot.formatSpotOrder) {
+      return this.stdExchange.exchangeSpot.formatSpotOrder(input);
     }
     logger.debug(`format method not found`);
     return undefined;

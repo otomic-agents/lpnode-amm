@@ -104,7 +104,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       .getCexExchange()
       // @ts-ignore
       .on("spot_order_close", (orderData: ISpotOrderResult) => {
-        logger.debug(`forward event to asyncOrderMonitor 🍄🍄🍄🍄🍄`);
+        logger.debug(`forward event to asyncOrderMonitor 🍄`);
         this.asyncOrderMonitor.onOrder(orderData);
       });
   }

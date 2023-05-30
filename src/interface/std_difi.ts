@@ -102,6 +102,7 @@ interface ISpotOrderResult {
   lostAmount: string;
   origAmount: string; // 的amount
   fee: { [key: string]: string };
+  price: string;
   symbol: string; // "ETHUSDT"
   stdSymbol: string; // "ETH/USDT";
   type: string; // 'market', 'limit'
@@ -126,6 +127,8 @@ interface ICexAccount {
   accountId: string;
   exchangeName: string; // binance huobi dex_bsc
   apiType: ICexAccountApiType;
+  enablePrivateStream?: boolean;
+  enableTestBalance?: boolean;
   spotAccount?: {
     apiKey: string;
     apiSecret: string;

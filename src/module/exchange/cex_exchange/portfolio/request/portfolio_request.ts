@@ -8,6 +8,16 @@ class PortfolioRequest {
         method: "get",
         url,
       });
+      const code = _.get(axiosResponse, "data.code", -1);
+      if (code !== 0) {
+        throw new Error(
+          `${url},service response an error:${_.get(
+            axiosResponse,
+            "data.msg",
+            ""
+          )}`
+        );
+      }
       return _.get(axiosResponse, "data", []);
       // logger.info(axiosResponse);
     } catch (e) {

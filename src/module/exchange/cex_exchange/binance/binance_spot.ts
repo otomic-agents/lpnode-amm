@@ -24,6 +24,7 @@ import { SystemMath } from "../../../../utils/system_math";
 import { ConsoleDirDepth5 } from "../../../../utils/console";
 
 class BinanceSpot implements IStdExchangeSpot {
+  public exchangeName = "binance";
   private apiKey: string;
   private apiSecret: string;
   private balance: Map<string, ISpotBalanceItemBinance> = new Map();
@@ -421,6 +422,7 @@ class BinanceSpot implements IStdExchangeSpot {
           this.formatBigNumberPrecision(stdSymbol, new BigNumber(origQty))
         );
       })(),
+      price: _.get(retData, "price", ""),
       filled: (() => {
         const executedQty = new BigNumber(_.get(retData, "executedQty", "0"));
         return Number(this.formatBigNumberPrecision(stdSymbol, executedQty));

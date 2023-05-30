@@ -32,7 +32,7 @@ class PortfolioOrderbook implements IOrderbook {
     return undefined;
   }
   private async initMarkets() {
-    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=2`;
+    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=15`;
     const pr: PortfolioRequest = new PortfolioRequest();
     logger.info(url);
     const marketResult = await pr.get(url);
@@ -89,7 +89,7 @@ class PortfolioOrderbook implements IOrderbook {
     const spotSymbols = this.symbolsManager.getSpotSymbols();
     logger.debug("list all symbols", spotSymbols);
     const qStr = querystring.stringify({
-      exchange: 2,
+      exchange: 15,
       market: spotSymbols.join(","),
     });
     const url = `${portfolioConfig.getBaseApi("getDepth")}?${qStr}`;

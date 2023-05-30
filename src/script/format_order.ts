@@ -53,6 +53,7 @@ async function main() {
       size: 0.0070000000000000001,
       timestamp: 1685081917.6995289,
     });
+    logger.debug(result);
   }, 3000);
 }
 

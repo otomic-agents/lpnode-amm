@@ -8,7 +8,7 @@ const md5 = require("md5");
 
 class OrderbookSymbolManager implements ISymbolsManager {
   private skipSymbols: string[] = ["USDT"];
-  private spotSymbols: string[];
+  private spotSymbols: string[] = [];
   private spotSymbolsHash: string;
   private spotSymbolAlreadySubscribed: Map<string, boolean> = new Map();
 
@@ -85,18 +85,22 @@ class OrderbookSymbolManager implements ISymbolsManager {
   }
 
   private async requestSubscription(marketSymbol: string) {
-    const url = `${portfolioConfig.getBaseApi(
-      "addSubMarkets"
-    )}?exchange=2&market=${marketSymbol}`;
-    const pr: PortfolioRequest = new PortfolioRequest();
-    logger.debug(`request`, url);
-    const subResponse = await pr.get(url);
-    const symbolArr = _.get(subResponse, "data", []);
-    if (symbolArr.length >= 1) {
-      return true;
+    try {
+      const url = `${portfolioConfig.getBaseApi(
+        "addSubMarkets"
+      )}?exchange=15&market=${marketSymbol}`;
+      const pr: PortfolioRequest = new PortfolioRequest();
+      logger.debug(`request`, url);
+      const subResponse = await pr.get(url);
+      const symbolArr = _.get(subResponse, "data", []);
+      if (symbolArr.length >= 1) {
+        return true;
+      }
+      logger.warn(`subscription failed ${marketSymbol}`);
+      return false;
+    } catch (e) {
+      logger.error(`send market subscription error${e}`);
     }
-    logger.warn(`subscription failed ${marketSymbol}`);
-    return false;
   }
 }
 

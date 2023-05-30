@@ -60,10 +60,6 @@ class Quotation {
   }
 
   private async startQuotation() {
-    if (orderbook.spotOrderbookOnceLoaded === false) {
-      logger.warn("spot orderbook not yet initialized");
-      return;
-    }
     for (const item of this.bridgeTokenList) {
       this.quotationKeep(item).then(() => {
         //

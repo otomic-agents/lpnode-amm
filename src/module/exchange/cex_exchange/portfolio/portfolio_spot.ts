@@ -30,9 +30,10 @@ class PortfolioSpot implements IStdExchangeSpot {
   }
 
   public async initMarkets(): Promise<void> {
-    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=2`;
+    logger.debug(`init markets.....`);
+    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=15`;
     const pr: PortfolioRequest = new PortfolioRequest();
-    logger.info(url);
+    logger.info("init Url is :", url);
     const marketResult = await pr.get(url);
     this.saveMarkets(_.get(marketResult, "data", []));
   }
@@ -40,6 +41,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     return IOrderExecModel.ASYNC;
   }
   private saveMarkets(symbolItemList: ISpotSymbolItemPortfolio[]): void {
+    // logger.debug("load markets from protfolio🍑🍑🍑🍑🍑", symbolItemList);
     const spotSymbolsArray: ISpotSymbolItemPortfolio[] | undefined = _.filter(
       symbolItemList,
       {
@@ -53,6 +55,7 @@ class PortfolioSpot implements IStdExchangeSpot {
       const stdSymbol = `${value.base_coin}/${value.quote_coin}`;
       _.set(value, "stdSymbol", stdSymbol);
       this.spotSymbolsInfo.set(stdSymbol, value);
+      // logger.debug("set Symbol", stdSymbol, value);
       this.spotSymbolsInfoByMarketName.set(value.market_name, value);
     });
   }
@@ -116,13 +119,23 @@ class PortfolioSpot implements IStdExchangeSpot {
     );
   }
   public async fetchBalance(): Promise<void> {
-    const balanceUrl = portfolioConfig.getBaseApi("spotBalance");
-    const pr: PortfolioRequest = new PortfolioRequest();
-    logger.info(balanceUrl);
-    const balanceResult = await pr.get(balanceUrl);
-    // logger.info(`fetchBalance`, balanceResult);
-    logger.info(`fetchBalance`);
-    this.saveBalance(_.get(balanceResult, "data", []));
+    try {
+      const balanceUrl = portfolioConfig.getBaseApi("spotBalance");
+      const pr: PortfolioRequest = new PortfolioRequest();
+      logger.info(balanceUrl);
+      const balanceResult = await pr.get(balanceUrl);
+      // logger.info(`fetchBalance`, balanceResult);
+      logger.info(`fetchBalance`);
+      this.saveBalance(_.get(balanceResult, "data", []));
+    } catch (e) {
+      const error: any = e;
+      const errMsg = _.get(e, "response.data.msg", undefined);
+      if (errMsg) {
+        logger.error(errMsg);
+      } else {
+        logger.error(error.toString());
+      }
+    }
   }
 
   private saveBalance(
@@ -221,16 +234,25 @@ class PortfolioSpot implements IStdExchangeSpot {
     targetPrice: BigNumber | undefined,
     simulation = false
   ): Promise<boolean> {
-    console.dir(this.spotSymbolsInfo.get(stdSymbol));
+    logger.debug("‼️‼️‼️‼️‼️", side, targetPrice, simulation);
+    if (simulation === true) {
+      return true;
+    }
+    logger.debug(
+      "create order symbol info is:",
+      this.spotSymbolsInfo.get(stdSymbol)
+    );
+
     const symbol = this.getSymbolByStdSymbol(stdSymbol);
 
     if (!symbol) {
       logger.error(
-        `The Symbol information of the transaction cannot be found......FindOption`,
-        stdSymbol
+        `Can't create order,the Symbol information of the transaction cannot be found......FindOption
+        spotSymbolsInfo Size: ${this.spotSymbolsInfo.size}
+        ${stdSymbol}`
       );
       throw new Error(
-        `The Symbol information of the transaction cannot be found:${stdSymbol}`
+        `Can't create order,the Symbol information of the transaction cannot be found:${stdSymbol}`
       );
     }
     const tradeInfo = this.spotSymbolsInfo.get(stdSymbol);
@@ -246,7 +268,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     );
     const orderData = {
       client: this.accountId,
-      exchange: 2,
+      exchange: 15,
       client_id: orderId,
       market: symbol,
       price: targetPrice?.toFixed(8).toString(),
@@ -254,9 +276,13 @@ class PortfolioSpot implements IStdExchangeSpot {
       order_type: IOrderTypePortfolio.Market.toLocaleLowerCase(),
       post_only: false,
     };
+    orderData.client = "binance_spot_bt_demo_trader"; // test user
     this.setAmountOrQty(stdSymbol, amount, quoteOrderQty, orderData, tradeInfo);
     const ok = await this.sendOrderToPortfolio(orderData);
     logger.info("let's create an order", orderData);
+    if (ok !== true) {
+      throw new Error(`send order to portfolio error`);
+    }
     return ok;
   }
 
@@ -272,6 +298,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     const pr: PortfolioRequest = new PortfolioRequest();
     const qStr = querystring.stringify(orderData);
     logger.debug(qStr);
+    // return false;
     const requestUrl = `${portfolioConfig.getBaseApi("createOrder")}?${qStr}`;
     logger.debug(requestUrl);
     const createOrderResponse = await pr.get(
@@ -354,7 +381,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     });
     return ret;
   }
-  public formatOrder(input: any): ISpotOrderResult {
+  public formatSpotOrder(input: any): ISpotOrderResult {
     const marketName = _.get(input, "market", "");
     const symbolInfo = this.spotSymbolsInfoByMarketName.get(marketName);
     if (!symbolInfo) {
@@ -373,7 +400,6 @@ class PortfolioSpot implements IStdExchangeSpot {
         .toString(),
       type: _.get(input, "order_type", "").toUpperCase(),
       timeInForce: "GTC",
-      fee: {},
       info: JSON.stringify(input),
       symbol: _.get(input, "market", ""),
       stdSymbol: symbolInfo.stdSymbol,
@@ -384,7 +410,22 @@ class PortfolioSpot implements IStdExchangeSpot {
         const filled = _.get(input, "size_filled", 0);
         return SystemMath.execNumber(`${amount}-${filled}`);
       })(),
-      clientOrderId: "--",
+      fee: (() => {
+        const feeRet = {};
+        const assets = _.get(input, "fee_type", "");
+        const feeSize = _.get(input, "fill_fees", 0);
+        if (!SystemMath.exec(`${feeSize}*1`).isFinite()) {
+          logger.warn(`fee value is incorrect `);
+          return {};
+        }
+        _.set(
+          feeRet,
+          `${assets}`,
+          SystemMath.exec(`${feeSize}*1`).toFixed(8).toString()
+        );
+        return feeRet;
+      })(),
+      clientOrderId: _.get(input, "client_id", "--"),
       timestamp: (() => {
         const time = _.get(input, "timestamp", 0);
         return parseInt((time * 1000).toString());
@@ -393,6 +434,7 @@ class PortfolioSpot implements IStdExchangeSpot {
         const time = _.get(input, "timestamp", 0);
         return parseInt((time * 1000).toString());
       })(),
+      price: _.get(input, "price", ""),
       average: ((): number => {
         const quoteFilled = _.get(input, "quote_size_filled", 0);
         const amount = _.get(input, "size", 0);
@@ -407,7 +449,7 @@ class PortfolioSpot implements IStdExchangeSpot {
       })(),
       status: "FILLED",
     };
-    logger.info(result);
+    logger.info("format result:🛌", result);
     return result;
   }
 }

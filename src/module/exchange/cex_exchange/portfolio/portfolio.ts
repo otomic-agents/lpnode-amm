@@ -11,53 +11,52 @@ import { PortfolioCoinFuture } from "./portfolio_coin_future";
 import * as _ from "lodash";
 import { ISpotOrderResult } from "../../../../interface/std_difi";
 import { logger } from "../../../../sys_lib/logger";
+import { PortfolioAuthManager } from "./portfolio_auth_manager";
 const Emittery = require("emittery");
 class PortfolioExchange extends Emittery implements IStdExchange {
   public exchangeSpot: IStdExchangeSpot;
   public exchangeUsdtFuture: IStdExchangeUsdtFuture;
   public exchangeCoinFuture: IStdExchangeCoinFuture;
   public exchangePrivateStream: PortfolioPrivateStream;
+  public authManager: PortfolioAuthManager;
   public exchangeName = "binance";
   private accountId: string;
 
-  public constructor(accountId: string) {
+  public constructor(accountId: string, userInfo: any) {
     super();
     this.accountId = accountId;
     this.exchangeSpot = new PortfolioSpot(this.accountId);
+    this.exchangeSpot.exchangeName = this.exchangeName;
     this.exchangeUsdtFuture = new PortfolioUsdtFuture(this.accountId);
     this.exchangeCoinFuture = new PortfolioCoinFuture(this.accountId);
-    this.exchangePrivateStream = new PortfolioPrivateStream(this.accountId);
-    this.exchangePrivateStream.on("streamEvent", (data) => {
-      logger.debug(data);
-      const action = _.get(data, "action", "unknow");
-      const market = _.get(data, "payload.market", "");
-      const rawInfo = _.get(data, "payload.rawInfo", {});
-      if (action === "order_result" && market === "spot" && rawInfo) {
-        this.onSportOrder(rawInfo);
-      }
-      // this.emit(_.get(data, "action", "unknow"), data);
-    });
+    this.authManager = new PortfolioAuthManager(this.accountId, userInfo);
+    const enableWs = _.get(userInfo, "enablePrivateStream", false);
+    if (enableWs) {
+      this.exchangePrivateStream = new PortfolioPrivateStream(
+        "binance_spot_bt_demo_trader" // test account
+      );
+      this.exchangePrivateStream.on("streamEvent", (data) => {
+        logger.debug(data);
+        const action = _.get(data, "action", "unknow");
+        const market = _.get(data, "payload.market", "");
+        const rawInfo = _.get(data, "payload.rawInfo", {});
+        if (action === "order_result" && market === "spot" && rawInfo) {
+          this.onSportOrder(rawInfo);
+        }
+      });
+      this.exchangePrivateStream.connect();
+    }
   }
   public onSportOrder(rawInfo: any) {
     this.emit(
       "spot_order_close",
       ((): ISpotOrderResult => {
-        if (typeof this.exchangeSpot.formatOrder === "function") {
-          return this.exchangeSpot.formatOrder(rawInfo);
+        if (typeof this.exchangeSpot.formatSpotOrder === "function") {
+          return this.exchangeSpot.formatSpotOrder(rawInfo);
         }
-        throw new Error("Convert order format is not supported");
+        throw new Error("convert order format is not supported");
       })()
     );
   }
-  /**
-   *
-   * {
-          action: "order_result",
-          payload: {
-            market: "spot",
-            rawInfo: _.get(method, "params", {}),
-          },
-        }
-   */
 }
 export { PortfolioExchange };

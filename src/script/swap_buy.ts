@@ -27,6 +27,13 @@ async function main() {
       apiType: ICexAccountApiType.portfolio,
       accountId: "binance_spot_bt_demo_trader",
       exchangeName: "binance",
+      enablePrivateStream: false,
+    },
+    {
+      apiType: ICexAccountApiType.portfolio,
+      accountId: "a001",
+      exchangeName: "binance",
+      enablePrivateStream: false,
     },
   ]);
   setInterval(() => {
@@ -34,10 +41,10 @@ async function main() {
   }, 1000);
   setTimeout(async () => {
     // balance Test
-    // const result = await accountManager
-    //   .getAccount("a001")
-    //   ?.balance.getAllSpotBalance();
-    // logger.info(result);
+    const result = await accountManager
+      .getAccount("a001")
+      ?.balance.getAllSpotBalance();
+    logger.info("balance Result:👁️", result);
     //
     // const result_01 = await accountManager
     //   .getAccount("a001")
@@ -80,12 +87,12 @@ async function main() {
     // );
     const orderResult = await accountManager
       .getAccount("binance_spot_bt_demo_trader")
-      ?.order.spotSell(
-        "00004",
+      ?.order.spotBuy(
+        "00005",
         "ETH/USDT",
         "0.008",
         undefined,
-        "1785.00",
+        "1885.00",
         false
       );
     logger.debug(orderResult);
@@ -97,5 +104,5 @@ main()
     //
   })
   .catch((e: any) => {
-    logger.error("e");
+    logger.error("e", e);
   });

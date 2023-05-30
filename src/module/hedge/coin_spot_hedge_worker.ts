@@ -34,6 +34,9 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
       );
     }
     const cexExePlan = optOrderList;
+    const hedgePlanClientOrderIdList = optOrderList.map((it) => {
+      return it.orderId;
+    });
     const cexExeResult: any[] = [];
     for (const order of optOrderList) {
       const actionSide = order.side;
@@ -79,6 +82,11 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     }
 
     try {
+      await ammContextManager.appendContext(
+        call.ammContext.systemOrder.orderId,
+        "systemOrder.hedgePlanClientOrderIdList",
+        hedgePlanClientOrderIdList
+      );
       await ammContextManager.appendContext(
         call.ammContext.systemOrder.orderId,
         "systemOrder.hedgePlan",
@@ -135,8 +143,9 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
             order.orderId,
             order.symbol,
             new BigNumber(order.amountNumber).toString(),
-            undefined,
-            true
+            undefined, // qty
+            undefined, // target price
+            true // simulation
           );
           execRow.status = 1;
         } catch (e: any) {

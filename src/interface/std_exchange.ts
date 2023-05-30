@@ -13,13 +13,14 @@ import {
 } from "./std_difi";
 import BigNumber from "bignumber.js";
 interface IStdExchangeSpot {
+  exchangeName: string;
   initMarkets(): Promise<void>;
   fetchMarkets(): Map<string, ISpotSymbolItem>;
   fetchBalance(): Promise<any>;
   withdrawApply?(): Promise<any>;
   capitalAll?(): Promise<any>;
   getExecModel(): IOrderExecModel;
-  formatOrder?(input: any): ISpotOrderResult;
+  formatSpotOrder?(input: any): ISpotOrderResult;
   spotTradeCheck(
     stdSymbol: string,
     value: number,

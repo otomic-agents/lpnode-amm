@@ -15,6 +15,10 @@ import { exchangeRedisStore } from "./redis_store";
 const cTable = require("console.table");
 
 class StdBalance {
+  private testBalance = {
+    ETH: 10,
+    USDT: 100000,
+  };
   private stdExchange: IStdExchange;
   private accountInfo: ICexAccount;
   private spotBalance: Map<string, ISpotBalanceItem> = new Map();
@@ -36,6 +40,13 @@ class StdBalance {
       return {
         free: "1000000",
         asset: "T",
+        locked: "0",
+      };
+    }
+    if (this.testBalance[symbol]) {
+      return {
+        free: this.testBalance[symbol].toString(),
+        asset: symbol,
         locked: "0",
       };
     }

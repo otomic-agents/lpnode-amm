@@ -7,11 +7,12 @@ class PortfolioPrivateStream extends Emittery {
   // @ts-ignore
   private accountId: string;
   private socket: WebSocket.WebSocket;
+  private keepAvailable: NodeJS.Timer;
   constructor(accountId: string) {
     super();
     this.accountId = accountId;
-    this.init();
   }
+
   private id = 1;
   private messageId(): number {
     if (this.id > 65535 * 10000) {
@@ -21,8 +22,9 @@ class PortfolioPrivateStream extends Emittery {
     this.id = this.id + 1;
     return this.id;
   }
-  public init() {
-    logger.debug("init streams 💥💥💥💥💥");
+
+  public async connect() {
+    logger.debug("init streams 💥");
     const ws = new WebSocket(portfolioConfig.getBaseApi("wsOrderStream"));
     this.socket = ws;
     ws.on("error", (err: any) => {
@@ -35,16 +37,44 @@ class PortfolioPrivateStream extends Emittery {
       this.onOpen();
     });
   }
+  private async reconnect() {
+    if (this.socket) {
+      try {
+        this.clearKeeper();
+        this.socket.removeAllListeners();
+        this.socket.close();
+      } catch (e) {
+        logger.error(`close socket error:`, e);
+      }
+    }
+    this.connect();
+  }
   private onOpen() {
     this.sign();
-    this.subscribeOrder();
+    setTimeout(() => {
+      this.subscribeOrder();
+    }, 300);
+    this.sendKeepAvailable();
+  }
+  private sendKeepAvailable() {
+    this.keepAvailable = setInterval(() => {
+      logger.debug(`send keepAvailable data`);
+      this.socket.send(
+        JSON.stringify({ method: "server.ping", params: [], id: 96803098084 })
+      );
+    }, 1000 * 40);
+  }
+  private clearKeeper() {
+    if (this.keepAvailable) {
+      clearInterval(this.keepAvailable);
+    }
   }
   private sign() {
     this.socket.send(
       JSON.stringify({
         id: this.messageId(),
         method: "server.sign",
-        params: ["binance_spot_bt_demo_trader"],
+        params: [this.accountId],
       })
     );
   }
@@ -62,7 +92,7 @@ class PortfolioPrivateStream extends Emittery {
       const message = JSON.parse(data.toString());
       const method = _.get(message, "method", "");
       const orderStatus = _.get(message, "params.status", 0);
-      const orderEvent = _.get(message, "params.event", "Empty");
+      const orderEvent = _.get(message, "params.event", "empty");
       if (method === "") {
         logger.error("method is empty");
         return;
@@ -83,11 +113,12 @@ class PortfolioPrivateStream extends Emittery {
     } catch (e) {
       logger.error(`parse message string error:`, e);
     }
-
-    // logger.debug(`received message 💦`, data.toString());
   }
   private onError(err: any) {
     logger.error(`socket error:`, err);
+    setTimeout(() => {
+      this.reconnect();
+    }, 1000);
   }
 }
 export { PortfolioPrivateStream };
