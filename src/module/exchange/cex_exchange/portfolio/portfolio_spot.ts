@@ -381,7 +381,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     });
     return ret;
   }
-  public formatOrder(input: any): ISpotOrderResult {
+  public formatOrder(input: any): ISpotOrderResult | undefined {
     const marketName = _.get(input, "market", "");
     const symbolInfo = this.spotSymbolsInfoByMarketName.get(marketName);
     if (!symbolInfo) {
@@ -389,7 +389,7 @@ class PortfolioSpot implements IStdExchangeSpot {
         `formatOrder error: symbol not found`,
         JSON.stringify(input)
       );
-      throw new Error("formatOrder error: symbol not found");
+      return undefined;
     }
     const result = {
       side: _.get(input, "side", "").toUpperCase(),

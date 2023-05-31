@@ -82,7 +82,7 @@ class PortfolioOrderbook implements IOrderbook {
 
     setTimeout(() => {
       this.syncSpotOrderbook();
-    }, 1000 * 30);
+    }, 1000 * 5);
   }
 
   private async requestSpotOrderbook() {

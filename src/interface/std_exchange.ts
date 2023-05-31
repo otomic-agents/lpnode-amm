@@ -20,7 +20,7 @@ interface IStdExchangeSpot {
   withdrawApply?(): Promise<any>;
   capitalAll?(): Promise<any>;
   getOrderExecModel(): IOrderExecModel;
-  formatOrder?(input: any): ISpotOrderResult;
+  formatOrder?(input: any): ISpotOrderResult | undefined;
   spotTradeCheck(
     stdSymbol: string,
     value: number,

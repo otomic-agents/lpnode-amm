@@ -142,7 +142,7 @@ class PortfolioPrivateStream extends Emittery {
   private onMessage(data: NodeJS.ArrayBufferView) {
     try {
       const message = JSON.parse(data.toString());
-      logger.debug(`received message`, JSON.stringify(message));
+      // logger.debug(`received message`, JSON.stringify(message));
       const method = _.get(message, "method", "");
       const messageId = _.get(message, "id", 0);
       const result = _.get(message, "result", "");

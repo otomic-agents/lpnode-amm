@@ -11,6 +11,10 @@ import {
 } from "../../interface/std_difi";
 import { logger } from "../../sys_lib/logger";
 import { exchangeRedisStore } from "./redis_store";
+const yargs = require("yargs-parser");
+const flags = yargs(process.argv.slice(2));
+const loadTestBalance = _.get(flags, "loadTestBalance", false);
+logger.debug("loadTestBalance", loadTestBalance);
 // @ts-ignore
 const cTable = require("console.table");
 
@@ -43,13 +47,22 @@ class StdBalance {
         locked: "0",
       };
     }
-    if (this.testBalance[symbol]) {
+    if (loadTestBalance === true) {
+      // return test balance
+      if (this.testBalance[symbol]) {
+        return {
+          free: this.testBalance[symbol].toString(),
+          asset: symbol,
+          locked: "0",
+        };
+      }
       return {
-        free: this.testBalance[symbol].toString(),
+        free: "0",
         asset: symbol,
         locked: "0",
       };
     }
+
     const balanceItem = this.spotBalance.get(symbol);
     if (!balanceItem) {
       return {

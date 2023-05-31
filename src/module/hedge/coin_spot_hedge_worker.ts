@@ -60,6 +60,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
       const execRow = {
         plan: order,
         result: {},
+        commitResult: {},
         error: "",
         status: 0,
       };
@@ -70,9 +71,21 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
           new BigNumber(order.amountNumber).toString()
         );
         execRow.status = 1;
+        if (accountIns.order.getSpotExecModel() === IOrderExecModel.ASYNC) {
+          execRow.commitResult = execRow.result;
+          execRow.status = 2;
+        }
       } catch (e: any) {
         execRow.error = e.toString();
       } finally {
+        accountIns
+          .getCexExchange()
+          // @ts-ignore
+          .emit("client_spot_create_order", order.orderId, {
+            symbol: order.symbol,
+            side: order.side,
+            amount: order.amountNumber,
+          });
         cexExeResult.push(execRow);
       }
     }

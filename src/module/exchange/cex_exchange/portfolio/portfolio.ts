@@ -51,7 +51,7 @@ class PortfolioExchange extends Emittery implements IStdExchange {
   public onSportOrder(rawInfo: any) {
     this.emit(
       "spot_order_close",
-      ((): ISpotOrderResult => {
+      ((): ISpotOrderResult | undefined => {
         if (typeof this.exchangeSpot.formatOrder === "function") {
           return this.exchangeSpot.formatOrder(rawInfo);
         }

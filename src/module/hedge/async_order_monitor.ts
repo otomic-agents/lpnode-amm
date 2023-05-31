@@ -5,14 +5,31 @@ import * as _ from "lodash";
 import { ISpotOrderResult } from "../../interface/std_difi";
 import { EFlowStatus } from "../../interface/interface";
 class AsyncOrderMonitor {
+  private executionOrderQueue: Map<string, any> = new Map();
   public constructor() {
     logger.info(`init AsyncOrderMonitor`);
   }
-  public async onOrder(orderData: ISpotOrderResult) {
+  public async onOrder(orderData: ISpotOrderResult | undefined) {
+    if (!orderData) {
+      logger.error(`order is not parsed correctly `);
+      return;
+    }
     console.log("________________");
     logger.info(`order data`, orderData);
     console.log("________________");
     const clientOrderId = _.get(orderData, "clientOrderId", "");
+    logger.debug("delete cached client event");
+
+    const createResult = this.executionOrderQueue.get(clientOrderId);
+    if (!createResult) {
+      logger.warn(`Could not find create record orderId:${clientOrderId}`);
+    }
+    if (createResult) {
+      if (createResult.time) {
+        logger.debug(`clear timeout check`);
+        clearTimeout(createResult.time);
+      }
+    }
     if (!clientOrderId || clientOrderId === "") {
       logger.error(
         `Unable to parse client orderid from order message`,
@@ -49,9 +66,11 @@ class AsyncOrderMonitor {
     });
     logger.debug(rowIndex);
     logger.debug(`update context status `);
-    const key = `systemOrder.hedgeResult.${rowIndex}.asyncExecuteResult`;
+    const key = `systemOrder.hedgeResult.${rowIndex}.result`;
+    const statusKey = `systemOrder.hedgeResult.${rowIndex}.status`;
     const data = {};
     data[key] = orderData;
+    data[statusKey] = 1; // update status
     data["flowStatus"] = EFlowStatus.HedgeCompletion;
     try {
       const find = {
@@ -68,6 +87,20 @@ class AsyncOrderMonitor {
     // find hedge result index and update
     // ISpotOrderResult
     //
+  }
+  public async onClientCreateOrder(orderId: string, orderData: any) {
+    this.executionOrderQueue.set(orderId, {
+      eventTime: new Date().getTime(),
+      orderCommitData: orderData,
+      time: ((orderId) => {
+        return setTimeout(() => {
+          const executionOrderItem = this.executionOrderQueue.get(orderId);
+          if (executionOrderItem) {
+            logger.error(`${orderId} execute timeout`);
+          }
+        }, 5000);
+      })(orderId),
+    });
   }
 }
 export { AsyncOrderMonitor };
