@@ -8,6 +8,7 @@ class PortfolioPrivateStream extends Emittery {
   private accountId: string;
   private socket: WebSocket.WebSocket;
   private keepAvailable: NodeJS.Timer;
+  private keepSendPromiseList: Map<number, any> = new Map();
   constructor(accountId: string) {
     super();
     this.accountId = accountId;
@@ -56,13 +57,64 @@ class PortfolioPrivateStream extends Emittery {
     }, 300);
     this.sendKeepAvailable();
   }
+  private onPong(msgId: number) {
+    const waitContext = this.keepSendPromiseList.get(msgId);
+    if (waitContext && typeof waitContext.resolve === "function") {
+      waitContext.resolve(msgId);
+      return;
+    }
+    logger.warn(`send context not found msgId:${msgId}`);
+  }
   private sendKeepAvailable() {
-    this.keepAvailable = setInterval(() => {
+    this.keepAvailable = setInterval(async () => {
       logger.debug(`send keepAvailable data`);
-      this.socket.send(
-        JSON.stringify({ method: "server.ping", params: [], id: 96803098084 })
-      );
-    }, 1000 * 40);
+      try {
+        await this.syncSendKeep();
+      } catch (e) {
+        setTimeout(() => {
+          this.reconnect();
+        }, 1000);
+
+        logger.error(`keepAvailable data response error`);
+      }
+    }, 1000 * 10);
+  }
+  private syncSendKeep() {
+    const messageId = this.messageId();
+    this.socket.send(
+      JSON.stringify({
+        method: "server.ping",
+        params: [],
+        id: messageId,
+      })
+    );
+    return new Promise((resolve, reject) => {
+      const clearTimer = (msgId: number) => {
+        logger.debug(`clear timeout..`);
+        if (
+          this.keepSendPromiseList.get(msgId) &&
+          this.keepSendPromiseList.get(msgId)["time"]
+        ) {
+          clearTimeout(this.keepSendPromiseList.get(msgId)["time"]);
+        }
+      };
+      this.keepSendPromiseList.set(messageId, {
+        time: setTimeout(() => {
+          reject(new Error("Timeout"));
+          this.keepSendPromiseList.delete(messageId);
+        }, 3000),
+        resolve: (msgId: number) => {
+          resolve(true);
+          clearTimer(msgId);
+          this.keepSendPromiseList.delete(msgId);
+        },
+        reject: (msgId: number, message: string) => {
+          reject(new Error(message));
+          clearTimer(msgId);
+          this.keepSendPromiseList.delete(msgId);
+        },
+      });
+    });
   }
   private clearKeeper() {
     if (this.keepAvailable) {
@@ -90,9 +142,17 @@ class PortfolioPrivateStream extends Emittery {
   private onMessage(data: NodeJS.ArrayBufferView) {
     try {
       const message = JSON.parse(data.toString());
+      logger.debug(`received message`, JSON.stringify(message));
       const method = _.get(message, "method", "");
+      const messageId = _.get(message, "id", 0);
+      const result = _.get(message, "result", "");
       const orderStatus = _.get(message, "params.status", 0);
       const orderEvent = _.get(message, "params.event", "empty");
+
+      if (messageId > 0 && result === "pong") {
+        this.onPong(messageId);
+        return;
+      }
       if (method === "") {
         logger.error("method is empty");
         return;

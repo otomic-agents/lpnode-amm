@@ -29,7 +29,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     this.accountId = accountId;
   }
 
-  public async initMarkets(): Promise<void> {
+  public async loadMarkets(): Promise<void> {
     logger.debug(`init markets.....`);
     const url = `${portfolioConfig.getBaseApi("markets")}?exchange=15`;
     const pr: PortfolioRequest = new PortfolioRequest();
@@ -37,7 +37,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     const marketResult = await pr.get(url);
     this.saveMarkets(_.get(marketResult, "data", []));
   }
-  public getExecModel() {
+  public getOrderExecModel() {
     return IOrderExecModel.ASYNC;
   }
   private saveMarkets(symbolItemList: ISpotSymbolItemPortfolio[]): void {
@@ -118,7 +118,7 @@ class PortfolioSpot implements IStdExchangeSpot {
       `The transaction amount error LOT_SIZE value [${value}] , filter [${min}] [${max}]`
     );
   }
-  public async fetchBalance(): Promise<void> {
+  public async loadBalance(): Promise<void> {
     try {
       const balanceUrl = portfolioConfig.getBaseApi("spotBalance");
       const pr: PortfolioRequest = new PortfolioRequest();
@@ -180,7 +180,7 @@ class PortfolioSpot implements IStdExchangeSpot {
    * @param {number} price ""
    * @returns {Promise<[number, number]>} "min max"
    */
-  public async spotGetTradeMinMax(
+  public async getTradeMinMax(
     stdSymbol: string,
     price: number
   ): Promise<[number, number]> {
@@ -197,7 +197,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     ];
   }
 
-  public async spotGetTradeMinMaxValue(
+  public async getTradeMinMaxValue(
     stdSymbol: string
   ): Promise<[number, number]> {
     const symbolInfo = this.getSymbolInfoByStdSymbol(stdSymbol);
@@ -213,7 +213,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     ];
   }
 
-  public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
+  public async getTradeMinNotional(stdSymbol: string): Promise<number> {
     if (stdSymbol === "T/USDT") {
       return 0;
     }
@@ -381,7 +381,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     });
     return ret;
   }
-  public formatSpotOrder(input: any): ISpotOrderResult {
+  public formatOrder(input: any): ISpotOrderResult {
     const marketName = _.get(input, "market", "");
     const symbolInfo = this.spotSymbolsInfoByMarketName.get(marketName);
     if (!symbolInfo) {

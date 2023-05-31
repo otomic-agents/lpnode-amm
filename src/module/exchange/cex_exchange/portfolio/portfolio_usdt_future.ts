@@ -13,7 +13,7 @@ class PortfolioUsdtFuture implements IStdExchangeUsdtFuture {
   public constructor(accountId: string) {
     this.accountId = accountId;
   }
-  public async initMarkets(): Promise<void> {
+  public async loadMarkets(): Promise<void> {
     //
     logger.info(`PortfolioUsdtFuture`);
   }
@@ -25,7 +25,7 @@ class PortfolioUsdtFuture implements IStdExchangeUsdtFuture {
     return c;
   }
 
-  public async fetchBalance(): Promise<void> {
+  public async loadBalance(): Promise<void> {
     //
   }
   public async fetchPositionRisk() {

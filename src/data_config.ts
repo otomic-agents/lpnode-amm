@@ -60,7 +60,9 @@ class DataConfig {
   } = {
     quotationInterval: 1000 * 10,
   };
-
+  public getBaseConfig() {
+    return this.baseConfig;
+  }
   public getTokenList() {
     const tokenList: any[] = [];
     for (const [uniqKey, item] of this.tokenToSymbolMap) {

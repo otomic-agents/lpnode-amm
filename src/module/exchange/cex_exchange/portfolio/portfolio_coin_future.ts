@@ -10,7 +10,7 @@ class PortfolioCoinFuture implements IStdExchangeCoinFuture {
   public constructor(accountId: string) {
     this.accountId = accountId;
   }
-  public async initMarkets() {
+  public async loadMarkets() {
     logger.debug(`init markets`);
   }
   public fetchMarkets(): Map<string, ICoinFutureSymbolItem> {

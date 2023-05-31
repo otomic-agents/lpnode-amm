@@ -31,6 +31,7 @@ class PortfolioExchange extends Emittery implements IStdExchange {
     this.exchangeCoinFuture = new PortfolioCoinFuture(this.accountId);
     this.authManager = new PortfolioAuthManager(this.accountId, userInfo);
     const enableWs = _.get(userInfo, "enablePrivateStream", false);
+    logger.debug("enableWs config", enableWs, JSON.stringify(userInfo));
     if (enableWs) {
       this.exchangePrivateStream = new PortfolioPrivateStream(
         "binance_spot_bt_demo_trader" // test account
@@ -51,8 +52,8 @@ class PortfolioExchange extends Emittery implements IStdExchange {
     this.emit(
       "spot_order_close",
       ((): ISpotOrderResult => {
-        if (typeof this.exchangeSpot.formatSpotOrder === "function") {
-          return this.exchangeSpot.formatSpotOrder(rawInfo);
+        if (typeof this.exchangeSpot.formatOrder === "function") {
+          return this.exchangeSpot.formatOrder(rawInfo);
         }
         throw new Error("convert order format is not supported");
       })()

@@ -13,7 +13,7 @@ class StdOrder extends StdOrderBase {
     this.stdExchange = cexExchange;
   }
   public getSpotExecModel(): IOrderExecModel {
-    return this.stdExchange.exchangeSpot.getExecModel();
+    return this.stdExchange.exchangeSpot.getOrderExecModel();
   }
   public async spotBuy(
     orderId: string,
@@ -109,8 +109,8 @@ class StdOrder extends StdOrderBase {
   }
 
   public async testSpotFormat(input: any) {
-    if (this.stdExchange.exchangeSpot.formatSpotOrder) {
-      return this.stdExchange.exchangeSpot.formatSpotOrder(input);
+    if (this.stdExchange.exchangeSpot.formatOrder) {
+      return this.stdExchange.exchangeSpot.formatOrder(input);
     }
     logger.debug(`format method not found`);
     return undefined;
@@ -122,15 +122,15 @@ class StdOrder extends StdOrderBase {
   // public async swapSell(){
   // }
   public async getSpotTradeMinMax(stdSymbol: string, price: number) {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinMax(stdSymbol, price);
+    return this.stdExchange.exchangeSpot.getTradeMinMax(stdSymbol, price);
   }
 
   public async getSpotTradeMinMaxValue(stdSymbol: string) {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinMaxValue(stdSymbol);
+    return this.stdExchange.exchangeSpot.getTradeMinMaxValue(stdSymbol);
   }
 
   public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
-    return this.stdExchange.exchangeSpot.spotGetTradeMinNotional(stdSymbol);
+    return this.stdExchange.exchangeSpot.getTradeMinNotional(stdSymbol);
   }
 }
 

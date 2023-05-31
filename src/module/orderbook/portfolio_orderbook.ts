@@ -32,11 +32,16 @@ class PortfolioOrderbook implements IOrderbook {
     return undefined;
   }
   private async initMarkets() {
-    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=15`;
-    const pr: PortfolioRequest = new PortfolioRequest();
-    logger.info(url);
-    const marketResult = await pr.get(url);
-    this.saveMarkets(_.get(marketResult, "data", []));
+    try {
+      const url = `${portfolioConfig.getBaseApi("markets")}?exchange=15`;
+      logger.info("request url:", url);
+      const pr: PortfolioRequest = new PortfolioRequest();
+
+      const marketResult = await pr.get(url);
+      this.saveMarkets(_.get(marketResult, "data", []));
+    } catch (e) {
+      logger.error(e);
+    }
   }
   private saveMarkets(symbolItemList: ISpotSymbolItemPortfolio[]): void {
     const spotSymbolsArray: ISpotSymbolItemPortfolio[] | undefined = _.filter(

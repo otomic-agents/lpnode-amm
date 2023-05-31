@@ -3,6 +3,7 @@ import { ammContextModule } from "../../mongo_module/amm_context";
 import { logger } from "../../sys_lib/logger";
 import * as _ from "lodash";
 import { ISpotOrderResult } from "../../interface/std_difi";
+import { EFlowStatus } from "../../interface/interface";
 class AsyncOrderMonitor {
   public constructor() {
     logger.info(`init AsyncOrderMonitor`);
@@ -51,6 +52,7 @@ class AsyncOrderMonitor {
     const key = `systemOrder.hedgeResult.${rowIndex}.asyncExecuteResult`;
     const data = {};
     data[key] = orderData;
+    data["flowStatus"] = EFlowStatus.HedgeCompletion;
     try {
       const find = {
         "systemOrder.orderId": ammContext.systemOrder.orderId,

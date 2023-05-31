@@ -44,26 +44,25 @@ class StdAccount {
    * @return {Promise<void>} Empty
    */
   public async init(): Promise<void> {
+    logger.debug(this.accountInfo);
     if (
       this.accountInfo.exchangeName === ICexExchangeList.binance &&
-      this.accountInfo.apiType === ICexAccountApiType.exchange &&
-      this.accountInfo.spotAccount &&
-      this.accountInfo.usdtFutureAccount &&
-      this.accountInfo.coinFutureAccount
+      _.get(this.accountInfo, "apiType", ICexAccountApiType.exchange) ===
+        ICexAccountApiType.exchange
     ) {
       // 直接对接币安
       this.cexExchange = new BinanceExchange({
         spotAccount: {
-          apiKey: this.accountInfo.spotAccount.apiKey,
-          apiSecret: this.accountInfo.spotAccount.apiSecret,
+          apiKey: _.get(this.accountInfo, "spotAccount.apiKey", ""),
+          apiSecret: _.get(this.accountInfo, "spotAccount.apiSecret", ""),
         },
         usdtFutureAccount: {
-          apiKey: this.accountInfo.usdtFutureAccount.apiKey,
-          apiSecret: this.accountInfo.usdtFutureAccount.apiSecret,
+          apiKey: _.get(this.accountInfo, "usdtFutureAccount.apiKey", ""),
+          apiSecret: _.get(this.accountInfo, "usdtFutureAccount.apiSecret", ""),
         },
         coinFutureAccount: {
-          apiKey: this.accountInfo.coinFutureAccount.apiKey,
-          apiSecret: this.accountInfo.coinFutureAccount.apiSecret,
+          apiKey: _.get(this.accountInfo, "coinFutureAccount.apiKey", ""),
+          apiSecret: _.get(this.accountInfo, "coinFutureAccount.apiSecret", ""),
         },
       });
       logger.debug(
@@ -80,9 +79,9 @@ class StdAccount {
       );
     }
     try {
-      await this.cexExchange.exchangeSpot.initMarkets(); // Initialize trading pairs in the spot market
-      await this.cexExchange.exchangeUsdtFuture.initMarkets(); //  initializes trading pairs
-      await this.cexExchange.exchangeCoinFuture.initMarkets(); // initializes trading pairs
+      await this.cexExchange.exchangeSpot.loadMarkets(); // Initialize trading pairs in the spot market
+      await this.cexExchange.exchangeUsdtFuture.loadMarkets(); //  initializes trading pairs
+      await this.cexExchange.exchangeCoinFuture.loadMarkets(); // initializes trading pairs
       await this.initBalance(this.cexExchange);
       await this.initOrder(this.cexExchange);
       await this.initInfo(this.cexExchange); // init markets

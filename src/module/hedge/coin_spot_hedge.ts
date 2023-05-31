@@ -19,7 +19,11 @@ import { CoinSpotHedgeWorker } from "./coin_spot_hedge_worker";
 import { EthUnit } from "../../utils/eth";
 import { SystemMath } from "../../utils/system_math";
 import { ConsoleDirDepth5 } from "../../utils/console";
-import { ICexExchangeList, ISpotOrderResult } from "../../interface/std_difi";
+import {
+  ICexExchangeList,
+  IOrderExecModel,
+  ISpotOrderResult,
+} from "../../interface/std_difi";
 import { hedgeJobModule } from "../../mongo_module/hedge_job";
 import { AsyncOrderMonitor } from "./async_order_monitor";
 
@@ -99,14 +103,15 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     if (!accountIns) {
       throw `account ins not initialized`;
     }
-
-    accountIns
-      .getCexExchange()
-      // @ts-ignore
-      .on("spot_order_close", (orderData: ISpotOrderResult) => {
-        logger.debug(`forward event to asyncOrderMonitor 🍄`);
-        this.asyncOrderMonitor.onOrder(orderData);
-      });
+    if (accountIns.order.getSpotExecModel() === IOrderExecModel.ASYNC) {
+      accountIns
+        .getCexExchange()
+        // @ts-ignore
+        .on("spot_order_close", (orderData: ISpotOrderResult) => {
+          logger.debug(`forward event to asyncOrderMonitor 🍄`);
+          this.asyncOrderMonitor.onOrder(orderData);
+        });
+    }
   }
 
   public getHedgeFeeSymbol() {

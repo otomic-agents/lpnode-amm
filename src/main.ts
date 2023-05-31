@@ -86,7 +86,11 @@ class Main {
      * 2.loadChainConfig
      */
 
-    const orderbookType = _.get(process.env, "ORDERBOOK_TYPE", undefined);
+    const orderbookType = _.get(
+      dataConfig.getBaseConfig(),
+      "orderBookType",
+      "market"
+    );
     if (orderbookType === "portfolio") {
       logger.info(`use portfolio orderbook`);
       orderbookSymbolManager.init();

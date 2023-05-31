@@ -37,10 +37,10 @@ class BinanceSpot implements IStdExchangeSpot {
     this.apiBaseUrl = binanceConfig.getSpotBaseApi();
   }
 
-  public getExecModel() {
+  public getOrderExecModel() {
     return IOrderExecModel.SYNC;
   }
-  public async fetchBalance(): Promise<void> {
+  public async loadBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(`apiKey not found`);
       return;
@@ -83,7 +83,7 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
-  public async initMarkets() {
+  public async loadMarkets() {
     const url = `${this.apiBaseUrl}/api/v3/exchangeInfo`;
     try {
       logger.debug(`request symbol info url: ${url}`);
@@ -130,7 +130,7 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
-  public async spotGetTradeMinMax(
+  public async getTradeMinMax(
     stdSymbol: string,
     price: number
   ): Promise<[number, number]> {
@@ -155,7 +155,7 @@ class BinanceSpot implements IStdExchangeSpot {
     ];
   }
 
-  public async spotGetTradeMinMaxValue(
+  public async getTradeMinMaxValue(
     stdSymbol: string
   ): Promise<[number, number]> {
     if (stdSymbol === "T/USDT") {
@@ -180,7 +180,7 @@ class BinanceSpot implements IStdExchangeSpot {
     ];
   }
 
-  public async spotGetTradeMinNotional(stdSymbol: string): Promise<number> {
+  public async getTradeMinNotional(stdSymbol: string): Promise<number> {
     if (stdSymbol === "T/USDT") {
       return 0;
     }

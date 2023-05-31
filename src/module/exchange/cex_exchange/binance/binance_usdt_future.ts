@@ -42,7 +42,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
    * @async
    * @returns {Promise<void>} ""
    */
-  public async fetchBalance(): Promise<void> {
+  public async loadBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(
         `账户没有初始化，不同步余额`,
@@ -267,7 +267,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
    * @async
    * @returns {*} "void"
    */
-  public async initMarkets(): Promise<void> {
+  public async loadMarkets(): Promise<void> {
     const url = `${this.apiBaseUrl}/fapi/v1/exchangeInfo`;
     try {
       logger.debug(`request symbol info url: ${url}`);

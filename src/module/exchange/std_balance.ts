@@ -109,7 +109,7 @@ class StdBalance {
    */
   public async syncSpotBalance() {
     logger.debug(`syncSpotBalance【${this.accountInfo.accountId}】`);
-    await this.stdExchange.exchangeSpot.fetchBalance();
+    await this.stdExchange.exchangeSpot.loadBalance();
     await this.reportSpotBalance();
     this.stdExchange.exchangeSpot.getBalance().forEach((v, k) => {
       this.spotBalance.set(k, v);
@@ -167,7 +167,7 @@ class StdBalance {
    */
   public async syncUsdtFutureBalance() {
     logger.debug(`syncUsdtFutureBalance【${this.accountInfo.accountId}】`);
-    await this.stdExchange.exchangeUsdtFuture.fetchBalance();
+    await this.stdExchange.exchangeUsdtFuture.loadBalance();
     this.stdExchange.exchangeUsdtFuture.getBalance().forEach((v, k) => {
       this.usdtFutureBalance.set(k, v);
     });

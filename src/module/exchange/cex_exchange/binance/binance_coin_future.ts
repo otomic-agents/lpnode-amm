@@ -27,7 +27,7 @@ class BinanceCoinFuture implements IStdExchangeCoinFuture {
     this.apiBaseUrl = binanceConfig.getCoinFutureBaseApi();
   }
 
-  public async initMarkets() {
+  public async loadMarkets() {
     const url = `${this.apiBaseUrl}/dapi/v1/exchangeInfo`;
     try {
       logger.debug(`request symbol info url: ${url}`);

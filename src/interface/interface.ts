@@ -169,6 +169,7 @@ enum EFlowStatus {
   HedgeSubmitted = "HedgeSubmitted",
   HedgeFailure = "HedgeFailure",
   NoHedge = "NoHedge",
+  HedgeAnalyzeCompletion = "HedgeAnalyzeCompletion",
 }
 
 export {
