@@ -17,8 +17,10 @@ import {
 import { PortfolioRequest } from "./request/portfolio_request";
 import { SystemMath } from "../../../../utils/system_math";
 import { formatStepSize } from "../../utils";
+import { measure, memo } from "helpful-decorators";
 const querystring = require("node:querystring");
 class PortfolioSpot implements IStdExchangeSpot {
+  private exchangeNumber = 15;
   public exchangeName: string;
   private accountId: string;
   private balance: Map<string, ISpotBalanceItemPortfolio> = new Map();
@@ -29,9 +31,13 @@ class PortfolioSpot implements IStdExchangeSpot {
     this.accountId = accountId;
   }
 
+  @measure
+  @memo()
   public async loadMarkets(): Promise<void> {
     logger.debug(`init markets.....`);
-    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=15`;
+    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=${
+      this.exchangeNumber
+    }`;
     const pr: PortfolioRequest = new PortfolioRequest();
     logger.info("init Url is :", url);
     const marketResult = await pr.get(url);

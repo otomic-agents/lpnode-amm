@@ -154,7 +154,7 @@ class PortfolioPrivateStream extends Emittery {
         return;
       }
       if (method === "") {
-        logger.error("method is empty");
+        // logger.error("method is empty");
         return;
       }
       if (
@@ -162,13 +162,34 @@ class PortfolioPrivateStream extends Emittery {
         orderStatus === 5 &&
         orderEvent === "ORDER_DONE"
       ) {
-        this.emit("streamEvent", {
+        const sendPayload = {
           action: "order_result",
           payload: {
             market: "spot",
             rawInfo: _.get(message, "params", {}),
           },
-        });
+        };
+        _.set(sendPayload, "payload.rawInfo.orderEventStatus", "ORDER_DONE");
+        this.emit("streamEvent", sendPayload);
+      }
+      if (
+        method === "order.update" &&
+        orderStatus === 3 &&
+        orderEvent === "ORDER_CREATE_REJECTED"
+      ) {
+        const sendPayload = {
+          action: "order_result",
+          payload: {
+            market: "spot",
+            rawInfo: _.get(message, "params", {}),
+          },
+        };
+        _.set(
+          sendPayload,
+          "payload.rawInfo.orderEventStatus",
+          "ORDER_CREATE_REJECTED"
+        );
+        this.emit("streamEvent", sendPayload);
       }
     } catch (e) {
       logger.error(`parse message string error:`, e);

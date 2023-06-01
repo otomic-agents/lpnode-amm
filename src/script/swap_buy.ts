@@ -87,10 +87,10 @@ async function main() {
     // );
     const orderResult = await accountManager
       .getAccount("binance_spot_bt_demo_trader")
-      ?.order.spotBuy(
-        "00005",
+      ?.order.spotSell(
+        "000085789",
         "ETH/USDT",
-        "0.008",
+        "0.00001",
         undefined,
         "1885.00",
         false

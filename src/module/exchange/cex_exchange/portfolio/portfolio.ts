@@ -49,15 +49,25 @@ class PortfolioExchange extends Emittery implements IStdExchange {
     }
   }
   public onSportOrder(rawInfo: any) {
-    this.emit(
-      "spot_order_close",
-      ((): ISpotOrderResult | undefined => {
-        if (typeof this.exchangeSpot.formatOrder === "function") {
-          return this.exchangeSpot.formatOrder(rawInfo);
-        }
-        throw new Error("convert order format is not supported");
-      })()
-    );
+    const eventStatus = _.get(rawInfo, "orderEventStatus", undefined);
+    if (eventStatus === "ORDER_DONE") {
+      this.emit(
+        "spot_order_close",
+        ((): ISpotOrderResult | undefined => {
+          if (typeof this.exchangeSpot.formatOrder === "function") {
+            return this.exchangeSpot.formatOrder(rawInfo);
+          }
+          throw new Error("convert order format is not supported");
+        })()
+      );
+    }
+    if (eventStatus === "ORDER_CREATE_REJECTED") {
+      this.emit(
+        "spot_order_create_rejected",
+        _.get(rawInfo, "client_id", undefined),
+        rawInfo
+      );
+    }
   }
 }
 export { PortfolioExchange };

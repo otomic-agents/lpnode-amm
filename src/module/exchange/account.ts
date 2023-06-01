@@ -44,7 +44,6 @@ class StdAccount {
    * @return {Promise<void>} Empty
    */
   public async init(): Promise<void> {
-    logger.debug(this.accountInfo);
     if (
       this.accountInfo.exchangeName === ICexExchangeList.binance &&
       _.get(this.accountInfo, "apiType", ICexAccountApiType.exchange) ===

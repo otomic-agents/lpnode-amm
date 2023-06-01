@@ -9,6 +9,18 @@ class AsyncOrderMonitor {
   public constructor() {
     logger.info(`init AsyncOrderMonitor`);
   }
+  private freeexecutionOrderQueue(clientOrderId: string) {
+    const createResult = this.executionOrderQueue.get(clientOrderId);
+    if (!createResult) {
+      logger.warn(`Could not find create record orderId:${clientOrderId}`);
+    }
+    if (createResult) {
+      if (createResult.time) {
+        logger.debug(`clear timeout check`);
+        clearTimeout(createResult.time);
+      }
+    }
+  }
   public async onOrder(orderData: ISpotOrderResult | undefined) {
     if (!orderData) {
       logger.error(`order is not parsed correctly `);
@@ -20,16 +32,6 @@ class AsyncOrderMonitor {
     const clientOrderId = _.get(orderData, "clientOrderId", "");
     logger.debug("delete cached client event");
 
-    const createResult = this.executionOrderQueue.get(clientOrderId);
-    if (!createResult) {
-      logger.warn(`Could not find create record orderId:${clientOrderId}`);
-    }
-    if (createResult) {
-      if (createResult.time) {
-        logger.debug(`clear timeout check`);
-        clearTimeout(createResult.time);
-      }
-    }
     if (!clientOrderId || clientOrderId === "") {
       logger.error(
         `Unable to parse client orderid from order message`,
@@ -37,6 +39,8 @@ class AsyncOrderMonitor {
       );
       return;
     }
+    this.freeexecutionOrderQueue(clientOrderId);
+
     const ammContext: AmmContext = await ammContextModule
       .findOne({
         "systemOrder.hedgePlanClientOrderIdList": clientOrderId,
@@ -50,6 +54,64 @@ class AsyncOrderMonitor {
       return;
     }
     this.updateHedgeData(ammContext, orderData);
+  }
+  public async onOrderFail(orderId: string, rawData: any) {
+    const clientOrderId = orderId;
+    if (!clientOrderId || clientOrderId === "") {
+      logger.error(
+        `Unable to parse client orderid from order message`,
+        rawData
+      );
+      return;
+    }
+    this.freeexecutionOrderQueue(orderId);
+    const ammContext: AmmContext = await ammContextModule
+      .findOne({
+        "systemOrder.hedgePlanClientOrderIdList": clientOrderId,
+      })
+      .lean();
+    if (!ammContext) {
+      logger.error(
+        `The order message was received, but the hedging context could not be found onOrderFail`,
+        rawData
+      );
+      return;
+    }
+    this.updateHedgeFailData(ammContext, clientOrderId, rawData);
+  }
+  private async updateHedgeFailData(
+    ammContext: AmmContext,
+    clientOrderId: string,
+    rawData: any
+  ) {
+    const hedgeResult = _.get(ammContext, "systemOrder.hedgeResult", []);
+    if (!_.isArray(hedgeResult) || hedgeResult.length <= 0) {
+      logger.error(`Unable to find the right hedging plan`);
+      return;
+    }
+    const rowIndex = _.findIndex(hedgeResult, (item) => {
+      return _.get(item, "plan.orderId", "") === clientOrderId;
+    });
+    logger.debug(rowIndex);
+    logger.debug(`update context status `);
+    const key = `systemOrder.hedgeResult.${rowIndex}.commitResult`;
+    const statusKey = `systemOrder.hedgeResult.${rowIndex}.status`;
+    const data = {};
+    data[key] = rawData;
+    data[statusKey] = 3; // update status
+    data["flowStatus"] = EFlowStatus.HedgeFailure;
+    try {
+      const find = {
+        "systemOrder.orderId": ammContext.systemOrder.orderId,
+      };
+      const set = {
+        $set: data,
+      };
+      logger.debug(find, set);
+      await ammContextModule.findOneAndUpdate(find, set);
+    } catch (e) {
+      logger.error(`updateHedgeFailData Update context status error`, e);
+    }
   }
   private async updateHedgeData(
     ammContext: AmmContext,

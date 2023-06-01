@@ -352,7 +352,7 @@ class DataConfig {
     }
     console.table(view);
 
-    await TimeSleepMs(1000 * 5);
+    await TimeSleepMs(100);
   }
 
   private async loadChainConfig() {
@@ -371,7 +371,7 @@ class DataConfig {
     });
     console.log("chain base data:");
     console.table(chainList);
-    await TimeSleepMs(5 * 1000);
+    await TimeSleepMs(100);
   }
 
   public getStdCoinSymbolInfoByToken(token: string, chainId: number) {

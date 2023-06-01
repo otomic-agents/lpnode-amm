@@ -81,7 +81,7 @@ class OrderbookSymbolManager implements ISymbolsManager {
         this.spotSymbolAlreadySubscribed.set(this.spotSymbols[i], true); // mark subscribed
       }
     }
-    logger.info(`subscription`, this.spotSymbols);
+    logger.info(`subscription`, JSON.stringify(this.spotSymbols));
   }
 
   private async requestSubscription(marketSymbol: string) {
