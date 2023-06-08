@@ -24,6 +24,7 @@ class PortfolioConfig {
     logger.error(`unknow type`, type);
     return "";
   }
+
 }
 
 const portfolioConfig: PortfolioConfig = new PortfolioConfig();

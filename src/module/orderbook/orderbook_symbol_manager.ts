@@ -1,7 +1,6 @@
 import { ISymbolsManager } from "../../interface/symbols_manager";
 import { tokensModule } from "../../mongo_module/tokens";
 import { logger } from "../../sys_lib/logger";
-import { portfolioConfig } from "../exchange/cex_exchange/portfolio/portfolio_config";
 import { PortfolioRequest } from "../exchange/cex_exchange/portfolio/request/portfolio_request";
 import * as _ from "lodash";
 const md5 = require("md5");
@@ -86,12 +85,16 @@ class OrderbookSymbolManager implements ISymbolsManager {
 
   private async requestSubscription(marketSymbol: string) {
     try {
-      const url = `${portfolioConfig.getBaseApi(
-        "addSubMarkets"
-      )}?exchange=15&market=${marketSymbol}`;
+     
       const pr: PortfolioRequest = new PortfolioRequest();
-      logger.debug(`request`, url);
-      const subResponse = await pr.get(url);
+      logger.debug("addSubMarkets",{
+        exchange:"15",
+        market:marketSymbol,
+      })
+      const subResponse = await pr.post("AddSubMarkets",{
+        exchange:"15",
+        market:marketSymbol,
+      });
       const symbolArr = _.get(subResponse, "data", []);
       if (symbolArr.length >= 1) {
         return true;

@@ -29,6 +29,7 @@
     "abi-decoder": "^2.4.0",
     "await-to-js": "^3.0.0",
     "axios": "^0.24.0",
+    "bcrypt": "^5.1.0",
     "bignumber.js": "^9.1.1",
     "bn.js": "^5.2.0",
     "bs58": "^5.0.0",

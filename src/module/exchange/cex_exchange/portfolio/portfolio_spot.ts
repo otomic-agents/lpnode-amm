@@ -5,7 +5,6 @@ import {
 } from "../../../../interface/cex_portfolio";
 import { IStdExchangeSpot } from "../../../../interface/std_exchange";
 import { logger } from "../../../../sys_lib/logger";
-import { portfolioConfig } from "./portfolio_config";
 import BigNumber from "bignumber.js";
 import * as _ from "lodash";
 import {
@@ -18,7 +17,6 @@ import { PortfolioRequest } from "./request/portfolio_request";
 import { SystemMath } from "../../../../utils/system_math";
 import { formatStepSize } from "../../utils";
 import { measure, memo } from "helpful-decorators";
-const querystring = require("node:querystring");
 class PortfolioSpot implements IStdExchangeSpot {
   private exchangeNumber = 15;
   public exchangeName: string;
@@ -35,12 +33,8 @@ class PortfolioSpot implements IStdExchangeSpot {
   @memo()
   public async loadMarkets(): Promise<void> {
     logger.debug(`init markets.....`);
-    const url = `${portfolioConfig.getBaseApi("markets")}?exchange=${
-      this.exchangeNumber
-    }`;
     const pr: PortfolioRequest = new PortfolioRequest();
-    logger.info("init Url is :", url);
-    const marketResult = await pr.get(url);
+    const marketResult = await pr.post("MarketInfo",{exchange:"15"});
     this.saveMarkets(_.get(marketResult, "data", []));
   }
   public getOrderExecModel() {
@@ -126,10 +120,10 @@ class PortfolioSpot implements IStdExchangeSpot {
   }
   public async loadBalance(): Promise<void> {
     try {
-      const balanceUrl = portfolioConfig.getBaseApi("spotBalance");
+     
       const pr: PortfolioRequest = new PortfolioRequest();
-      logger.info(balanceUrl);
-      const balanceResult = await pr.get(balanceUrl);
+      
+      const balanceResult = await pr.post("Account",{});
       // logger.info(`fetchBalance`, balanceResult);
       logger.info(`fetchBalance`);
       this.saveBalance(_.get(balanceResult, "data", []));
@@ -302,14 +296,9 @@ class PortfolioSpot implements IStdExchangeSpot {
    */
   private async sendOrderToPortfolio(orderData: any): Promise<boolean> {
     const pr: PortfolioRequest = new PortfolioRequest();
-    const qStr = querystring.stringify(orderData);
-    logger.debug(qStr);
+    logger.debug(orderData);
     // return false;
-    const requestUrl = `${portfolioConfig.getBaseApi("createOrder")}?${qStr}`;
-    logger.debug(requestUrl);
-    const createOrderResponse = await pr.get(
-      `${portfolioConfig.getBaseApi("createOrder")}?${qStr}`
-    );
+    const createOrderResponse = await pr.post("CreateOrder",orderData);
     logger.debug(`create order response:`, createOrderResponse);
     const responseCode = _.get(createOrderResponse, "code", -1);
     if (responseCode === 0) {

@@ -1,4 +1,3 @@
-const querystring = require("node:querystring");
 import { IOrderbookStoreItem } from "../../interface/interface";
 import { IOrderbook } from "../../interface/orderbook";
 import { eventBus } from "../../sys_lib/event.bus";
@@ -7,7 +6,6 @@ import { ISymbolsManager } from "../../interface/symbols_manager";
 import { PortfolioRequest } from "../exchange/cex_exchange/portfolio/request/portfolio_request";
 import * as _ from "lodash";
 import { ISpotSymbolItemPortfolio } from "../../interface/cex_portfolio";
-import { portfolioConfig } from "../exchange/cex_exchange/portfolio/portfolio_config";
 class PortfolioOrderbook implements IOrderbook {
   public spotOrderbookOnceLoaded = false;
   private spotOrderbook: Map<string, IOrderbookStoreItem> = new Map();
@@ -33,12 +31,11 @@ class PortfolioOrderbook implements IOrderbook {
   }
   private async initMarkets() {
     try {
-      const url = `${portfolioConfig.getBaseApi("markets")}?exchange=15`;
-      logger.info("request url:", url);
+      
       const pr: PortfolioRequest = new PortfolioRequest();
-
-      const marketResult = await pr.get(url);
+      const marketResult = await pr.post("MarketInfo",{exchange:"15"});
       this.saveMarkets(_.get(marketResult, "data", []));
+
     } catch (e) {
       logger.error(e);
     }
@@ -56,6 +53,7 @@ class PortfolioOrderbook implements IOrderbook {
     spotSymbolsArray.forEach((value) => {
       const stdSymbol = `${value.base_coin}/${value.quote_coin}`;
       _.set(value, "stdSymbol", stdSymbol);
+      // logger.debug("setSymbols",stdSymbol)
       this.spotSymbolsInfoByMarketName.set(value.market_name, value);
       this.spotSymbolsInfo.set(stdSymbol, value);
     });
@@ -93,14 +91,14 @@ class PortfolioOrderbook implements IOrderbook {
     }
     const spotSymbols = this.symbolsManager.getSpotSymbols();
     logger.debug("list all symbols", spotSymbols);
-    const qStr = querystring.stringify({
-      exchange: 15,
+    const queryData = {
+      exchange: "15",
       market: spotSymbols.join(","),
-    });
-    const url = `${portfolioConfig.getBaseApi("getDepth")}?${qStr}`;
-    logger.debug("request", url);
+    };
+    
+    logger.debug("request", queryData);
     const pr: PortfolioRequest = new PortfolioRequest();
-    const orderbookResponse = await pr.get(url);
+    const orderbookResponse = await pr.post("Depth",queryData);
     this.saveSpotOrderbook(_.get(orderbookResponse, "data", {}));
   }
   private saveSpotOrderbook(orderBookResult: any) {
