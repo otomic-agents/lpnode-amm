@@ -1,7 +1,6 @@
 import WebSocket from "ws";
 import { logger } from "../../../../sys_lib/logger";
 import * as _ from "lodash";
-import { portfolioConfig } from "./portfolio_config";
 const Emittery = require("emittery");
 class PortfolioPrivateStream extends Emittery {
   // @ts-ignore
@@ -26,9 +25,10 @@ class PortfolioPrivateStream extends Emittery {
 
   public async connect() {
     logger.debug("init streams 💥");
-    const ws = new WebSocket(portfolioConfig.getBaseApi("wsOrderStream"));
+    const ws = new WebSocket("ws://system-server.user-system-bigdog/legacy/v1alpha1/websocket.portfolio/v1/ws/");
     this.socket = ws;
     ws.on("error", (err: any) => {
+      logger.error("stream error")
       this.onError(err);
     });
     ws.on("message", (data: any) => {
@@ -51,6 +51,7 @@ class PortfolioPrivateStream extends Emittery {
     this.connect();
   }
   private onOpen() {
+    logger.debug("ws connect open");
     this.sign();
     setTimeout(() => {
       this.subscribeOrder();

@@ -90,13 +90,12 @@ class PortfolioOrderbook implements IOrderbook {
       return;
     }
     const spotSymbols = this.symbolsManager.getSpotSymbols();
-    logger.debug("list all symbols", spotSymbols);
+    logger.debug("get depth", spotSymbols.join(","));
     const queryData = {
       exchange: "15",
       market: spotSymbols.join(","),
     };
     
-    logger.debug("request", queryData);
     const pr: PortfolioRequest = new PortfolioRequest();
     const orderbookResponse = await pr.post("Depth",queryData);
     this.saveSpotOrderbook(_.get(orderbookResponse, "data", {}));

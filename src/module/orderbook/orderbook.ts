@@ -34,6 +34,7 @@ class Orderbook {
     }
     if (orderbookType === "market") {
       logger.debug(`init CexOrderbook`);
+      dataConfig.rewriteMarketUrl();
       this.provider = new CexOrderbook();
     }
 

@@ -131,7 +131,6 @@ class DataConfig {
   }
 
   public async rewriteMarketUrl() {
-    return
     const rewrite = _.get(process.env, "rewrite_market_host", "true");
     if (rewrite === "false") {
       logger.warn(`skip rewrite`);

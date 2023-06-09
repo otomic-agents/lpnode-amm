@@ -2,11 +2,10 @@ import axios from "axios";
 // import { logger } from "../../../../../sys_lib/logger";
 import * as _ from "lodash";
 import { logger } from "../../../../../sys_lib/logger";
-import { ConsoleDirDepth5 } from "../../../../../utils/console";
 const bcrypt = require('bcrypt')
 class PortfolioRequestManager {
-  private appKey = "bytetrade_otmoiclp_531565"
-  private appSecret = "9c5db81b363ad9ef"
+  private appKey = "bytetrade_otmoiclp_219538"
+  private appSecret = "cf28e46f66ed8aca"
   private userName = "bigdog"
   private accessToken = "";
   public getAccessToken() {
@@ -15,7 +14,10 @@ class PortfolioRequestManager {
   }
   constructor() {
 
-    this.refreshToken()
+    
+  }
+  public async init(){
+    await this.refreshToken()
   }
   public async refreshToken() {
     const timestamp = (new Date().getTime() / 1000).toFixed(0);
@@ -25,7 +27,7 @@ class PortfolioRequestManager {
       "app_key": this.appKey,
       "timestamp": parseInt(timestamp),
       "token": token,
-      "perm": { "group": "portfolio", "dataType": "key", "version": "v1", "ops": ["MarketInfo", "SubMarkets", "Depth", "Deal","AddSubMarkets","CreateOrder"] }
+      "perm": { "group": "portfolio", "dataType": "key", "version": "v1", "ops": ["Account","MarketInfo", "SubMarkets", "Depth", "Deal","AddSubMarkets","CreateOrder"] }
     }
     try{
 
@@ -39,6 +41,7 @@ class PortfolioRequestManager {
         logger.error(`An error occurred requesting accessToken from the system`, _.get(response, "data", ""))
       }
       this.accessToken = accessToken
+      logger.debug(`Obtained the token `,this.accessToken)
     }catch(e){
 
       logger.error(`An error occurred requesting accessToken from the system`,e)
@@ -46,14 +49,13 @@ class PortfolioRequestManager {
 
       setTimeout(()=>{
         this.refreshToken()
-      },1000*60&5)
+      },1000*60*5)
     }
 
   }
 
 }
 const portfolioRequestManager: PortfolioRequestManager = new PortfolioRequestManager();
-logger.debug(portfolioRequestManager)
 class PortfolioRequest {
 
 
@@ -92,22 +94,22 @@ class PortfolioRequest {
       });
       const code = _.get(axiosResponse, "data.code", -1);
       if (code !== 0) {
-        logger.error(`${opType},service response an error:${_.get(
+        logger.error(`${opType},service response an error:${JSON.stringify(_.get(
           axiosResponse,
-          "data.msg",
+          "data",
           ""
-        )}`)
+        ))}`)
         throw new Error(
-          `${opType},service response an error:${_.get(
+          `${opType},service response an error:${JSON.stringify(_.get(
             axiosResponse,
             "data.msg",
             ""
-          )}`
+          ))}`
         );
       }
-      if (opType ==="Depth"){
-        console.dir(_.get(axiosResponse, "data",""),ConsoleDirDepth5)
-      }
+      // if (opType ==="Depth"){
+      //   console.dir(_.get(axiosResponse, "data",""),ConsoleDirDepth5)
+      // }
       
       return _.get(axiosResponse, "data.data", undefined);
       // logger.info(axiosResponse);
@@ -117,4 +119,4 @@ class PortfolioRequest {
   }
 }
 
-export { PortfolioRequest };
+export { PortfolioRequest,portfolioRequestManager };

@@ -29,6 +29,7 @@ import { hedgeManager } from "./module/hedge_manager";
 import { systemRedisBus } from "./system_redis_bus";
 import { statusReport } from "./status_report";
 import { orderbookSymbolManager } from "./module/orderbook/orderbook_symbol_manager";
+import { portfolioRequestManager } from "./module/exchange/cex_exchange/portfolio/request/portfolio_request";
 
 class Main {
   public async main() {
@@ -67,8 +68,7 @@ class Main {
     logger.info("bus init");
 
     await dataConfig.prepareConfigResource();
-    await dataConfig.rewriteMarketUrl();
-
+   
     await httpServer.start();
     try {
       // Do not start without basic configuration
@@ -95,6 +95,7 @@ class Main {
     );
     if (orderbookType === "portfolio") {
       logger.info(`use portfolio orderbook`);
+      await portfolioRequestManager.init() // waiting get access token
       orderbookSymbolManager.init();
     }
 
