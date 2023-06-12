@@ -5,8 +5,10 @@ import { logger } from "../../sys_lib/logger";
 import { CexOrderbook } from "./cex_orderbook";
 import { PortfolioOrderbook } from "./portfolio_orderbook";
 import * as _ from "lodash";
+
 class Orderbook {
   private provider: CexOrderbook | PortfolioOrderbook;
+
   get spotOrderbookOnceLoaded() {
     return this.provider.spotOrderbookOnceLoaded;
   }
@@ -18,6 +20,7 @@ class Orderbook {
   public refreshOrderbook() {
     return this.provider.refreshOrderbook();
   }
+
   public setSymbolsManager(symbolsManager: ISymbolsManager | undefined) {
     this.provider.setSymbolsManager(symbolsManager);
   }
@@ -31,14 +34,16 @@ class Orderbook {
     if (orderbookType === "portfolio") {
       logger.debug(`init PortfolioOrderbook`);
       this.provider = new PortfolioOrderbook();
+      this.provider.init();
+      return;
     }
     if (orderbookType === "market") {
       logger.debug(`init CexOrderbook`);
       dataConfig.rewriteMarketUrl();
       this.provider = new CexOrderbook();
+      this.provider.init();
+      return;
     }
-
-    this.provider.init();
   }
 }
 

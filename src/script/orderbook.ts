@@ -18,7 +18,6 @@ import { orderbookSymbolManager } from "../module/orderbook/orderbook_symbol_man
 async function main() {
   await dataConfig.prepareConfigResource(); // 提前创建配置
   orderbookSymbolManager.init();
-
   await orderbook.init();
   orderbook.setSymbolsManager(orderbookSymbolManager);
 
