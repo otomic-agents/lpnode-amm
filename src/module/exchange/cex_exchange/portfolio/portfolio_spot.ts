@@ -35,7 +35,7 @@ class PortfolioSpot implements IStdExchangeSpot {
   public async loadMarkets(): Promise<void> {
     logger.debug(`init markets.....`);
     const pr: PortfolioRequest = new PortfolioRequest();
-    const marketResult = await pr.post("MarketInfo",{exchange:"15"});
+    const marketResult = await pr.post("MarketInfo", { exchange: "15" });
     this.saveMarkets(_.get(marketResult, "data", []));
   }
   public getOrderExecModel() {
@@ -121,10 +121,9 @@ class PortfolioSpot implements IStdExchangeSpot {
   }
   public async loadBalance(): Promise<void> {
     try {
-     
       const pr: PortfolioRequest = new PortfolioRequest();
-      
-      const balanceResult = await pr.post("Account",{});
+
+      const balanceResult = await pr.post("Account", {});
 
       // logger.info(`fetchBalance`, balanceResult);
       logger.info(`fetchBalance`);
@@ -221,7 +220,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     }
     const symbolInfo = this.getSymbolInfoByStdSymbol(stdSymbol);
     if (!symbolInfo) {
-      logger.warn(`symbol info not fount `);
+      logger.error(`symbol info not fount ,get query${stdSymbol}`);
       return 0;
     }
     return symbolInfo.min_trade_quote;
@@ -300,7 +299,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     const pr: PortfolioRequest = new PortfolioRequest();
     logger.debug(orderData);
     // return false;
-    const createOrderResponse = await pr.post("CreateOrder",orderData);
+    const createOrderResponse = await pr.post("CreateOrder", orderData);
     logger.debug(`create order response:`, createOrderResponse);
     const responseCode = _.get(createOrderResponse, "code", -1);
     if (responseCode === 0) {

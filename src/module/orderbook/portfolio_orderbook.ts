@@ -31,11 +31,9 @@ class PortfolioOrderbook implements IOrderbook {
   }
   private async initMarkets() {
     try {
-      
       const pr: PortfolioRequest = new PortfolioRequest();
-      const marketResult = await pr.post("MarketInfo",{exchange:"15"});
+      const marketResult = await pr.post("MarketInfo", { exchange: "15" });
       this.saveMarkets(_.get(marketResult, "data", []));
-
     } catch (e) {
       logger.error(e);
     }
@@ -95,16 +93,16 @@ class PortfolioOrderbook implements IOrderbook {
       exchange: "15",
       market: spotSymbols.join(","),
     };
-    
+
     const pr: PortfolioRequest = new PortfolioRequest();
-    const orderbookResponse = await pr.post("Depth",queryData);
+    const orderbookResponse = await pr.post("Depth", queryData);
     this.saveSpotOrderbook(_.get(orderbookResponse, "data", {}));
   }
   private saveSpotOrderbook(orderBookResult: any) {
-    logger.info(`save spotOrderbook 🦑`);
+    logger.info(`synced orderbook from portfolio`);
     const keys = Object.keys(orderBookResult);
     if (!_.isArray(keys) || keys.length === 0) {
-      logger.debug(`empty return`);
+      logger.warn(`orderbook empty return`);
       return;
     }
     for (let i = 0; i < keys.length; i++) {
@@ -123,10 +121,12 @@ class PortfolioOrderbook implements IOrderbook {
           incomingTimestamp: new Date().getTime(),
           stream: "",
           bids: this.convertAsksOrBidsToString(
-            _.get(itemValue, "depth.bids", [])
+            _.get(itemValue, "depth.bids", []),
+            symbolInfo.stdSymbol
           ),
           asks: this.convertAsksOrBidsToString(
-            _.get(itemValue, "depth.asks", [])
+            _.get(itemValue, "depth.asks", []),
+            symbolInfo.stdSymbol
           ),
         };
         if (item.asks.length > 0 && item.bids.length > 0) {
@@ -138,9 +138,10 @@ class PortfolioOrderbook implements IOrderbook {
       }
     }
   }
-  private convertAsksOrBidsToString(data: number[][]) {
+  private convertAsksOrBidsToString(data: number[][], stdSymbol: string) {
     if (!_.isArray(data) || data.length <= 0) {
       logger.error(
+        stdSymbol,
         `asks or bids format error`,
         typeof data,
         JSON.stringify(data)

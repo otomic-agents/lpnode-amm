@@ -160,7 +160,7 @@ class DataConfig {
   }
 
   private async initBaseConfig(baseConfig: any) {
-    console.log(baseConfig);
+    logger.info("baseConfig:", JSON.stringify(baseConfig));
     this.baseConfig = baseConfig;
     try {
       this.checkBaseConfig(baseConfig);
@@ -188,9 +188,10 @@ class DataConfig {
         Number(chainData.config.maxSwapNativeTokenValue)
       );
       logger.debug(
-        "set chain usd",
         chainData.chainId,
+        "minSwapNativeTokenValue:",
         Number(chainData.config.minSwapNativeTokenValue),
+        "maxSwapNativeTokenValue:",
         Number(chainData.config.maxSwapNativeTokenValue)
       );
     }
@@ -244,7 +245,7 @@ class DataConfig {
     let result;
     const lpAdminPanelUrl = appEnv.GetLpAdminUrl();
     const url = `${lpAdminPanelUrl}/lpnode/lpnode_admin_panel/configResource/get`;
-    logger.info(`request :${url}`);
+    logger.info(`get configResource request :${url}`);
     try {
       result = await axios.request({
         url,
@@ -495,7 +496,7 @@ class DataConfig {
       process.exit(1);
     }
     const findOption = { ammName: appName };
-    logger.debug(`findOption`, findOption);
+    logger.debug(`syncBridgeConfigFromLocalDatabase,findOption:`, findOption);
     const lpConfigList: {
       _id: string;
       bridgeName: string;
@@ -508,7 +509,7 @@ class DataConfig {
       dstClientUri: string;
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
-    logger.info(`loaded ${lpConfigList.length}个BridgeConfig`);
+    logger.info(`loaded BridgeConfigs count: [${lpConfigList.length}] `);
     if (!lpConfigList || lpConfigList.length <= 0) {
       logger.warn(
         "Did not find any available BridgeItem",
@@ -580,9 +581,10 @@ class DataConfig {
     );
     logger.debug(
       `system default value`,
+      "defHedgeSetting:",
       defHedgeSetting,
-      defFeeSetting,
-      "🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻"
+      "defFeeSetting:",
+      defFeeSetting
     );
     this.bridgeTokenList = this.bridgeTokenList.map((it) => {
       const itemConfig = _.find(bridgeConfig, { bridgeId: it.id.toString() });
@@ -629,6 +631,9 @@ class DataConfig {
       throw new Error("No chain base configuration found");
     }
     return tokenName;
+  }
+  public getChainTokenMap() {
+    return this.chainTokenMap;
   }
 
   public getBridgeTokenList(): IBridgeTokenConfigItem[] {

@@ -1,3 +1,4 @@
+import { dataConfig } from "../../data_config";
 import { ISymbolsManager } from "../../interface/symbols_manager";
 import { tokensModule } from "../../mongo_module/tokens";
 import { logger } from "../../sys_lib/logger";
@@ -41,9 +42,10 @@ class OrderbookSymbolManager implements ISymbolsManager {
             },
           },
         ]);
+
       this.saveSpotTokenList(uniqTokenList);
     } catch (e) {
-      logger.error(`0000`);
+      logger.error(`loadToken error:`, e);
     }
   }
 
@@ -52,6 +54,9 @@ class OrderbookSymbolManager implements ISymbolsManager {
     for (let i = 0; i < uniqTokenList.length; i++) {
       symbolList.push(uniqTokenList[i].marketName);
     }
+    dataConfig.getChainTokenMap().forEach((item) => {
+      symbolList.push(item);
+    });
     symbolList = symbolList.sort();
     const newMd5 = md5(symbolList.join(","));
     if (this.spotSymbolsHash !== newMd5) {
@@ -75,26 +80,23 @@ class OrderbookSymbolManager implements ISymbolsManager {
         continue;
       }
       if (!isSubscription) {
-        logger.info(`start subscribing`, this.spotSymbols[i], "🐖");
+        logger.info(`start subscribing market:`, `${this.spotSymbols[i]}USDT`);
         await this.requestSubscription(`${this.spotSymbols[i]}USDT`);
         this.spotSymbolAlreadySubscribed.set(this.spotSymbols[i], true); // mark subscribed
       }
     }
-    logger.info(`subscription`, JSON.stringify(this.spotSymbols));
+    logger.info(`Subscribe Ready List`, JSON.stringify(this.spotSymbols));
   }
 
   private async requestSubscription(marketSymbol: string) {
     try {
-     
       const pr: PortfolioRequest = new PortfolioRequest();
-      logger.debug("addSubMarkets",{
-        exchange:"15",
-        market:marketSymbol,
-      })
-      const subResponse = await pr.post("AddSubMarkets",{
-        exchange:"15",
-        market:marketSymbol,
-      });
+      const tobeSend = {
+        exchange: "15",
+        market: marketSymbol,
+      };
+      logger.debug("addSubMarkets", JSON.stringify(tobeSend));
+      const subResponse = await pr.post("AddSubMarkets", tobeSend);
       const symbolArr = _.get(subResponse, "data", []);
       if (symbolArr.length >= 1) {
         return true;

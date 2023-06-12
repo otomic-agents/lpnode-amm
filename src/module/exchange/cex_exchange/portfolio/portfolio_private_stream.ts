@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import { logger } from "../../../../sys_lib/logger";
 import * as _ from "lodash";
+import { portfolioRequestManager } from "./request/portfolio_request";
 const Emittery = require("emittery");
 class PortfolioPrivateStream extends Emittery {
   // @ts-ignore
@@ -25,10 +26,12 @@ class PortfolioPrivateStream extends Emittery {
 
   public async connect() {
     logger.debug("init streams 💥");
-    const ws = new WebSocket("ws://system-server.user-system-bigdog/legacy/v1alpha1/websocket.portfolio/v1/ws/");
+    const ws = new WebSocket(
+      `ws://${portfolioRequestManager.getService()}/legacy/v1alpha1/websocket.portfolio/v1/ws/`
+    );
     this.socket = ws;
     ws.on("error", (err: any) => {
-      logger.error("stream error")
+      logger.error("stream error");
       this.onError(err);
     });
     ws.on("message", (data: any) => {
@@ -91,7 +94,7 @@ class PortfolioPrivateStream extends Emittery {
     );
     return new Promise((resolve, reject) => {
       const clearTimer = (msgId: number) => {
-        logger.debug(`clear timeout..`);
+        // logger.debug(`clear timeout..`);
         if (
           this.keepSendPromiseList.get(msgId) &&
           this.keepSendPromiseList.get(msgId)["time"]
@@ -151,6 +154,7 @@ class PortfolioPrivateStream extends Emittery {
       const orderEvent = _.get(message, "params.event", "empty");
 
       if (messageId > 0 && result === "pong") {
+        // logger.info("received a poll message", data.toString());
         this.onPong(messageId);
         return;
       }

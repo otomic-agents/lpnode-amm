@@ -56,7 +56,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   public asyncOrderMonitor: AsyncOrderMonitor = new AsyncOrderMonitor();
   public constructor() {
     super();
-    logger.info("CoinSpotHedge loaded.. ");
+    logger.info("CoinSpotHedge loaded");
   }
 
   public async init() {

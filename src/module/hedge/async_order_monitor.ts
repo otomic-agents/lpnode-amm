@@ -7,7 +7,7 @@ import { EFlowStatus } from "../../interface/interface";
 class AsyncOrderMonitor {
   private executionOrderQueue: Map<string, any> = new Map();
   public constructor() {
-    logger.info(`init AsyncOrderMonitor`);
+    logger.info(`AsyncOrderMonitor loaded`);
   }
   private freeexecutionOrderQueue(clientOrderId: string) {
     const createResult = this.executionOrderQueue.get(clientOrderId);

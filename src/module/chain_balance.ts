@@ -62,7 +62,7 @@ class ChainBalance {
   }
 
   private intervalSyncBalance() {
-    logger.debug(`sync dex account balance`, "🟥");
+    logger.debug(`sync dex account balance`);
     const chainList: IChainListItem[] = this.uniqDstChain();
     this.getChainWalletInfo(chainList).then(async () => {
       logger.debug("emit", "balance:load:complete");
@@ -254,7 +254,7 @@ class ChainBalance {
         });
       }
     }
-    console.table(ret);
+    // console.table(ret);
     return ret;
   }
 }

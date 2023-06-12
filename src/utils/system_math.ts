@@ -15,7 +15,7 @@ class SystemMath {
     return mathIns.evaluate(formula);
   }
 
-  static execNumber(formula: string, title = "", debug = true): number {
+  static execNumber(formula: string, title = "", debug = false): number {
     formula = replaceall("\n", "", formula);
 
     const ret = Number(mathIns.evaluate(formula).toFixed(8));

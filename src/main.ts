@@ -68,13 +68,13 @@ class Main {
     logger.info("bus init");
 
     await dataConfig.prepareConfigResource();
-   
+
     await httpServer.start();
     try {
       // Do not start without basic configuration
       logger.debug("loadBaseConfig");
       await dataConfig.loadBaseConfig(); // Load basic configuration from redis
-      logger.debug("syncBridgeConfigFromLocalDatabase");
+      logger.debug("start syncBridgeConfigFromLocalDatabase");
       await dataConfig.syncBridgeConfigFromLocalDatabase(); // First get the Lp configuration from the Lp settings
     } catch (e) {
       logger.warn("No Bridge configuration.", e);
@@ -94,8 +94,10 @@ class Main {
       "market"
     );
     if (orderbookType === "portfolio") {
-      logger.info(`use portfolio orderbook`);
-      await portfolioRequestManager.init() // waiting get access token
+      logger.info(`portfolio orderbook model`);
+      logger.info(`init portfolioRequestManager`);
+      await portfolioRequestManager.init(); // waiting get access token
+      logger.info(`init orderbookSymbolManager`);
       orderbookSymbolManager.init();
     }
 
@@ -105,7 +107,9 @@ class Main {
     orderbook.setSymbolsManager(orderbookSymbolManager);
     logger.debug(`init hedgeManager`);
     await hedgeManager.init();
+    logger.debug(`start eventProcess`);
     await eventProcess.process(); // Subscribe and start processing business events
+    logger.debug(`start quotation`);
     await quotation.init(); // Initialize the quote program
 
     statusReport.init();
