@@ -6,41 +6,41 @@ if (envFile) {
 } else {
   console.log("env File 不存在");
 }
+// import BigNumber from "bignumber.js";
 import { appEnv } from "../app_env"; // 这个要在最前边
 appEnv.initConfig(); // 初始化基本配置
 import { dataConfig } from "../data_config";
-import { ICexAccountApiType } from "../interface/std_difi";
 import { accountManager } from "../module/exchange/account_manager";
 import { logger } from "../sys_lib/logger";
+import { ICexAccountApiType } from "../interface/std_difi";
+// import { formatStepSize } from "../module/exchange/utils";
+import * as _ from "lodash";
+
 appEnv.initConfig(); // 初始化基本配置
+
 async function main() {
   await dataConfig.prepareConfigResource(); // 提前创建配置
   await accountManager.loadAccounts([
     {
-      apiType: ICexAccountApiType.exchange,
-      accountId: "a003",
+      apiType: ICexAccountApiType.portfolio,
+      accountId: "a001",
       exchangeName: "binance",
-      spotAccount: {
-        apiKey:
-          "VWZhndFZ8Hm4pXvhxk2F5cr9cAgvWcACIpXtNUMSwiKAv8UMBGS2c0i3ObAoslqT",
-        apiSecret:
-          "6K4y9FcpPdWOb3MSsULe68NqpzJBs2Q2wyHcBNY61D2KiadjrBE0mR7IQer1RvGM",
-      },
-      usdtFutureAccount: {
-        apiKey: "",
-        apiSecret: "",
-      },
-      coinFutureAccount: {
-        apiKey: "",
-        apiSecret: "",
-      },
     },
   ]);
-  setTimeout(() => {
-    console.log(accountManager.getAccount("a003")?.balance.getAllSpotBalance());
-  }, 5000);
+  setTimeout(async () => {
+    const orderResult = await accountManager
+      .getAccount("a001")
+      ?.order.spotSell(
+        "00004",
+        "ETH/USDT",
+        "0.007",
+        undefined,
+        "1785.00",
+        false
+      );
+    logger.debug(orderResult);
+  }, 1000 * 10);
 }
-
 main()
   .then(() => {
     //

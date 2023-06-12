@@ -5,7 +5,7 @@ import {
   IStdExchangeCoinFuture,
   IStdExchangeSpot,
   IStdExchangeUsdtFuture,
-} from "../../../interface/std_exchange";
+} from "../../../../interface/std_exchange";
 import * as _ from "lodash";
 import { BinanceSpot } from "./binance_spot";
 import { BinanceUsdtFuture } from "./binance_usdt_future";

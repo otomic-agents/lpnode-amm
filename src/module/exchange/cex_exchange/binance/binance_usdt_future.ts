@@ -4,18 +4,18 @@ import {
   IUsdtFutureBalanceItemBinance,
   // IOrderTypeBinance,
   IUsdtFutureAccountPositionsRiskItemBinance,
-} from "../../../interface/cex_binance";
-import { logger } from "../../../sys_lib/logger";
-import { signatureObject } from "../utils";
+} from "../../../../interface/cex_binance";
+import { logger } from "../../../../sys_lib/logger";
+import { signatureObject } from "../../utils";
 import * as _ from "lodash";
-import { IStdExchangeUsdtFuture } from "../../../interface/std_exchange";
+import { IStdExchangeUsdtFuture } from "../../../../interface/std_exchange";
 import BigNumber from "bignumber.js";
 import {
   ISide,
   IUsdtFutureAccountPositionsRiskItem,
   IUsdtFutureSymbolItem,
-} from "../../../interface/std_difi";
-import { httpsKeepAliveAgent } from "../../../sys_lib/http_agent";
+} from "../../../../interface/std_difi";
+import { httpsKeepAliveAgent } from "../../../../sys_lib/http_agent";
 import { binanceConfig } from "./binance_config";
 
 class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
@@ -42,7 +42,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
    * @async
    * @returns {Promise<void>} ""
    */
-  public async fetchBalance(): Promise<void> {
+  public async loadBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(
         `账户没有初始化，不同步余额`,
@@ -267,7 +267,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
    * @async
    * @returns {*} "void"
    */
-  public async initMarkets(): Promise<void> {
+  public async loadMarkets(): Promise<void> {
     const url = `${this.apiBaseUrl}/fapi/v1/exchangeInfo`;
     try {
       logger.debug(`request symbol info url: ${url}`);

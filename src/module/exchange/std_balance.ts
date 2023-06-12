@@ -11,10 +11,18 @@ import {
 } from "../../interface/std_difi";
 import { logger } from "../../sys_lib/logger";
 import { exchangeRedisStore } from "./redis_store";
+const yargs = require("yargs-parser");
+const flags = yargs(process.argv.slice(2));
+const loadTestBalance = _.get(flags, "loadTestBalance", false);
+logger.debug("loadTestBalance", loadTestBalance);
 // @ts-ignore
 const cTable = require("console.table");
 
 class StdBalance {
+  private testBalance = {
+    ETH: 10,
+    USDT: 100000,
+  };
   private stdExchange: IStdExchange;
   private accountInfo: ICexAccount;
   private spotBalance: Map<string, ISpotBalanceItem> = new Map();
@@ -39,6 +47,22 @@ class StdBalance {
         locked: "0",
       };
     }
+    if (loadTestBalance === true) {
+      // return test balance
+      if (this.testBalance[symbol]) {
+        return {
+          free: this.testBalance[symbol].toString(),
+          asset: symbol,
+          locked: "0",
+        };
+      }
+      return {
+        free: "0",
+        asset: symbol,
+        locked: "0",
+      };
+    }
+
     const balanceItem = this.spotBalance.get(symbol);
     if (!balanceItem) {
       return {
@@ -81,11 +105,11 @@ class StdBalance {
   }
 
   public async withdrawApply() {
-    return this.stdExchange.exchangeSpot.withdrawApply();
+    return;
   }
 
   public async capitalAll() {
-    return this.stdExchange.exchangeSpot.capitalAll();
+    return;
   }
 
   /**
@@ -98,7 +122,7 @@ class StdBalance {
    */
   public async syncSpotBalance() {
     logger.debug(`syncSpotBalance【${this.accountInfo.accountId}】`);
-    await this.stdExchange.exchangeSpot.fetchBalance();
+    await this.stdExchange.exchangeSpot.loadBalance();
     await this.reportSpotBalance();
     this.stdExchange.exchangeSpot.getBalance().forEach((v, k) => {
       this.spotBalance.set(k, v);
@@ -156,7 +180,7 @@ class StdBalance {
    */
   public async syncUsdtFutureBalance() {
     logger.debug(`syncUsdtFutureBalance【${this.accountInfo.accountId}】`);
-    await this.stdExchange.exchangeUsdtFuture.fetchBalance();
+    await this.stdExchange.exchangeUsdtFuture.loadBalance();
     this.stdExchange.exchangeUsdtFuture.getBalance().forEach((v, k) => {
       this.usdtFutureBalance.set(k, v);
     });

@@ -9,28 +9,28 @@ import {
   ICoinFutureBalanceItem,
   ICoinFutureSymbolItem,
   IUsdtFutureAccountPositionsRiskItem,
+  IOrderExecModel,
 } from "./std_difi";
 import BigNumber from "bignumber.js";
-
 interface IStdExchangeSpot {
-  initMarkets(): Promise<void>;
+  exchangeName: string;
+  loadMarkets(): Promise<void>;
   fetchMarkets(): Map<string, ISpotSymbolItem>;
-  fetchBalance(): Promise<any>;
-  withdrawApply(): Promise<any>;
-  capitalAll(): Promise<any>;
+  loadBalance(): Promise<any>;
+  withdrawApply?(): Promise<any>;
+  capitalAll?(): Promise<any>;
+  getOrderExecModel(): IOrderExecModel;
+  formatOrder?(input: any): ISpotOrderResult | undefined;
   spotTradeCheck(
     stdSymbol: string,
     value: number,
     amount: number
   ): Promise<boolean>;
-  spotGetTradeMinMax(
-    stdSymbol: string,
-    price: number
-  ): Promise<[number, number]>;
+  getTradeMinMax(stdSymbol: string, price: number): Promise<[number, number]>;
 
-  spotGetTradeMinMaxValue(stdSymbol: string): Promise<[number, number]>;
+  getTradeMinMaxValue(stdSymbol: string): Promise<[number, number]>;
 
-  spotGetTradeMinNotional(stdSymbol: string): Promise<number>;
+  getTradeMinNotional(stdSymbol: string): Promise<number>;
 
   createMarketOrder(
     orderId: string,
@@ -38,19 +38,22 @@ interface IStdExchangeSpot {
     amount: BigNumber | undefined,
     quoteOrderQty: BigNumber | undefined,
     side: ISide,
+    targetPrice: BigNumber | undefined,
     simulation: boolean
-  ): Promise<ISpotOrderResult>; // market order
+  ): Promise<ISpotOrderResult | boolean>;
+  // A result result is returned when placing an order synchronously
+  // When placing an order asynchronously, it only displays whether the submission is successful
   getBalance(): Map<string, ISpotBalanceItem>;
 }
 
 interface IStdExchangeUsdtFuture {
-  initMarkets(): Promise<void>;
+  loadMarkets(): Promise<void>;
 
   fetchOrdersBySymbol(symbol: string): Promise<any>;
 
   fetchMarkets(): Map<string, IUsdtFutureSymbolItem>;
 
-  fetchBalance(): Promise<any>;
+  loadBalance(): Promise<any>;
 
   fetchPositionRisk(): Promise<any>;
   getPositionRisk(): Map<string, IUsdtFutureAccountPositionsRiskItem>;
@@ -64,7 +67,7 @@ interface IStdExchangeUsdtFuture {
 }
 
 interface IStdExchangeCoinFuture {
-  initMarkets(): Promise<void>;
+  loadMarkets(): Promise<void>;
 
   fetchMarkets(): Map<string, ICoinFutureSymbolItem>;
 

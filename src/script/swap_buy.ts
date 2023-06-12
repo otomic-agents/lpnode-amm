@@ -14,6 +14,7 @@ import { accountManager } from "../module/exchange/account_manager";
 import { logger } from "../sys_lib/logger";
 import { formatStepSize } from "../module/exchange/utils";
 import * as _ from "lodash";
+import { ICexAccountApiType } from "../interface/std_difi";
 appEnv.initConfig(); // 初始化基本配置
 
 console.log(formatStepSize("0.013884994", "0.01000000"));
@@ -23,49 +24,79 @@ async function main() {
   // await accountManager.init();
   await accountManager.loadAccounts([
     {
-      accountId: "a002",
+      apiType: ICexAccountApiType.portfolio,
+      accountId: "binance_spot_bt_demo_trader",
       exchangeName: "binance",
-      spotAccount: {
-        apiKey: "",
-        apiSecret: "",
-      },
-      usdtFutureAccount: {
-        apiKey:
-          "NzhXa9logqSx3Pnaejsa9siBtAnY5wPAmpyA7WN797BCGaaPxL8uWL178oWmYOLq",
-        apiSecret:
-          "c8qoWHR1TwkwfoiV4lMAoa1b1AyW454jbdGzezeBKDpIG4TjIaeTtz6QtjbvGeFs",
-      },
-      coinFutureAccount: {
-        apiKey: "",
-        apiSecret: "",
-      },
+      enablePrivateStream: false,
+    },
+    {
+      apiType: ICexAccountApiType.portfolio,
+      accountId: "a001",
+      exchangeName: "binance",
+      enablePrivateStream: false,
     },
   ]);
   setInterval(() => {
     // logger.debug(`000`);
   }, 1000);
   setTimeout(async () => {
+    // balance Test
     const result = await accountManager
-      .getAccount("a002")
-      ?.balance.getUsdtFutureAllPositionRisk();
-    console.log(_.find(result, { symbol: "ETH-USDT-SWAP" }));
-  }, 3000);
-  // setTimeout(async () => {
-  //   const result = await accountManager
-  //     .getAccount("a002")
-  //     ?.order.getUsdtFutureOrdersBySymbol("ETH/USDT");
-  //   logger.debug(result);
-  // }, 3000);
+      .getAccount("a001")
+      ?.balance.getAllSpotBalance();
+    logger.info("balance Result:👁️", result);
+    //
+    // const result_01 = await accountManager
+    //   .getAccount("a001")
+    //   ?.balance.getSpotBalance("USDT");
+    // logger.info(result_01);
+    //
+    // accountManager.getAccount("a001")?.balance.showSpotBalance();
+    //
+    // logger.debug(
+    //   accountManager
+    //     .getAccount("a001")
+    //     ?.balance.getUsdtFutureBalance("ETH/USDT")
+    // );
+    // logger.debug(
+    //   accountManager
+    //     .getAccount("a001")
+    //     ?.balance.getCoinFutureBalance("ETH/USDT")
+    // );
 
-  // setTimeout(async () => {
-  //   // logger.debug(
-  //   //   accountManager.getAccount("a002")?.balance.getAllSpotBalance()
-  //   // );
-  //   const result = await accountManager
-  //     .getAccount("a002")
-  //     ?.order.swapBuy("ETH/USDT", new BigNumber(0.01));
-  //   logger.debug(result);
-  // }, 3000);
+    // logger.silly(
+    //   await accountManager
+    //     .getAccount("a001")
+    //     ?.order.spotGetTradeMinNotional("ETH/USDT")
+    // );
+
+    // accountManager
+    //   .getAccount("a001")
+    //   ?.order.spotBuy("0908383", "ETH/USDT", "0.000935", undefined, true);
+
+    // logger.silly(
+    //   await accountManager
+    //     .getAccount("a001")
+    //     ?.order.getSpotTradeMinMax("ETH/USDT", 1800)
+    // );
+
+    // logger.silly(
+    //   await accountManager
+    //     .getAccount("a001")
+    //     ?.order.getSpotTradeMinMaxValue("ETH/USDT")
+    // );
+    const orderResult = await accountManager
+      .getAccount("binance_spot_bt_demo_trader")
+      ?.order.spotSell(
+        "000085789",
+        "ETH/USDT",
+        "0.00001",
+        undefined,
+        "1885.00",
+        false
+      );
+    logger.debug(orderResult);
+  }, 3000);
 }
 
 main()
@@ -73,5 +104,5 @@ main()
     //
   })
   .catch((e: any) => {
-    logger.error("e");
+    logger.error("e", e);
   });
