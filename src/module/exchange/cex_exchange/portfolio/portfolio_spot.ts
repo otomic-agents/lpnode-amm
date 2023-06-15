@@ -269,7 +269,7 @@ class PortfolioSpot implements IStdExchangeSpot {
     );
     const orderData = {
       client: this.accountId,
-      exchange: 15,
+      exchange: "15",
       client_id: orderId,
       market: symbol,
       price: targetPrice?.toFixed(8).toString(),
@@ -277,7 +277,7 @@ class PortfolioSpot implements IStdExchangeSpot {
       order_type: IOrderTypePortfolio.Market.toLocaleLowerCase(),
       post_only: false,
     };
-    orderData.client = "binance_spot_bt_demo_trader"; // test user
+    // orderData.client = "binance_spot_bt_demo_trader"; // test user
     this.setAmountOrQty(stdSymbol, amount, quoteOrderQty, orderData, tradeInfo);
     const ok = await this.sendOrderToPortfolio(orderData);
     logger.info("let's create an order", orderData);
