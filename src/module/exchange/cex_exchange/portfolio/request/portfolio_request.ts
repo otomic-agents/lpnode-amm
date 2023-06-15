@@ -115,7 +115,7 @@ class PortfolioRequest {
           "X-Access-Token": portfolioRequestManager.getAccessToken(),
         },
       };
-      logger.info(requestOption);
+      // logger.info(requestOption);
       const axiosResponse = await axios.request(requestOption);
       const code = _.get(axiosResponse, "data.code", -1);
       if (code !== 0) {
