@@ -218,9 +218,12 @@ class PortfolioSpot implements IStdExchangeSpot {
     if (stdSymbol === "T/USDT") {
       return 0;
     }
+    if (stdSymbol === "USDT/USDT") {
+      return 12;
+    }
     const symbolInfo = this.getSymbolInfoByStdSymbol(stdSymbol);
     if (!symbolInfo) {
-      logger.error(`symbol info not fount ,get query${stdSymbol}`);
+      logger.trace(`symbol info not fount ,get query${stdSymbol}`);
       return 0;
     }
     return symbolInfo.min_trade_quote;

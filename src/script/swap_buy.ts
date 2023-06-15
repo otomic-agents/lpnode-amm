@@ -70,23 +70,19 @@ async function main() {
     //     .getAccount("a001")
     //     ?.balance.getCoinFutureBalance("ETH/USDT")
     // );
-
     // logger.silly(
     //   await accountManager
     //     .getAccount("a001")
     //     ?.order.spotGetTradeMinNotional("ETH/USDT")
     // );
-
     // accountManager
     //   .getAccount("a001")
     //   ?.order.spotBuy("0908383", "ETH/USDT", "0.000935", undefined, true);
-
     // logger.silly(
     //   await accountManager
     //     .getAccount("a001")
     //     ?.order.getSpotTradeMinMax("ETH/USDT", 1800)
     // );
-
     // logger.silly(
     //   await accountManager
     //     .getAccount("a001")
@@ -95,17 +91,17 @@ async function main() {
     // const supportAccount = await accountManager
     //   .getAccount("binance_spot_bt_demo_trader")
     //   ?.order.supportAccount();
-    const orderResult = await accountManager
-      .getAccount("001")
-      ?.order.spotSell(
-        "000085789",
-        "ETH/USDT",
-        "0.01",
-        undefined,
-        "0.00000000",
-        false
-      );
-    logger.debug(orderResult);
+    // const orderResult = await accountManager
+    //   .getAccount("001")
+    //   ?.order.spotBuy(
+    //     "000085800",
+    //     "ETH/USDT",
+    //     "0.05",
+    //     undefined,
+    //     "0.00000000",
+    //     false
+    //   );
+    // logger.debug(orderResult);
   }, 3000);
   // {
   //   client: 'binance_spot_bt_demo_trader',
