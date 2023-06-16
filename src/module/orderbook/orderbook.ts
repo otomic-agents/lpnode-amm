@@ -25,7 +25,7 @@ class Orderbook {
     this.provider.setSymbolsManager(symbolsManager);
   }
 
-  public init() {
+  public async init() {
     const orderbookType = _.get(
       dataConfig.getBaseConfig(),
       "orderBookType",
@@ -39,7 +39,7 @@ class Orderbook {
     }
     if (orderbookType === "market") {
       logger.debug(`init CexOrderbook`);
-      dataConfig.rewriteMarketUrl();
+      await dataConfig.rewriteMarketUrl();
       this.provider = new CexOrderbook();
       this.provider.init();
       return;

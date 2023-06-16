@@ -16,9 +16,13 @@ class OrderbookSymbolManager implements ISymbolsManager {
     this.syncSpotTokens();
   }
   public getSpotSymbols() {
-    return this.spotSymbols.map((it) => {
-      return `${it}USDT`;
+    const list: string[] = [];
+    this.spotSymbols.map((it) => {
+      if (it !== "USDT") {
+        list.push(`${it}USDT`);
+      }
     });
+    return list;
   }
 
   private async syncSpotTokens() {

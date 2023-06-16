@@ -44,6 +44,7 @@ class PortfolioRequestManager {
           "Account",
           "MarketInfo",
           "SubMarkets",
+          "SupportAccount",
           "Depth",
           "Deal",
           "AddSubMarkets",
@@ -105,7 +106,7 @@ class PortfolioRequest {
   }
   public async post(opType: string, data: any) {
     try {
-      const axiosResponse = await axios.request({
+      const requestOption: any = {
         method: "post",
         url: `http://${portfolioRequestManager.getService()}/system-server/v1alpha1/key/portfolio/v1/${opType}`,
         data: data,
@@ -113,7 +114,9 @@ class PortfolioRequest {
           "Content-Type": "application/json",
           "X-Access-Token": portfolioRequestManager.getAccessToken(),
         },
-      });
+      };
+      // logger.info(requestOption);
+      const axiosResponse = await axios.request(requestOption);
       const code = _.get(axiosResponse, "data.code", -1);
       if (code !== 0) {
         logger.error(
