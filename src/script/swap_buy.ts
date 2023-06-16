@@ -88,9 +88,6 @@ async function main() {
     //     .getAccount("a001")
     //     ?.order.getSpotTradeMinMaxValue("ETH/USDT")
     // );
-    // const supportAccount = await accountManager
-    //   .getAccount("binance_spot_bt_demo_trader")
-    //   ?.order.supportAccount();
     // const orderResult = await accountManager
     //   .getAccount("001")
     //   ?.order.spotBuy(
