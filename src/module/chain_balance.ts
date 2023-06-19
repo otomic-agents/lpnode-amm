@@ -147,6 +147,7 @@ class ChainBalance {
     }[],
     chainId: number
   ) {
+    logger.info(JSON.stringify(info));
     for (const item of info) {
       const uniqToken = dataConfig.convertAddressToUniq(item.token, chainId);
       _.set(
