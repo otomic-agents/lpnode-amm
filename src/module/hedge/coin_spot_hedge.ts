@@ -55,6 +55,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   public worker: CoinSpotHedgeWorker = new CoinSpotHedgeWorker();
   public asyncOrderMonitor: AsyncOrderMonitor = new AsyncOrderMonitor();
   public constructor() {
+    logger.info("init CoinSpotHedge");
     super();
     logger.info("CoinSpotHedge loaded");
   }
@@ -94,8 +95,14 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       dataConfig.getHedgeConfig().hedgeType === IHedgeType.CoinSpotHedge &&
       dataConfig.getHedgeConfig().hedgeAccount !== ""
     ) {
-      logger.info(`initialize account`);
+      logger.info(
+        `initialize hedgeAccount account`,
+        dataConfig.getHedgeConfig().hedgeAccount
+      );
       await this.initAccount();
+    } else {
+      logger.debug(`no hedging required`);
+      return;
     }
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount

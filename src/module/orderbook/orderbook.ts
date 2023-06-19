@@ -18,6 +18,7 @@ class Orderbook {
   }
 
   public refreshOrderbook() {
+    logger.debug('call refreshOrderbook')
     return this.provider.refreshOrderbook();
   }
 

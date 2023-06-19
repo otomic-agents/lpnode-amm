@@ -6,6 +6,7 @@ import {
   ICoinType,
   ILpCmd,
 } from "../interface/interface";
+const dayjs = require("dayjs");
 import { redisPub } from "../redis_bus";
 import { logger } from "../sys_lib/logger";
 import { orderbook } from "./orderbook/orderbook";
@@ -60,12 +61,18 @@ class Quotation {
   }
 
   private async startQuotation() {
+    const keepList: String[] = [];
     for (const item of this.bridgeTokenList) {
+      keepList.push(item.std_symbol);
       this.quotationKeep(item).then(() => {
         //
       });
     }
-    logger.info("keep quotation", new Date().getTime());
+    logger.info(
+      "keep quotation",
+      keepList.join(","),
+      dayjs().format("YYYY-MM-DDTHH:mm:ss SSS [Z] A")
+    );
     setTimeout(() => {
       this.startQuotation();
     }, 1000 * 30);
@@ -180,6 +187,7 @@ class Quotation {
     if (orderbook.spotOrderbookOnceLoaded) {
       return true;
     }
+    logger.debug("waiting spotOrderbookOnceLoaded");
     return false;
   }
 
