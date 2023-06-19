@@ -195,7 +195,12 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     if (free > inputAmount) {
       return true;
     }
-    logger.debug(`userBalance`, symbol, balance);
+    logger.debug({
+      type: "userBalance",
+      symbol,
+      balance,
+      accountId: dataConfig.getHedgeConfig().hedgeAccount,
+    });
     logger.warn(`【${symbol}】not enough balance,User input:${inputAmount} `);
     throw new Error(`not enough balance`);
   }
@@ -623,7 +628,11 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       return 0;
     }
     const minCount: any = SystemMath.min([srcTokenCexBalance, maxTradeCount]);
-    logger.debug(`spot hedge maximum supply `, minCount);
+    logger.debug(
+      `spot hedge maximum supply `,
+      { srcTokenCexBalance, maxTradeCount },
+      minCount
+    );
     return minCount;
   }
 

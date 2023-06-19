@@ -47,6 +47,7 @@ class Business {
         coinType: string;
         symbol: string;
         chainId: number;
+        tokenName: string;
       },
       {
         precision: number;
@@ -54,6 +55,7 @@ class Business {
         coinType: string;
         symbol: string;
         chainId: number;
+        tokenName: string;
       }
     ] = dataConfig.getCexStdSymbolInfoByToken(
       item.srcToken,
@@ -123,6 +125,7 @@ class Business {
           coinType: token0.coinType,
           symbol: token0.symbol,
           chainId: token0.chainId,
+          tokenName: token0.tokenName,
         },
         dstToken: {
           precision: token1.precision,
@@ -131,6 +134,7 @@ class Business {
           coinType: token1.coinType,
           symbol: token1.symbol,
           chainId: token1.chainId,
+          tokenName: token1.tokenName,
         },
       },
       AskInfo: {

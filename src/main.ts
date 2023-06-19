@@ -99,19 +99,19 @@ class Main {
         userType = item.apiType;
       }
     });
-    if (userType === "profolio") {
-      logger.info(`init portfolioRequestManager`);
-      await portfolioRequestManager.init(); // waiting get access token
-    }
 
     const orderbookType = _.get(
       dataConfig.getBaseConfig(),
       "orderBookType",
       "market"
     );
+
+    if (userType === "portfolio" || orderbookType === "portfolio") {
+      logger.info(`init portfolioRequestManager`, { userType, orderbookType });
+      await portfolioRequestManager.init(); // waiting get access token
+    }
     if (orderbookType === "portfolio") {
       logger.info(`portfolio orderbook model`);
-
       logger.info(`init orderbookSymbolManager`);
       orderbookSymbolManager.init();
     }
@@ -124,12 +124,11 @@ class Main {
     await hedgeManager.init();
     logger.debug(`start eventProcess`);
     await eventProcess.process(); // Subscribe and start processing business events
-    logger.debug(`start quotation`);
+    logger.debug(`init quotation`);
     await quotation.init(); // Initialize the quote program
 
     statusReport.init();
     statusReport.intervalReport();
-    logger.debug(`debug drive loaded.`);
   }
 }
 

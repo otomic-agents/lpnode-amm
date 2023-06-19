@@ -20,12 +20,6 @@ class StdAccount {
   public info: StdInfo;
 
   constructor(option: ICexAccount) {
-    // logger.debug(`rewrite config to Test`);
-    // _.set(option, "apiType", ICexAccountApiType.portfolio);
-    // if (_.get(option, "enablePrivateStream", undefined) === undefined) {
-    //   logger.debug(`set default ws option`);
-    //   _.set(option, "enablePrivateStream", true);
-    // }
     this.accountInfo = option;
   }
   public getCexExchange() {

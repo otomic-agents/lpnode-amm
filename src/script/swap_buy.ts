@@ -90,10 +90,10 @@ async function main() {
     // );
     const orderResult = await accountManager
       .getAccount("001")
-      ?.order.spotSell(
+      ?.order.spotBuy(
         "000085802",
         "ETH/USDT",
-        "0.015",
+        "0.02",
         undefined,
         "0.00000000",
         false
