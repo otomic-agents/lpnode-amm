@@ -34,8 +34,9 @@ class PortfolioExchange extends Emittery implements IStdExchange {
     logger.debug("enableWs config", enableWs, JSON.stringify(userInfo));
     if (enableWs) {
       this.exchangePrivateStream = new PortfolioPrivateStream(
-        "binance_spot_bt_demo_trader" // test account
+        this.accountId // test account
       );
+      logger.debug("login to ws:", this.accountId);
       this.exchangePrivateStream.on("streamEvent", (data) => {
         logger.debug(data);
         const action = _.get(data, "action", "unknow");
