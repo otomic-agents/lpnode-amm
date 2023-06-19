@@ -197,7 +197,7 @@ class DataConfig {
     }
     let hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
     const hedgeAccount = _.get(baseConfig, "hedgeConfig.hedgeAccount", null);
-    if (!hedgeType || !hedgeAccount) {
+    if (!hedgeType) {
       logger.error(`Incorrect base configuration data`);
       await TimeSleepForever(
         "The basic configuration data is incorrect, waiting for reconfiguration"
@@ -209,7 +209,7 @@ class DataConfig {
     this.hedgeConfig.hedgeType = hedgeType;
     this.hedgeConfig.hedgeAccount = hedgeAccount;
     this.hedgeAccountList = _.get(baseConfig, "hedgeConfig.accountList", []);
-    if (hedgeAccount.length <= 0) {
+    if (hedgeAccount.length <= 0 && hedgeType!=="Null") {
       logger.error(
         `The basic configuration data is incorrect, please check the hedge account settings`
       );

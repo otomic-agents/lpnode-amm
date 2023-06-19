@@ -87,6 +87,22 @@ class Main {
      * 1.load loadTokenToSymbol
      * 2.loadChainConfig
      */
+    // console.dir(dataConfig.getBaseConfig(), ConsoleDirDepth5);
+    // process.exit();
+    let userType = "exchange";
+    const hedgeAccount = _.get(
+      dataConfig.getBaseConfig(),
+      "hedgeConfig.hedgeAccount"
+    );
+    dataConfig.getHedgeAccountList().forEach((item) => {
+      if (item.accountId === hedgeAccount) {
+        userType = item.apiType;
+      }
+    });
+    if (userType === "profolio") {
+      logger.info(`init portfolioRequestManager`);
+      await portfolioRequestManager.init(); // waiting get access token
+    }
 
     const orderbookType = _.get(
       dataConfig.getBaseConfig(),
@@ -95,8 +111,7 @@ class Main {
     );
     if (orderbookType === "portfolio") {
       logger.info(`portfolio orderbook model`);
-      logger.info(`init portfolioRequestManager`);
-      await portfolioRequestManager.init(); // waiting get access token
+
       logger.info(`init orderbookSymbolManager`);
       orderbookSymbolManager.init();
     }
