@@ -88,17 +88,17 @@ async function main() {
     //     .getAccount("a001")
     //     ?.order.getSpotTradeMinMaxValue("ETH/USDT")
     // );
-    // const orderResult = await accountManager
-    //   .getAccount("001")
-    //   ?.order.spotBuy(
-    //     "000085800",
-    //     "ETH/USDT",
-    //     "0.05",
-    //     undefined,
-    //     "0.00000000",
-    //     false
-    //   );
-    // logger.debug(orderResult);
+    const orderResult = await accountManager
+      .getAccount("001")
+      ?.order.spotSell(
+        "000085802",
+        "ETH/USDT",
+        "0.015",
+        undefined,
+        "0.00000000",
+        false
+      );
+    logger.debug(orderResult);
   }, 3000);
   // {
   //   client: 'binance_spot_bt_demo_trader',
