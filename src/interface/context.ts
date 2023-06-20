@@ -32,6 +32,7 @@ interface AmmContext {
       coinType: string;
       symbol: string;
       chainId: number;
+      tokenName:string;
     };
     dstToken: {
       precision: number;
@@ -40,6 +41,7 @@ interface AmmContext {
       coinType: string;
       symbol: string;
       chainId: number;
+      tokenName:string;
     };
   };
   swapInfo: {

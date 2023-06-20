@@ -799,7 +799,6 @@ class Quotation {
         ammContext.baseInfo.srcToken.chainId,
         ammContext.baseInfo.dstToken.chainId
       );
-    logger.debug(token0, token1);
     Object.assign(sourceObject.quote_data, {
       assetName: `${token0}/${token1}`,
       assetTokenName: `${ammContext.baseInfo.srcToken.address}/${ammContext.baseInfo.dstToken.address}`,
@@ -832,19 +831,13 @@ class Quotation {
       dstBalanceMaxSwap,
       orderbookLiquidity,
     ]);
-    logger.info(
+    logger.info({
       hedgeCapacity,
       dstBalanceMaxSwap,
       orderbookLiquidity,
-      "<-hedgeCapacity"
-    );
-
-    logger.debug(
-      hedgeCapacity,
-      dstBalanceMaxSwap,
       capacity,
-      "⏩⏩⏩⏩⏩⏩⏩⏩⏩"
-    );
+    });
+
     logger.debug(
       `maximum supply`,
       new BigNumber(capacity).toFixed(8).toString()

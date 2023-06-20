@@ -130,7 +130,7 @@ class ChainBalance {
     if (!_.isFinite(balance)) {
       logger.error(`balance is not a number`);
     }
-    logger.info(findKey, balance);
+    logger.info({ findKey, balance });
     return balance;
   }
 
@@ -147,7 +147,6 @@ class ChainBalance {
     }[],
     chainId: number
   ) {
-    logger.info(JSON.stringify(info));
     for (const item of info) {
       const uniqToken = dataConfig.convertAddressToUniq(item.token, chainId);
       _.set(

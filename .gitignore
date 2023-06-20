@@ -11,3 +11,4 @@ config_id
 src/env.ts
 src/dev.mongodb
 map/**/*
+panel.mongodb.js

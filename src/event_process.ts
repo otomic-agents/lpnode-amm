@@ -108,7 +108,13 @@ class EventProcess {
     ];
     if (processCmdList.includes(msg.cmd)) {
       logger.debug(
-        "🟩<--",
+        "received message",
+        `【${msg.cmd}】`,
+        JSON.stringify(msg).substring(0, 100)
+      );
+    } else {
+      logger.debug(
+        "received message skip",
         `【${msg.cmd}】`,
         JSON.stringify(msg).substring(0, 100)
       );

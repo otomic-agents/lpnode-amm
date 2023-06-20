@@ -124,12 +124,11 @@ class Main {
     await hedgeManager.init();
     logger.debug(`start eventProcess`);
     await eventProcess.process(); // Subscribe and start processing business events
-    logger.debug(`start quotation`);
+    logger.debug(`init quotation`);
     await quotation.init(); // Initialize the quote program
 
     statusReport.init();
     statusReport.intervalReport();
-    logger.debug(`debug drive loaded.`);
   }
 }
 

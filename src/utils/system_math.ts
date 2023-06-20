@@ -1,6 +1,5 @@
 import * as mathlib from "mathjs";
 import { all, create } from "mathjs";
-import { logger } from "../sys_lib/logger";
 import * as _ from "lodash";
 // configure the default type of numbers as BigNumbers
 const replaceall = require("replaceall");
@@ -10,8 +9,11 @@ mathIns.config({ number: "BigNumber", precision: 20 });
 class SystemMath {
   static exec(formula: string, title = ""): mathlib.BigNumber {
     formula = replaceall("\n", "", formula);
-    console.log(`${title}\n`);
-    console.log("♨️", formula, "♨️");
+    if (title !== "") {
+      console.log(`${title}\n`);
+      console.log("exec: ", formula);
+    }
+
     return mathIns.evaluate(formula);
   }
 
@@ -37,7 +39,6 @@ class SystemMath {
   static min(values: number[]): number {
     const usedNumberList: number[] = [];
     for (const item of values) {
-      logger.debug(item);
       if (item >= 0) {
         usedNumberList.push(item);
       }
@@ -47,7 +48,6 @@ class SystemMath {
   static max(values: number[]): number {
     const usedNumberList: number[] = [];
     for (const item of values) {
-      logger.debug(item);
       if (item >= 0) {
         usedNumberList.push(item);
       }
