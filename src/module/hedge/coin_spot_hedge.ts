@@ -195,7 +195,12 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     if (free > inputAmount) {
       return true;
     }
-    logger.debug(`userBalance`, symbol, balance);
+    logger.debug({
+      type: "userBalance",
+      symbol,
+      balance,
+      accountId: dataConfig.getHedgeConfig().hedgeAccount,
+    });
     logger.warn(`【${symbol}】not enough balance,User input:${inputAmount} `);
     throw new Error(`not enough balance`);
   }
