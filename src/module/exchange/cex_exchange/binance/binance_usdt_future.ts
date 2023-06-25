@@ -45,7 +45,7 @@ class BinanceUsdtFuture implements IStdExchangeUsdtFuture {
   public async loadBalance(): Promise<void> {
     if (this.apiKey === "" || this.apiSecret === "") {
       logger.warn(
-        `账户没有初始化，不同步余额`,
+        `The balance is not synced because the account is not configured`,
         "binance_usdt_future___fetchBalance"
       );
       return;
