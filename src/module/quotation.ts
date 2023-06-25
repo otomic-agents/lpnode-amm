@@ -832,10 +832,11 @@ class Quotation {
       orderbookLiquidity,
     ]);
     logger.info({
+      "type":"capacity = SystemMath.min",
       hedgeCapacity,
       dstBalanceMaxSwap,
       orderbookLiquidity,
-      capacity,
+      "result":capacity,
     });
 
     logger.debug(
