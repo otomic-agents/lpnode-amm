@@ -36,7 +36,7 @@ class AppEnv {
     _.set(
       process,
       "_sys_config.lp_market_host",
-      _.get(process.env, "LP_MARKET_SERVICE_URL", "")
+      _.get(process.env, "LP_MARKET_SERVICE_HOST", "")
     );
     _.set(
       process,
