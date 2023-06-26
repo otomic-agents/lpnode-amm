@@ -2,9 +2,7 @@ import { logger } from "./sys_lib/logger";
 import { SysIoRedis } from "./sys_lib/redis";
 
 import * as _ from "lodash";
-const host: any = _.attempt(() => {
-  return _.get(process.env, "OBRIDGE_LPNODE_DB_REDIS_MASTER_SERVICE_HOST", "");
-});
+const host: any = _.get(process.env, "OBRIDGE_REDIS_HOST", "");
 const pass: any = _.attempt(() => {
   const pass = _.get(process.env, "REDIS_PASSWORD", "");
   if (pass === "") {
