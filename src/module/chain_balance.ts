@@ -45,7 +45,7 @@ class ChainBalance {
     };
   } = {};
 
-  public init() {
+  public async init() {
     this.bridgeItemList = dataConfig.getBridgeTokenList();
     systemRedisBus.on("bridgeUpdate", async () => {
       await dataConfig.syncBridgeConfigFromLocalDatabase();

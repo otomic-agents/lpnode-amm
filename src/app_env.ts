@@ -1,5 +1,6 @@
 import * as _ from "lodash";
 import { logger } from "./sys_lib/logger";
+
 class AppEnv {
   public isProd(): boolean {
     const isProd = _.get(
@@ -12,9 +13,26 @@ class AppEnv {
     }
     return false;
   }
+
   public initConfig() {
     this.initBaseConfig();
+    this.preProcessEnv();
+    console.log(process["_sys_config"]);
+  }
 
+  private initBaseConfig() {
+    _.set(process, "_sys_config.balance_lock_expiration_time", 1000 * 60 * 15);
+  }
+
+  public GetLpAdminUrl() {
+    const adminUrl = _.get(process, "_sys_config.lp_host", null);
+    if (!adminUrl) {
+      logger.warn("can't fount admin-panel host config");
+    }
+    return adminUrl;
+  }
+
+  private preProcessEnv() {
     const appName = _.get(process.env, "APP_NAME", null);
     if (!appName) {
       logger.error(
@@ -24,13 +42,17 @@ class AppEnv {
     }
     _.set(process, "_sys_config.app_name", appName);
     const mongoHost = _.get(process.env, "OBRIDGE_MONGODB_HOST", "");
-    const mongoUser = "root";
+    const mongoUser = _.get(process.env, "MONGODB_ACCOUNT", "");
     const mongoPass = _.get(process.env, "MONGODB_PASSWORD", "");
+    const mongoPort = _.get(process.env, "MONGODB_PORT", "");
+    const mongoDBNameStore = _.get(process.env, "MONGODB_DBNAME_LP_STORE", "");
+    const mongoDBNameHistory = _.get(process.env, "MONGODB_DBNAME_HISTORY", "");
+
     _.set(process, "_sys_config.mdb.main", {
-      url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:27017/lp_store?authSource=admin`,
+      url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:${mongoPort}/${mongoDBNameStore}?authSource=${mongoDBNameStore}`,
     });
     _.set(process, "_sys_config.mdb.business", {
-      url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:27017/businessHistory?authSource=admin`,
+      url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:${mongoPort}/${mongoDBNameHistory}?authSource=${mongoDBNameHistory}`,
     });
 
     _.set(
@@ -52,16 +74,7 @@ class AppEnv {
     }
     _.set(process, "_sys_config.lp_host", adminUrl);
   }
-  private initBaseConfig() {
-    _.set(process, "_sys_config.balance_lock_expiration_time", 1000 * 60 * 15);
-  }
-  public GetLpAdminUrl() {
-    const adminUrl = _.get(process, "_sys_config.lp_host", null);
-    if (!adminUrl) {
-      logger.warn("can't fount admin-panel host config");
-    }
-    return adminUrl;
-  }
 }
+
 const appEnv: AppEnv = new AppEnv();
 export { appEnv };

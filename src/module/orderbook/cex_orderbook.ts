@@ -21,8 +21,17 @@ class CexOrderbook implements IOrderbook {
 
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
     const orderbookItem = this.spotOrderbook.get(stdSymbol);
+
     if (orderbookItem) {
       const timeNow = new Date().getTime();
+      logger.info(
+        "orderbook timestamp:",
+        orderbookItem.timestamp,
+        "timeNow:",
+        timeNow,
+        "diff:",
+        timeNow - orderbookItem.timestamp
+      );
       if (timeNow - orderbookItem.timestamp > 1000 * 30) {
         logger.warn(
           `order book expired.`,
@@ -39,6 +48,7 @@ class CexOrderbook implements IOrderbook {
   public setSymbolsManager(symbolsManager: ISymbolsManager | undefined) {
     logger.info("do nothing");
   }
+
   public async init(): Promise<void> {
     logger.debug("Initialize Cex_orderbook..");
     this.startOrderbookGc();
@@ -108,11 +118,17 @@ class CexOrderbook implements IOrderbook {
         "_sys_config.lp_market_port",
         undefined
       );
-      if (!orderbookServiceHost) {
+      if (
+        !orderbookServiceHost &&
+        !_.get(process.env, "LP_MARKET_SERVICE_URL", undefined)
+      ) {
         throw "Unable to obtain orderbook service address";
       }
-      const url = `http://${orderbookServiceHost}:${orderbookServicePort}/api/spotOrderbook`;
-      // logger.info(`request orderbook Url:`, url);
+      let url: string = `http://${orderbookServiceHost}:${orderbookServicePort}/api/spotOrderbook`;
+      if (_.get(process.env, "LP_MARKET_SERVICE_URL", undefined)) {
+        url = _.get(process.env, "LP_MARKET_SERVICE_URL", "");
+      }
+      logger.info(`request orderbook Url:`, url);
       const result = await axios.get(url);
       const code = _.get(result, "data.code", { code: 1 });
       const data: IMarketOrderbookRet = _.get(result, "data.data", {});

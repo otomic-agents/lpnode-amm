@@ -97,24 +97,24 @@ class EventProcessTransferOut extends BaseEventProcess {
   }
 
   private async verificationTime(msg: IEVENT_TRANSFER_OUT) {
-    const lockQuoteTimestamp = Number(
-      _.get(
-        msg,
-        "business_full_data.pre_business.swap_asset_information.time_lock",
-        0
-      )
-    );
-    if (!_.isFinite(lockQuoteTimestamp) || lockQuoteTimestamp === 0) {
-      logger.debug(`lockQuoteTimestamp incorrect`);
-      throw new Error(`lockQuoteTimestamp incorrect ${lockQuoteTimestamp}`);
-    }
-    const eventDelay = new Date().getTime() - lockQuoteTimestamp * 1000;
-    if (eventDelay > 1000 * 60 * 5) {
-      logger.error(`the time to lock in the price is too long :${eventDelay}`);
-      throw new Error(
-        `the time to lock in the price is too long :${eventDelay}`
-      );
-    }
+    // const lockQuoteTimestamp = Number(
+    //   _.get(
+    //     msg,
+    //     "business_full_data.pre_business.swap_asset_information.time_lock",
+    //     0
+    //   )
+    // );
+    // if (!_.isFinite(lockQuoteTimestamp) || lockQuoteTimestamp === 0) {
+    //   logger.debug(`lockQuoteTimestamp incorrect`);
+    //   throw new Error(`lockQuoteTimestamp incorrect ${lockQuoteTimestamp}`);
+    // }
+    // const eventDelay = new Date().getTime() - lockQuoteTimestamp * 1000;
+    // if (eventDelay > 1000 * 60 * 5) {
+    //   logger.error(`the time to lock in the price is too long :${eventDelay}`);
+    //   throw new Error(
+    //     `the time to lock in the price is too long :${eventDelay}`
+    //   );
+    // }
   }
 }
 

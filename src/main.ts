@@ -13,6 +13,7 @@ import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
 
 import { appEnv } from "./app_env";
+
 appEnv.initConfig();
 
 import { dataConfig } from "./data_config";
@@ -33,43 +34,12 @@ import { portfolioRequestManager } from "./module/exchange/cex_exchange/portfoli
 
 class Main {
   public async main() {
-    try {
-      logger.debug("start main ");
-      Mdb.getInstance().getMongoDb("main"); // Initialize database connection
-      await Mdb.getInstance().awaitDbConn("main");
-      logger.debug(`database connection ready...`, "..");
-    } catch (e) {
-      logger.error("Error initializing database connection", e);
-      process.exit(3);
-    }
-    systemRedisBus.on("tokenReload", (msg: any) => {
-      logger.warn(`skip tokenReload event`);
-      logger.info(msg);
-    });
-    systemRedisBus.on("configResourceUpdate", async (message: any) => {
-      logger.debug(message);
-      if (
-        _.get(message, "appName", "") !==
-        _.get(process.env, "APP_NAME", undefined)
-      ) {
-        logger.debug(
-          `Not this program's message configResourceUpdate  skip process`
-        );
-        return;
-      }
-      logger.warn(`The configuration is updated by admin_panel,need restart`);
-      await TimeSleepMs(3000);
-      process.exit(1);
-    });
-    systemRedisBus.on("bridgeUpdate", async () => {
-      //
-    });
-    await systemRedisBus.init();
-    logger.info("bus init");
+    await this.initMongodb();
+    await this.listenEvent();
 
     await dataConfig.prepareConfigResource();
 
-    await httpServer.start();
+    httpServer.start();
     try {
       // Do not start without basic configuration
       logger.debug("loadBaseConfig");
@@ -83,12 +53,7 @@ class Main {
         "LpBridge configuration is empty, waiting for configuration"
       );
     }
-    /**
-     * 1.load loadTokenToSymbol
-     * 2.loadChainConfig
-     */
-    // console.dir(dataConfig.getBaseConfig(), ConsoleDirDepth5);
-    // process.exit();
+
     let userType = "exchange";
     const hedgeAccount = _.get(
       dataConfig.getBaseConfig(),
@@ -130,13 +95,54 @@ class Main {
     statusReport.init();
     statusReport.intervalReport();
   }
+
+  private async initMongodb() {
+    try {
+      logger.debug("start main ");
+      Mdb.getInstance().getMongoDb("main"); // Initialize database connection
+      await Mdb.getInstance().awaitDbConn("main");
+      logger.debug(`database connection ready...`, "..");
+    } catch (e) {
+      logger.error("Error initializing database connection", e);
+      TimeSleepMs(10000);
+      process.exit(0);
+    }
+  }
+
+  private async listenEvent() {
+    systemRedisBus.on("tokenReload", (msg: any) => {
+      logger.warn(`skip tokenReload event`);
+      logger.info(msg);
+    });
+    systemRedisBus.on("configResourceUpdate", async (message: any) => {
+      logger.debug(message);
+      if (
+        _.get(message, "appName", "") !==
+        _.get(process.env, "APP_NAME", undefined)
+      ) {
+        logger.debug(
+          `Not this program's message configResourceUpdate  skip process`
+        );
+        return;
+      }
+      logger.warn(`The configuration is updated by admin_panel,need restart`);
+      await TimeSleepMs(3000);
+      process.exit(1);
+    });
+    systemRedisBus.on("bridgeUpdate", async () => {
+      //
+    });
+    await systemRedisBus.init();
+    logger.info("bus init");
+  }
 }
 
 const mainIns: Main = new Main();
 mainIns
   .main()
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  .then(() => {})
+  .then(() => {
+  })
   .catch((e: any) => {
     logger.error(e);
     logger.error("main process error", _.get(e, "message", "message"));

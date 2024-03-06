@@ -22,11 +22,17 @@ class SetCtrl {
   }
 
   public async eventTest(req: any, res: any) {
-    // usdt-busd
+    // eth-usdt
     eventProcess.onMessage(
       JSON.stringify(req.body),
-      "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x6eD522603ab403D7acfCB2227A760A8C9dD7b371_9006_9006"
+      "0x57e73db0eebd89f722e064d4c209f86eba9daeec/0xacda8bf66c2cadac9e99aa1aa75743f536e71094_9006_9006"
     );
+
+    // usdt-busd
+    // eventProcess.onMessage(
+    //   JSON.stringify(req.body),
+    //   "0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23/0x6eD522603ab403D7acfCB2227A760A8C9dD7b371_9006_9006"
+    // );
     // busd-usdt
     // eventProcess.onMessage(
     //   JSON.stringify(req.body),

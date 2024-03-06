@@ -168,7 +168,7 @@ class StdBalance {
     await this.stdExchange.exchangeSpot.getBalance().forEach((item, key) => {
       balanceList.push(item);
     });
-    console.table(balanceList);
+    // console.table(balanceList);
   }
 
   /**

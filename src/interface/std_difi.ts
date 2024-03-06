@@ -4,6 +4,7 @@ enum ICexExchangeList {
 
 interface ISpotBalanceItem {
   asset: string;
+  used?: string;
   free: string;
   locked: string;
 }
@@ -119,8 +120,9 @@ interface ISpotOrderResult {
   info: string; // original order info
 }
 enum ICexAccountApiType {
-  exchange = "exchange",
-  portfolio = "profolio",
+  exchange = "exchange", // local exchange
+  portfolio = "profolio", // profolio
+  exchange_adapter = "exchange_adapter", // exchange_adapter
 }
 // account define______________________________________
 interface ICexAccount {

@@ -1,0 +1,54 @@
+{
+    "chainDataConfig": [
+      {
+        "chainId": 9006,
+        "config": {
+          "maxSwapNativeTokenValue": "50000",
+          "minSwapNativeTokenValue": "0.5"
+        }
+      },
+      {
+        "chainId": 9000,
+        "config": {
+          "maxSwapNativeTokenValue": "80",
+          "minSwapNativeTokenValue": "0.5"
+        }
+      }
+    ],
+    "bridgeBaseConfig": {
+      "defaultFee": "0.003",
+      "enabledHedge": true
+    },
+    "bridgeConfig": [
+      {
+        "bridgeId": "64452225c1bb584223010906",
+        "fee": "0.01",
+        "enableHedge": false
+      }
+    ],
+    "orderBookType": "market",
+    "hedgeConfig": {
+      "hedgeAccount": "001",
+      "hedgeType": "CoinSpotHedge",
+      "accountList": [
+        {
+          "enablePrivateStream": false,
+          "apiType": "exchange",
+          "accountId": "001",
+          "exchangeName": "binance",
+          "spotAccount": {
+            "apiKey": "arelVdKxWiBm7Mp77hx8nONoWLp37gyrVd7CrKMwD7XOBBxWiCeg3JIehiJ0nAoO",
+            "apiSecret": "ohMRXHppUEvZScqQ1mq5lmIu5FAAX4xzM4fW6RDfy2gG0gLBOOIYG6eKeNJV7wTo"
+          },
+          "usdtFutureAccount": {
+            "apiKey": "a4aa44de63eaddde555b7bceab84ae98931a225313480010dc3c7b8467771b2b",
+            "apiSecret": "32246bd97a55369c99d49cccbbe0de3541f6f46c4f5729fe34db286957e235ec"
+          },
+          "coinFutureAccount": {
+            "apiKey": "a4aa44de63eaddde555b7bceab84ae98931a225313480010dc3c7b8467771b2b",
+            "apiSecret": "32246bd97a55369c99d49cccbbe0de3541f6f46c4f5729fe34db286957e235ec"
+          }
+        }
+      ]
+    }
+  }

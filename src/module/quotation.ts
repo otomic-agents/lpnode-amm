@@ -61,7 +61,7 @@ class Quotation {
   }
 
   private async startQuotation() {
-    const keepList: String[] = [];
+    const keepList: string[] = [];
     for (const item of this.bridgeTokenList) {
       keepList.push(item.std_symbol);
       this.quotationKeep(item).then(() => {
@@ -818,7 +818,11 @@ class Quotation {
    */
   private async calculate_capacity(ammContext: AmmContext, sourceObject: any) {
     let hedgeCapacity = -1;
-    const orderbookLiquidity = await this.calculateLiquidity(ammContext);
+    let orderbookLiquidity = -1;
+    if (ammContext.hedgeEnabled) {
+      orderbookLiquidity = await this.calculateLiquidity(ammContext);
+    }
+
     const dstBalanceMaxSwap = await this.dstBalanceMaxSwap(ammContext);
     if (ammContext.hedgeEnabled) {
       hedgeCapacity = await ammContext.bridgeItem.hedge_info
@@ -832,11 +836,11 @@ class Quotation {
       orderbookLiquidity,
     ]);
     logger.info({
-      "type":"capacity = SystemMath.min",
+      type: "capacity = SystemMath.min",
       hedgeCapacity,
       dstBalanceMaxSwap,
       orderbookLiquidity,
-      "result":capacity,
+      result: capacity,
     });
 
     logger.debug(
@@ -919,6 +923,9 @@ class Quotation {
       ammContext.walletInfo.walletName,
       ammContext.baseInfo.dstToken.address
     );
+    logger.info(
+      `DstChain: [${ammContext.baseInfo.dstToken.chainId}] [${ammContext.baseInfo.dstToken.symbol}],Balance[${dstTokenBalance}] able to provide`
+    );
     const {
       asks: [[dstTokenPrice]],
     } = quotationPrice.getCoinStableCoinOrderBook(
@@ -964,7 +971,8 @@ class Quotation {
     if (max <= input) {
       console.dir(sourceObject.quote_data, ConsoleDirDepth5);
       logger.warn(
-        "The quotation has expired, and the maximum quantity is not enough to meet the input requirement."
+        "The quotation has expired, and the maximum quantity is not enough to meet the input requirement.",
+        `max:${max},input:${input}`
       );
       throw new Error(
         `The quotation has expired, and the maximum quantity is not enough to meet the input requirement`

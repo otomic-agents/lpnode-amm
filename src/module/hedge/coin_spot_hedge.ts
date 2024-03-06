@@ -10,8 +10,6 @@ import {
 import { logger } from "../../sys_lib/logger";
 import { accountManager } from "../exchange/account_manager";
 import BigNumber from "bignumber.js";
-import { getRedisConfig } from "../../redis_bus";
-import Bull from "bull";
 import { AmmContext } from "../../interface/context";
 import { balanceLockModule } from "../../mongo_module/balance_lock";
 import { CoinSpotHedgeBase } from "./coin_spot_hedge_base";
@@ -26,25 +24,16 @@ import {
 } from "../../interface/std_difi";
 import { hedgeJobModule } from "../../mongo_module/hedge_job";
 import { AsyncOrderMonitor } from "./async_order_monitor";
+import { SysMongoQueue } from "../../sys_lib/mongo_queue";
 
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
-const redisConfig = getRedisConfig();
 const appName = _.get(process.env, "APP_NAME", undefined);
 if (!appName) {
   throw new Error(`Queue name is incorrectly configured`);
 }
 const queueName = `SYSTEM_HEDGE_QUEUE_${appName}`;
-const hedgeQueue = new Bull(queueName, {
-  settings: {
-    backoffStrategies: {
-      hedge(attemptsMade, err) {
-        return 10000 + Math.random() * 500;
-      },
-    },
-  },
-  redis: { port: 6379, host: redisConfig.host, password: redisConfig.pass },
-});
+const hedgeQueue = new SysMongoQueue(queueName);
 
 /**
  * coin spot Hedged
@@ -218,6 +207,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       );
       return true;
     }
+    logger.debug("get account", dataConfig.getHedgeConfig().hedgeAccount);
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount
     );
@@ -628,11 +618,11 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       return 0;
     }
     const minCount: any = SystemMath.min([srcTokenCexBalance, maxTradeCount]);
-    logger.debug(
-      `spot hedge maximum supply `,
-      { srcTokenCexBalance, maxTradeCount },
-      minCount
-    );
+    logger.debug(`spot hedge maximum supply `, {
+      srcTokenCexBalance,
+      maxTradeCount,
+      minCount,
+    });
     return minCount;
   }
 
@@ -769,9 +759,10 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   public async writeJob(hedgeInfo: ISpotHedgeInfo) {
     logger.info(`Write information to Job.....`);
-    hedgeQueue.add(hedgeInfo, { attempts: 2, backoff: { type: "hedge" } });
+    hedgeQueue.add(hedgeInfo);
   }
 }
 
 const coinSpotHedge: CoinSpotHedge = new CoinSpotHedge();
+
 export { coinSpotHedge, CoinSpotHedge };

@@ -17,6 +17,7 @@ class OrderbookSymbolManager implements ISymbolsManager {
   }
   public getSpotSymbols() {
     const list: string[] = [];
+    // eslint-disable-next-line array-callback-return
     this.spotSymbols.map((it) => {
       if (it !== "USDT") {
         list.push(`${it}USDT`);
