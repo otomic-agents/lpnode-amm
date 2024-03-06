@@ -24,13 +24,17 @@ class AppEnv {
     }
     _.set(process, "_sys_config.app_name", appName);
     const mongoHost = _.get(process.env, "OBRIDGE_MONGODB_HOST", "");
-    const mongoUser = "root";
+    const mongoUser = _.get(process.env, "MONGODB_ACCOUNT", "");
     const mongoPass = _.get(process.env, "MONGODB_PASSWORD", "");
+    const mongoPort = _.get(process.env, "MONGODB_PORT", "");
+    const mongoDBNameStore = _.get(process.env, "MONGODB_DBNAME_LP_STORE", "");
+    const mongoDBNameHistory = _.get(process.env, "MONGODB_DBNAME_HISTORY", "");
+
     _.set(process, "_sys_config.mdb.main", {
-      url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:27017/lp_store?authSource=admin`,
+      url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:${mongoPort}/${mongoDBNameStore}?authSource=${mongoDBNameStore}`,
     });
     _.set(process, "_sys_config.mdb.business", {
-      url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:27017/businessHistory?authSource=admin`,
+      url: `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:${mongoPort}/${mongoDBNameHistory}?authSource=${mongoDBNameHistory}`,
     });
 
     _.set(
