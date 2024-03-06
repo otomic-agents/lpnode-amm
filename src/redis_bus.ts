@@ -14,7 +14,7 @@ logger.debug(`redis conn info`, host);
 const redisSub = SysIoRedis.getRedis(host, pass, undefined, 0);
 const redisPub = SysIoRedis.getRedis(host, pass, undefined, 0);
 const dataRedis = SysIoRedis.getRedis(host, pass, undefined, 0);
-const statusRedis = SysIoRedis.getRedis(host, pass, undefined, 9);
+const statusRedis = SysIoRedis.getRedis(host, pass, undefined, 0);
 function getNewRedis(db = 0) {
   logger.debug(`get new redis ins`, db);
   return SysIoRedis.getRedis(host, pass, undefined, db);
