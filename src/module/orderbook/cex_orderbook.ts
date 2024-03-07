@@ -28,8 +28,8 @@ class CexOrderbook implements IOrderbook {
       timestamp: Date.now(),
       incomingTimestamp: Date.now(),
       stream: stdSymbol,
-      bids: [["1", "1"]],
-      asks: [["1", "1"]]
+      bids: [["1", "10000"]],
+      asks: [["1", "10000"]]
     };
     // if (orderbookItem) {
     //   const timeNow = new Date().getTime();
