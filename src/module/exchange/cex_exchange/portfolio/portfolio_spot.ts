@@ -18,7 +18,7 @@ import { SystemMath } from "../../../../utils/system_math";
 import { formatStepSize } from "../../utils";
 import { measure, memo } from "helpful-decorators";
 class PortfolioSpot implements IStdExchangeSpot {
-  //@ts-ignore
+  // @ts-ignore
   private exchangeNumber = 15;
   public exchangeName: string;
   private accountId: string;

@@ -20,25 +20,36 @@ class CexOrderbook implements IOrderbook {
   // public cumulativeErrorCount = 0;
 
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
-    const orderbookItem = this.spotOrderbook.get(stdSymbol);
-    if (orderbookItem) {
-      const timeNow = new Date().getTime();
-      if (timeNow - orderbookItem.timestamp > 1000 * 30) {
-        logger.warn(
-          `order book expired.`,
-          (timeNow - orderbookItem.timestamp) / 1000,
-          "sec"
-        );
-        return undefined;
-      }
-      return orderbookItem;
-    }
-    return undefined;
+    // const orderbookItem = this.spotOrderbook.get(stdSymbol);
+    return {
+      stdSymbol,
+      symbol: stdSymbol,
+      lastUpdateId: 1,
+      timestamp: Date.now(),
+      incomingTimestamp: Date.now(),
+      stream: stdSymbol,
+      bids: [["1", "1"]],
+      asks: [["1", "1"]]
+    };
+    // if (orderbookItem) {
+    //   const timeNow = new Date().getTime();
+    //   if (timeNow - orderbookItem.timestamp > 1000 * 30) {
+    //     logger.warn(
+    //       `order book expired.`,
+    //       (timeNow - orderbookItem.timestamp) / 1000,
+    //       "sec"
+    //     );
+    //     return undefined;
+    //   }
+    //   return orderbookItem;
+    // }
+    // return undefined;
   }
 
   public setSymbolsManager(symbolsManager: ISymbolsManager | undefined) {
     logger.info("do nothing");
   }
+
   public async init(): Promise<void> {
     logger.debug("Initialize Cex_orderbook..");
     this.startOrderbookGc();

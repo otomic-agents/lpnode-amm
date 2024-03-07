@@ -35,7 +35,7 @@ class PortfolioRequestManager {
     const body = {
       app_key: this.appKey,
       timestamp: parseInt(timestamp),
-      token: token,
+      token,
       perm: {
         group: "portfolio",
         dataType: "key",
@@ -109,7 +109,7 @@ class PortfolioRequest {
       const requestOption: any = {
         method: "post",
         url: `http://${portfolioRequestManager.getService()}/system-server/v1alpha1/key/portfolio/v1/${opType}`,
-        data: data,
+        data,
         headers: {
           "Content-Type": "application/json",
           "X-Access-Token": portfolioRequestManager.getAccessToken(),
