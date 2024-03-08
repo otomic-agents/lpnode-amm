@@ -60,9 +60,11 @@ class DataConfig {
   } = {
     quotationInterval: 1000 * 10,
   };
+
   public getBaseConfig() {
     return this.baseConfig;
   }
+
   public getTokenList() {
     const tokenList: any[] = [];
     for (const [uniqKey, item] of this.tokenToSymbolMap) {
@@ -209,7 +211,7 @@ class DataConfig {
     this.hedgeConfig.hedgeType = hedgeType;
     this.hedgeConfig.hedgeAccount = hedgeAccount;
     this.hedgeAccountList = _.get(baseConfig, "hedgeConfig.accountList", []);
-    if (hedgeAccount.length <= 0 && hedgeType!=="Null") {
+    if (hedgeAccount.length <= 0 && hedgeType !== "Null") {
       logger.error(
         `The basic configuration data is incorrect, please check the hedge account settings`
       );
@@ -556,9 +558,11 @@ class DataConfig {
     }
     console.table(this.bridgeTokenList);
   }
-  public async getBridgeBaseConfig() {
+
+  public getBridgeBaseConfig() {
     return _.get(this.baseConfig, "bridgeBaseConfig", undefined);
   }
+
   private async loadBridgeConfig() {
     if (
       _.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined) ===
@@ -632,6 +636,7 @@ class DataConfig {
     }
     return tokenName;
   }
+
   public getChainTokenMap() {
     return this.chainTokenMap;
   }

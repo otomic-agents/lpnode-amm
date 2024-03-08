@@ -2,14 +2,19 @@ import { dataConfig } from "../data_config";
 import { IHedgeClass, IHedgeType } from "../interface/interface";
 import { logger } from "../sys_lib/logger";
 import { coinSpotHedge } from "./hedge/coin_spot_hedge";
+import * as _ from "lodash";
 
 class HedgeManager {
   public async init() {
     if (dataConfig.getHedgeConfig().hedgeType === IHedgeType.Null) {
-      logger.info(`no hedging required`);
+      logger.info(`No need for hedging.`);
       return;
     }
-    await coinSpotHedge.init();
+    const enabledHedge = _.get(dataConfig.getBridgeBaseConfig(), "enabledHedge", "false");
+    if (!enabledHedge || enabledHedge === "false") {
+      logger.warn("No need for hedging.");
+      return;
+    }
     logger.debug(`init HedgeManager`);
   }
 

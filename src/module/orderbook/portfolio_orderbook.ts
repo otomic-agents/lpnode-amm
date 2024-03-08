@@ -73,7 +73,7 @@ class PortfolioOrderbook implements IOrderbook {
     try {
       await this.requestSpotOrderbook();
     } catch (e) {
-      logger.error(`synchronizing orderbook error:`, e);
+      logger.error(`synchronizing portfolio orderbook error:`, e);
     }
 
     setTimeout(() => {

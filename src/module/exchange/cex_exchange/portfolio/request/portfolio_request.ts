@@ -2,19 +2,23 @@ import axios from "axios";
 // import { logger } from "../../../../../sys_lib/logger";
 import * as _ from "lodash";
 import { logger } from "../../../../../sys_lib/logger";
+
 const bcrypt = require("bcrypt");
+
 class PortfolioRequestManager {
   private appKey = _.get(process.env, "OS_API_KEY", undefined);
   private appSecret = _.get(process.env, "OS_API_SECRET", undefined);
   private service = _.get(process.env, "OS_SYSTEM_SERVER", undefined);
   private accessToken = "";
+
   public getService() {
     return this.service;
   }
+
   public getAccessToken() {
     return this.accessToken;
   }
-  constructor() {}
+
   public async init() {
     if (this.appKey === undefined || this.appSecret === undefined) {
       logger.error("Missing required parameter portfolio [OS_API_KEY]");
@@ -28,6 +32,7 @@ class PortfolioRequestManager {
     }
     await this.refreshToken();
   }
+
   public async refreshToken() {
     const timestamp = (new Date().getTime() / 1000).toFixed(0);
     const text = this.appKey + timestamp + this.appSecret;
@@ -79,8 +84,10 @@ class PortfolioRequestManager {
     }
   }
 }
+
 const portfolioRequestManager: PortfolioRequestManager =
   new PortfolioRequestManager();
+
 class PortfolioRequest {
   public async get(url: string) {
     try {
@@ -104,6 +111,7 @@ class PortfolioRequest {
       throw e;
     }
   }
+
   public async post(opType: string, data: any) {
     try {
       const requestOption: any = {
