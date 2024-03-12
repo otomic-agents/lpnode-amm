@@ -99,12 +99,14 @@ class QuotationPrice {
         timestamp: new Date().getTime(),
       };
     }
-    return {
+    const retData = {
       stdSymbol,
       asks: retAsks,
       bids: retBids,
       timestamp: orderbookItem.timestamp,
     };
+    console.log(retData);
+    return retData;
   }
   public getCoinStableCoinOrderBookLiquidity(
     token: string,
