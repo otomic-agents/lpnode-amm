@@ -18,21 +18,31 @@ class SysMongoQueue {
   public async process(fun: any) {
     const readDocFromMongo = async () => {
       return new Promise(async (resolve, reject) => {
-        const ret = await sysQueueModel.findOne({
-          queue_name: this._queueName,
-          processed: false
-        }).sort({ _id: 1 }).limit(1).lean();
+        const ret = await sysQueueModel
+          .findOne({
+            queue_name: this._queueName,
+            processed: false,
+          })
+          .sort({ _id: 1 })
+          .limit(1)
+          .lean();
         if (ret !== undefined && ret !== null) {
           console.log("new doc ...");
-          fun({
-            data: ret
-          }, async () => {
-            await sysQueueModel.updateOne({ _id: ret._id }, { $set: { processed: true } });
-            resolve(true);
-            readDocFromMongo().then(() => {
-              console.log("read from mongo and process sucess");
-            });
-          });
+          fun(
+            {
+              data: ret.data,
+            },
+            async () => {
+              await sysQueueModel.updateOne(
+                { _id: ret._id },
+                { $set: { processed: true } }
+              );
+              resolve(true);
+              readDocFromMongo().then(() => {
+                console.log("read from mongo and process sucess");
+              });
+            }
+          );
         } else {
           await this.sleep();
           readDocFromMongo();
@@ -45,7 +55,7 @@ class SysMongoQueue {
   public async add(data: any) {
     await sysQueueModel.create({
       queue_name: this._queueName,
-      data
+      data,
     });
   }
 }
