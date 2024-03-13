@@ -54,7 +54,7 @@ class AccountManager {
     console.log(JSON.stringify(accounts));
     await AsyncEach(accounts, async (accountItem: ICexAccount) => {
       const accountIns = new StdAccount(accountItem);
-      logger.debug(`Store Account instance`, accountItem.accountId);
+      logger.debug(`initAccountsInfo Store Account instance`, accountItem.accountId);
       await accountIns.init();
       this.accountInsList.set(accountItem.accountId, accountIns);
     });

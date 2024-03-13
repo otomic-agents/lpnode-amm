@@ -43,7 +43,6 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
   // private accountStatus = 0;
   public worker: CoinSpotHedgeWorker = new CoinSpotHedgeWorker();
   public asyncOrderMonitor: AsyncOrderMonitor = new AsyncOrderMonitor();
-
   public constructor() {
     logger.info("init CoinSpotHedge");
     super();
@@ -208,6 +207,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       );
       return true;
     }
+    logger.debug("get account", dataConfig.getHedgeConfig().hedgeAccount);
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount
     );
@@ -764,4 +764,5 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 }
 
 const coinSpotHedge: CoinSpotHedge = new CoinSpotHedge();
+
 export { coinSpotHedge, CoinSpotHedge };

@@ -10,12 +10,21 @@ class HedgeManager {
       logger.info(`No need for hedging.`);
       return;
     }
-    const enabledHedge = _.get(dataConfig.getBridgeBaseConfig(), "enabledHedge", "false");
+    const enabledHedge = _.get(
+      dataConfig.getBridgeBaseConfig(),
+      "enabledHedge",
+      "false"
+    );
     if (!enabledHedge || enabledHedge === "false") {
       logger.warn("No need for hedging.");
       return;
     }
     logger.debug(`init HedgeManager`);
+    try {
+      await coinSpotHedge.init(); // init spot hedge
+    } catch (e: any) {
+      logger.error("init coinSpotHedge error", e);
+    }
   }
 
   public getHedgeIns(hedgeType: IHedgeType): IHedgeClass {
