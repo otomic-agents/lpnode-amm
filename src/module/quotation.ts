@@ -971,7 +971,8 @@ class Quotation {
     if (max <= input) {
       console.dir(sourceObject.quote_data, ConsoleDirDepth5);
       logger.warn(
-        "The quotation has expired, and the maximum quantity is not enough to meet the input requirement."
+        "The quotation has expired, and the maximum quantity is not enough to meet the input requirement.",
+        `max:${max},input:${input}`
       );
       throw new Error(
         `The quotation has expired, and the maximum quantity is not enough to meet the input requirement`

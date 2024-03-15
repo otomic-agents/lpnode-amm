@@ -12,6 +12,7 @@ import { StdInfo } from "./std_info";
 import { PortfolioExchange } from "./cex_exchange/portfolio/portfolio";
 
 import * as _ from "lodash";
+import { AdapterExchange } from "./cex_exchange/adapter/adapter";
 class StdAccount {
   private cexExchange: IStdExchange;
   private accountInfo: ICexAccount;
@@ -67,6 +68,12 @@ class StdAccount {
       this.accountInfo.apiType === ICexAccountApiType.portfolio
     ) {
       this.cexExchange = new PortfolioExchange(
+        this.accountInfo.accountId,
+        this.accountInfo
+      );
+    }
+    if (this.accountInfo.apiType === ICexAccountApiType.exchange_adapter) {
+      this.cexExchange = new AdapterExchange(
         this.accountInfo.accountId,
         this.accountInfo
       );

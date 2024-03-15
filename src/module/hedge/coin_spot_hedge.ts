@@ -618,11 +618,11 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       return 0;
     }
     const minCount: any = SystemMath.min([srcTokenCexBalance, maxTradeCount]);
-    logger.debug(
-      `spot hedge maximum supply `,
-      { srcTokenCexBalance, maxTradeCount },
-      minCount
-    );
+    logger.debug(`spot hedge maximum supply `, {
+      srcTokenCexBalance,
+      maxTradeCount,
+      minCount,
+    });
     return minCount;
   }
 
