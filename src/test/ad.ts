@@ -12,7 +12,7 @@ const tokenAddress1 = "0xB31f66AA3C1e785363F0875A1B74e27b85Fd66c7";
 //   console.log(v2);
 //   console.log(v1 === v2);
 // } else {
-//   console.log("不支持");
+//   console.log(" not supported");
 // }
 // 1022609614459700804404024606828648442286046064602
 // 1022609614459701029408687827241879653027990562503

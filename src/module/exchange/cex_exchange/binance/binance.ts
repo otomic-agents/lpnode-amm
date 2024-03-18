@@ -51,7 +51,7 @@ class BinanceExchange implements IStdExchange {
   }
 
   // /**
-  //  * Description 这里还没有实现好
+  //  * Description it has not been implemented well here
   //  * @date 2023/2/3 - 21:43:19
   //  *
   //  * @public

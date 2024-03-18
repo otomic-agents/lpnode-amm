@@ -5,6 +5,7 @@ import { hedgeOrderIncModule } from "../../mongo_module/hedge_order_inc";
 import * as _ from "lodash";
 import { SystemMath } from "../../utils/system_math";
 import { accountManager } from "../exchange/account_manager";
+import { logger } from "../../sys_lib/logger";
 
 class CoinSpotHedgeBase {
   protected getTokenInfoByAmmContext(ammContext: AmmContext) {
@@ -42,6 +43,7 @@ class CoinSpotHedgeBase {
     srcUnitPrice: number,
     dstUnitPrice: number
   ): [number, number] {
+    logger.info("input Number:", ammContext.swapInfo.inputAmountNumber);
     const mode = _.get(ammContext, "quoteInfo.mode", undefined);
     if (mode === "11") {
       return this.optAmountValue_11(ammContext);

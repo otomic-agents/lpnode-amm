@@ -1,14 +1,14 @@
-# 基础镜像
+# base image
 FROM docker.io/library/node:16.10.0-buster
-# 文件系统
+#  file system
 ADD ./ /data/lp_main/
 
-# 端口信息
+# port information
 EXPOSE 18081
 
-# 工作目录
+# working directory
 WORKDIR /data/lp_main/
-# 安装依赖
+# install dependencies
 RUN apt-get update
 RUN yes|apt-get install libusb-1.0-0-dev
 RUN yes|apt-get install libudev-dev

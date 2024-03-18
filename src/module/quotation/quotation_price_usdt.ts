@@ -48,10 +48,7 @@ class QuotationPrice {
     };
   }
   // return coin/stableCoin orderbook
-  public getCoinStableCoinOrderBook(
-    token: string,
-    chainId: number
-  ): IOrderbookResult {
+  public getCoinOrderBook(token: string, chainId: number): IOrderbookResult {
     const { symbol: stdCoinSymbol } = dataConfig.getStdCoinSymbolInfoByToken(
       token,
       chainId
@@ -91,7 +88,11 @@ class QuotationPrice {
       return [Number(it[0]), Number(it[1])];
     });
     if (retBids.length <= 2 || retAsks.length <= 2) {
-      logger.debug(`the depth of the orderbook is not enough`, stdSymbol);
+      logger.debug(
+        `The order book depth is insufficient. must > 2  `,
+        stdSymbol,
+        { bidsLevel: retBids.length, asksLevel: retAsks.length }
+      );
       return {
         stdSymbol: null,
         bids: [[0, 0]],
@@ -161,7 +162,7 @@ class QuotationPrice {
     };
   }
 
-  public getCoinStableCoinExecuteOrderbook(
+  public getCoinExecuteOrderbook(
     token: string,
     chainId: number,
     amount: number
@@ -272,6 +273,13 @@ class QuotationPrice {
         ],
       ];
     };
+    logger.debug({
+      stdSymbol,
+      asksAmount: amount,
+      asksAmountString: amount,
+      bidsAmount: amount,
+      bidsAmountString: amount,
+    });
     return {
       stdSymbol,
       asks: level_1_asks(amount),
@@ -280,9 +288,7 @@ class QuotationPrice {
     };
   }
 
-  public getCoinStableCoinOrderBookByCoinName(
-    stdCoinSymbol: string
-  ): IOrderbookResult {
+  public getCoinOrderBookByCoinName(stdCoinSymbol: string): IOrderbookResult {
     const stdSymbol = `${stdCoinSymbol}/${this.quoteStableCoin}`;
     if (stdSymbol === "USDT/USDT") {
       return this.make11Orderbook(stdCoinSymbol);
@@ -307,7 +313,7 @@ class QuotationPrice {
     };
   }
 
-  public getCoinStableCoinOrderBookLiquidityByCoinName(
+  public getCoinOrderBookLiquidityByCoinName(
     stdCoinSymbol: string
   ): IOrderbookLiquidityResult {
     const stdSymbol = `${stdCoinSymbol}/${this.quoteStableCoin}`;
@@ -365,7 +371,7 @@ class QuotationPrice {
     }
     const {
       asks: [[tokenUsdtPrice]],
-    } = this.getCoinStableCoinOrderBookByCoinName(gasSymbol);
+    } = this.getCoinOrderBookByCoinName(gasSymbol);
     if (!_.isFinite(tokenUsdtPrice) || tokenUsdtPrice === 0) {
       logger.error(`failed to get price :${gasSymbol}`);
       throw new Error(`failed to get price :${gasSymbol}`);
@@ -378,7 +384,7 @@ class QuotationPrice {
       throw new Error(`No coins found for the target chain 【${chainId}】`);
     }
     const { asks: askLiquidity } =
-      this.getCoinStableCoinOrderBookLiquidityByCoinName(gasSymbol);
+      this.getCoinOrderBookLiquidityByCoinName(gasSymbol);
     if (!_.isFinite(askLiquidity) || askLiquidity === 0) {
       logger.error(`no liquidity information found ${gasSymbol}`);
       throw new Error(
@@ -389,7 +395,7 @@ class QuotationPrice {
   }
 
   public getSrcTokenBuyPrice(ammContext: AmmContext): number {
-    const { stdSymbol, asks } = this.getCoinStableCoinOrderBook(
+    const { stdSymbol, asks } = this.getCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );
@@ -402,7 +408,7 @@ class QuotationPrice {
     return price;
   }
   public getGasTokenBuyPrice(ammContext: AmmContext): number {
-    const { stdSymbol, asks } = this.getCoinStableCoinOrderBookByCoinName(
+    const { stdSymbol, asks } = this.getCoinOrderBookByCoinName(
       ammContext.baseInfo.dstChain.tokenName
     );
     if (stdSymbol === null) {
@@ -415,7 +421,7 @@ class QuotationPrice {
   }
 
   public getDstTokenBuyPrice(ammContext: AmmContext): number {
-    const { stdSymbol, asks } = this.getCoinStableCoinOrderBook(
+    const { stdSymbol, asks } = this.getCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
@@ -429,7 +435,7 @@ class QuotationPrice {
   }
 
   public getDstTokenSellPrice(ammContext: AmmContext): number {
-    const { stdSymbol, bids } = this.getCoinStableCoinOrderBook(
+    const { stdSymbol, bids } = this.getCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );

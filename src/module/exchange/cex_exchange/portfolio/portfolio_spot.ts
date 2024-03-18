@@ -38,6 +38,18 @@ class PortfolioSpot implements IStdExchangeSpot {
     const marketResult = await pr.post("MarketInfo", { exchange: "15" });
     this.saveMarkets(_.get(marketResult, "data", []));
   }
+  public async refreshMarkets() {
+    setInterval(() => {
+      this.loadMarkets()
+        .then(() => {
+          logger.info("loaded markets ");
+        })
+        .catch((e) => {
+          logger.error(e);
+        });
+    }, 1000 * 30);
+  }
+
   public getOrderExecModel() {
     return IOrderExecModel.ASYNC;
   }

@@ -15,9 +15,9 @@ const testQ = new Bull(`SYSTBULLQ2`, {
 testQ.add({ v: 1 }, { attempts: 2, backoff: { type: "hedge" } });
 testQ.add({ v: 2 }, { attempts: 2, backoff: { type: "hedge" } });
 testQ.add({ v: 3 }, { attempts: 2 });
-console.log(`添加队列完毕 `);
+console.log(`queue added successfully `);
 
-// console.log(`开始处理队列...¬`);
+// console.log(`start processing queue...¬`);
 testQ.process((job, done) => {
   console.log(job);
   // const optAttempts = _.get(job, "opts.attempts", 0);
@@ -38,5 +38,5 @@ async function main() {
   // });
 }
 main().then(() => {
-  console.log(`执行完毕`);
+  console.log(`execution completed`);
 });

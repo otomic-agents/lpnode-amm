@@ -23,6 +23,7 @@ import { eventProcess } from "./event_process";
 import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
 import { quotation } from "./module/quotation";
 import { httpServer } from "./httpd/server";
+import axios from "axios";
 // @ts-ignore
 // const cTable = require("console.table");
 import { chainBalance } from "./module/chain_balance";
@@ -33,10 +34,37 @@ import { orderbookSymbolManager } from "./module/orderbook/orderbook_symbol_mana
 import { portfolioRequestManager } from "./module/exchange/cex_exchange/portfolio/request/portfolio_request";
 
 class Main {
+  private async checkAdminPanel() {
+    const getAdminStatus = async () => {
+      logger.debug("get admin panel service status ...");
+      const lpAdminPanelUrl = appEnv.GetLpAdminUrl();
+      const result = await axios.request({
+        url: `${lpAdminPanelUrl}/link`,
+        method: "get",
+      });
+      if (_.get(result, "data.code", -1) === 0) {
+        return true;
+      } else {
+        return false;
+      }
+    };
+    while (true) {
+      try {
+        let ready = await getAdminStatus();
+        if (ready === true) {
+          break;
+        }
+      } catch (e) {
+        logger.error(e);
+      }
+      logger.info("admin panel service is not yet ready, continue waiting.");
+      await TimeSleepMs(5000);
+    }
+  }
   public async main() {
     await this.initMongodb();
     await this.listenEvent();
-
+    await this.checkAdminPanel();
     await dataConfig.prepareConfigResource();
 
     httpServer.start();
@@ -141,8 +169,7 @@ const mainIns: Main = new Main();
 mainIns
   .main()
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  .then(() => {
-  })
+  .then(() => {})
   .catch((e: any) => {
     logger.error(e);
     logger.error("main process error", _.get(e, "message", "message"));

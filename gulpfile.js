@@ -37,6 +37,6 @@ function buildTs() {
     .pipe(gulp.dest('dist'));
 }
 
-gulp.task('default', gulp.series(copyJs, copyJson, copyConfig, buildTs), function() {
-  console.log('task 完成');
+gulp.task('default', gulp.series(copyJs, copyJson, copyConfig, buildTs), function () {
+  console.log('task complete');
 });

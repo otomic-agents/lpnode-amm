@@ -105,6 +105,18 @@ class BinanceSpot implements IStdExchangeSpot {
     }
   }
 
+  public async refreshMarkets() {
+    setInterval(() => {
+      this.loadMarkets()
+        .then(() => {
+          logger.info("loaded markets ");
+        })
+        .catch((e) => {
+          logger.error(e);
+        });
+    }, 1000 * 30);
+  }
+
   public async spotTradeCheck(
     stdSymbol: string,
     value: number,

@@ -3,6 +3,7 @@ import {
   IOrderExecModel,
   ISide,
   ISpotBalanceItem,
+  ISpotOrderResult,
 } from "../../../../interface/std_difi";
 import BigNumber from "bignumber.js";
 import axios from "axios";
@@ -10,9 +11,11 @@ import * as _ from "lodash";
 import { logger } from "../../../../sys_lib/logger";
 import { SystemMath } from "../../../../utils/system_math";
 import { ISpotSymbolItemAdapter } from "../../../../interface/cex_adapter";
+import { formatStepSize } from "../../utils";
+import { adapterConfig } from "./adapter_config";
 class AdapterSpot implements IStdExchangeSpot {
   public exchangeName = "binance";
-  private accountId: string = "";
+  private accountId = "";
   private balance: Map<string, ISpotBalanceItem> = new Map();
   protected spotSymbolsInfoByMarketName: Map<string, ISpotSymbolItemAdapter> =
     new Map();
@@ -25,11 +28,18 @@ class AdapterSpot implements IStdExchangeSpot {
     return IOrderExecModel.SYNC;
   }
   public async loadBalance(): Promise<void> {
-    logger.debug(`Loading balance information...`);
+    const spotBalanceUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/spotBalances?accountId=${
+      this.accountId
+    }`;
+    logger.debug(
+      `Loading balance information...`,
+      `${adapterConfig.getAdapterServiceBaseUrl()}/api/spotBalances?accountId=${
+        this.accountId
+      }`
+    );
     try {
       const response = await axios.request({
-        baseURL: "http://localhost:18080/api",
-        url: "/spotBalances",
+        url: spotBalanceUrl,
         method: "get",
       });
 
@@ -45,7 +55,6 @@ class AdapterSpot implements IStdExchangeSpot {
 
       const balances: any = _.get(retData, "balances", {});
 
-      // 假设SpotBalance是一个已定义的接口类型，用于存储余额信息
       this.saveBalances(balances);
     } catch (e: any) {
       logger.error("Fetch spot balances error:", e);
@@ -61,7 +70,7 @@ class AdapterSpot implements IStdExchangeSpot {
     for (const asset in balances) {
       //   logger.info("save balance", asset);
       this.balance.set(asset, {
-        asset: asset,
+        asset,
         free: balances[asset].free.toString(),
         used: balances[asset].used.toString(),
         locked: (balances[asset].total - balances[asset].free).toString(),
@@ -69,11 +78,12 @@ class AdapterSpot implements IStdExchangeSpot {
     }
   }
   public async loadMarkets(): Promise<void> {
-    logger.debug(`init markets.....`);
+    logger.debug(`loadMarkets`);
     try {
+      const fetchMarketsUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/public/fetchMarkets`;
+      logger.info("fetch markets url:", fetchMarketsUrl);
       const response = await axios.request({
-        baseURL: "http://price-access:18080/api/public",
-        url: "/fetchMarkets",
+        url: fetchMarketsUrl,
         method: "get",
       });
       logger.info(`Adapter loadMarkets`);
@@ -90,6 +100,18 @@ class AdapterSpot implements IStdExchangeSpot {
       logger.error("fetch markets error:", e);
     }
   }
+
+  public async refreshMarkets() {
+    setInterval(() => {
+      this.loadMarkets()
+        .then(() => {
+          logger.info("loaded markets ");
+        })
+        .catch((e) => {
+          logger.error(e);
+        });
+    }, 1000 * 30);
+  }
   public fetchMarkets(): Map<string, any> {
     return this.spotSymbolsInfo;
   }
@@ -105,6 +127,7 @@ class AdapterSpot implements IStdExchangeSpot {
       logger.warn("markets is empty");
       return;
     }
+    logger.info("loaded markets count :", spotSymbolsArray.length);
     spotSymbolsArray.forEach((value) => {
       const stdSymbol = `${value.base}/${value.quote}`;
       _.set(value, "stdSymbol", stdSymbol);
@@ -130,6 +153,7 @@ class AdapterSpot implements IStdExchangeSpot {
     }
     const minNotional = _.get(symbolInfo, "limits.cost.min", 0);
     const maxNotional = _.get(symbolInfo, "limits.cost.max", 0);
+    console.log("minNotional", minNotional, "maxNotional", maxNotional);
     logger.info({
       title: "getTradeMinMax",
       info: [
@@ -206,7 +230,7 @@ class AdapterSpot implements IStdExchangeSpot {
     }
     try {
       logger.info(`filters_NOTIONAL`);
-      this.filters_NOTIONAL(item, value);
+      this.filters_NOTIONAL(item, value); // NOTIONAL
       logger.info(`filters_LOT_SIZE`);
       this.filters_LOT_SIZE(item, amount);
       return true;
@@ -216,10 +240,21 @@ class AdapterSpot implements IStdExchangeSpot {
     }
   }
   private filters_NOTIONAL(item: ISpotSymbolItemAdapter, value: number) {
-    const minNotional = Number(_.get(item, "limits.cost.min", undefined));
+    /**
+     * okx data like this:
+     *
+  limits: {
+    leverage: { min: 1, max: 10 },
+    amount: { min: 0.0001, max: null },
+    price: { min: null, max: null },
+    cost: { min: null, max: 1000000 }
+  },
+     */
+    const minNotional = Number(_.get(item, "limits.cost.min", 0));
+
     if (!minNotional) {
       logger.warn("No minnotional setting was found.");
-      throw new Error("No minnotional setting was found.");
+      // throw new Error("No minnotional setting was found.");
     }
     if (value > minNotional) {
       return;
@@ -227,7 +262,11 @@ class AdapterSpot implements IStdExchangeSpot {
     logger.warn(
       `The transaction volume does not meet the minimum order limit`,
       value,
-      minNotional
+      minNotional,
+      {
+        status: { limits: _.get(item, "limits.cost", {}) },
+        symbolInfo: item,
+      }
     );
     throw new Error(
       `The transaction volume does not meet the minimum order limit input:${value} ${minNotional}`
@@ -244,7 +283,9 @@ class AdapterSpot implements IStdExchangeSpot {
     }
 
     const min = Number(_.get(item, "limits.amount.min"));
-    const max = Number(_.get(item, "item.limits.amount.max"));
+    const max = Number(
+      _.get(item, "item.limits.amount.max", Number.MAX_SAFE_INTEGER)
+    );
     if (value >= min && value <= max) {
       return;
     }
@@ -264,6 +305,7 @@ class AdapterSpot implements IStdExchangeSpot {
   }
   /**
    * @todo impl
+   * exchange need load from config
    */
   public async createMarketOrder(
     orderId: string,
@@ -273,8 +315,227 @@ class AdapterSpot implements IStdExchangeSpot {
     side: ISide,
     targetPrice: BigNumber | undefined,
     simulation = false
-  ): Promise<boolean> {
-    return true;
+  ): Promise<ISpotOrderResult> {
+    logger.debug("summary info", {
+      side,
+      amount: amount?.toString(),
+      targetPrice: targetPrice?.toString(),
+      simulation,
+    });
+
+    logger.debug(
+      `create order symbol info is: ${stdSymbol}`
+      // this.spotSymbolsInfo.get(stdSymbol)
+    );
+    const symbol = this.getSymbolByStdSymbol(stdSymbol);
+    if (!symbol) {
+      logger.error(
+        `Can't create order,the Symbol information of the transaction cannot be found......FindOption
+        spotSymbolsInfo Size: ${this.spotSymbolsInfo.size}
+        ${stdSymbol}`
+      );
+      throw new Error(
+        `Can't create order,the Symbol information of the transaction cannot be found:${stdSymbol}`
+      );
+    }
+    const tradeInfo = this.spotSymbolsInfo.get(stdSymbol);
+    if (!tradeInfo) {
+      logger.error(
+        `Unable to find transaction information......FindOption`,
+        stdSymbol
+      );
+      throw new Error(`Unable to find transaction information:${stdSymbol}`);
+    }
+    logger.debug(
+      `Ready to create an order........stdSymbol:${stdSymbol},symbol:${symbol}`
+    );
+    const orderData = {
+      accountId: this.accountId,
+      exchange: "binance",
+      clientOrderId: orderId,
+      market: stdSymbol,
+      side,
+      post_only: false,
+      timestamp: new Date().getTime(),
+    };
+    logger.info("setAmountOrQty", stdSymbol, amount?.toString(), quoteOrderQty);
+    this.setAmountOrQty(
+      stdSymbol,
+      amount,
+      quoteOrderQty,
+      orderData,
+      tradeInfo.limits
+    );
+
+    let lostAmount = "";
+    const origAmount = amount?.toString();
+    logger.debug(`User ${this.accountId} create order:`);
+    console.dir(orderData, { depth: 5 });
+    lostAmount = _.get(orderData, "lostAmount", "");
+    // delete orderData["lostAmount"];
+    let result, orderUrl;
+    orderUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/order/createMarketOrder?accountId=${
+      this.accountId
+    }`;
+    if (simulation === true) {
+      orderUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/order/simulationCreateMarketOrder?accountId=${
+        this.accountId
+      }`;
+    }
+    try {
+      result = await axios.request({
+        url: orderUrl,
+        method: "POST",
+        headers: {
+          accountId: this.accountId,
+        },
+        data: orderData,
+      });
+      logger.info(
+        "exchange adapter service response:",
+        JSON.stringify(_.get(result, "data"))
+      );
+      // console.log("||||||||||||");
+      _.set(result, "data.result.stdSymbol", stdSymbol);
+      _.set(result, "data.result.inputInfo", {
+        amount: _.get(orderData, "quantity", ""),
+        lostAmount,
+        origAmount,
+      });
+
+      logger.debug("order complete", "result:");
+      console.log("_______________________________:exec result:");
+      const execResult = this.formatMarketResponse(
+        _.get(result, "data.result", {})
+      );
+      console.dir(execResult, {
+        depth: 5,
+      });
+      console.log("_______________________________");
+      return execResult;
+    } catch (e) {
+      const errMsg = _.get(e, "response.data.msg", undefined);
+      logger.error(`create Binance order err:`, errMsg);
+      if (errMsg) {
+        throw new Error(errMsg);
+      }
+      throw e;
+    }
+  }
+  private formatMarketResponse(retData: any): ISpotOrderResult {
+    // console.dir(retData, { depth: 5 });
+    const result: ISpotOrderResult = {
+      side: (() => {
+        return _.get(retData, "side", "");
+      })(),
+      orderId: retData.id,
+      lostAmount: _.get(retData, "inputInfo.lostAmount", ""),
+      origAmount: _.get(retData, "inputInfo.origAmount", ""),
+      type: _.get(retData, "type", ""),
+      timeInForce: _.get(retData, "timeInForce", ""),
+      fee: this.getOrderFee(retData),
+      info: JSON.stringify(retData),
+      symbol: retData.symbol,
+      stdSymbol: _.get(retData, "stdSymbol", ""),
+      amount: _.get(retData, "amount", 0),
+      price: _.get(retData, "price", 0).toString(),
+      filled: _.get(retData, "filled"),
+      remaining: _.get(retData, "remaining", 0),
+      clientOrderId: retData.clientOrderId,
+      timestamp: _.get(retData, "timestamp", 0),
+      lastTradeTimestamp: _.get(retData, "lastTradeTimestamp", 0),
+      average: _.get(retData, "average", 0).toString(),
+      averagePrice: _.get(retData, "average", 0).toString(),
+      status: _.get(retData, "status"),
+    };
+    return result;
+  }
+  /**
+   * @todo impl
+   * @param retData
+   * @returns
+   */
+  private getOrderFee(retData: any): { [key: string]: string } {
+    const fee = {};
+    const fees: { fee: { cost: number; currency: string } }[] = _.get(
+      retData,
+      "trades",
+      []
+    );
+    // console.log("fees list is :", fees);
+    fees.map((it) => {
+      const curCommission: any | undefined = _.get(
+        fee,
+        it.fee.currency,
+        undefined
+      );
+      if (!curCommission) {
+        _.set(fee, it.fee.currency, new BigNumber(it.fee.cost).toString());
+        return null;
+      }
+      const BnNumber = new BigNumber(curCommission);
+      const feeVal = BnNumber.plus(new BigNumber(it.fee.cost));
+      _.set(fee, it.fee.currency, feeVal.toString());
+      return null;
+    });
+    return fee;
+  }
+
+  private setAmountOrQty(
+    stdSymbol: string,
+    amount: BigNumber | undefined,
+    qty: BigNumber | undefined,
+    struct: any,
+    limits: any
+  ) {
+    if (amount !== undefined) {
+      if (_.isNumber(limits.amount.min)) {
+        const stepSize = limits.amount.min;
+        const [tradeAmount, lostAmount] = formatStepSize(
+          amount.toString(),
+          stepSize
+        );
+        _.set(
+          struct,
+          "quantity",
+          Number(
+            this.formatBigNumberPrecision(stdSymbol, new BigNumber(tradeAmount))
+          )
+        );
+        _.set(struct, "lostAmount", new BigNumber(lostAmount).toString());
+      } else {
+        throw new Error("limit.amount min value error");
+      }
+    }
+
+    if (qty !== undefined) {
+      throw new Error("Not yet implemented");
+    }
+  }
+  private formatBigNumberPrecision(stdSymbol: string, value: any): string {
+    const symbolInfo = this.getSymbolInfoByStdSymbol(stdSymbol);
+    if (!symbolInfo) {
+      throw new Error("symbolInfo not found");
+    }
+    const assetPrecision = symbolInfo.precision.quote;
+    if (!assetPrecision || !_.isFinite(assetPrecision)) {
+      throw new Error(`quoteAssetPrecision not found`);
+    }
+
+    const val = value.toFixed(parseInt(assetPrecision.toString())).toString();
+    logger.warn(
+      "amount cex precision converted",
+      value.toString(),
+      val.toString()
+    );
+    return val;
+  }
+  private getSymbolByStdSymbol(stdSymbol: string) {
+    const info = this.spotSymbolsInfo.get(stdSymbol);
+    if (!info) {
+      return null;
+    }
+    return info.lowercaseId;
   }
   public getBalance(): Map<string, ISpotBalanceItem> {
     const ret: Map<string, ISpotBalanceItem> = new Map();

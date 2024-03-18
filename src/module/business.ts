@@ -22,6 +22,7 @@ import { ammContextModule } from "../mongo_module/amm_context";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
+    logger.info("ask quote message:", msg);
     if (!channel) {
       logger.error(`channel cannot be empty.`);
       return;

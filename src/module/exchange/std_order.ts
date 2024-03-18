@@ -88,7 +88,7 @@ class StdOrder extends StdOrderBase {
     amount: number
   ): Promise<boolean> {
     if (!_.isFinite(value)) {
-      logger.error(`输入的量有问题.`, value);
+      logger.error(`the input amount is not a valid number.`, value);
       return false;
     }
     return this.stdExchange.exchangeSpot.spotTradeCheck(

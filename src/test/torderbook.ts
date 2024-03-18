@@ -27,7 +27,7 @@ const level_1_asks = ((inputAmount: number) => {
     //
   });
   if (left_amount > 0) {
-    throw "orderbook 无法满足报价";
+    throw "orderbook cannot meet the quote";
   }
   let cost = 0;
   execResult.map((it) => {

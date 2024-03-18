@@ -403,9 +403,7 @@ class Quotation {
         .getHedgeIns()
         .getHedgeFeeSymbol();
       const { stdSymbol, asks } =
-        this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
-          hedgeFeeSymbol
-        );
+        this.quotationPrice.getCoinOrderBookByCoinName(hedgeFeeSymbol);
       if (stdSymbol && _.isArray(asks)) {
         const [[price]] = asks;
         Object.assign(sourceObject.quote_data, {
@@ -418,7 +416,7 @@ class Quotation {
 
   private price_native_token(ammContext: AmmContext, sourceObject: any) {
     const { asks: nativeTokenAsks } =
-      this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
+      this.quotationPrice.getCoinOrderBookByCoinName(
         ammContext.baseInfo.dstChain.tokenName
       );
     const [[usdPrice]] = nativeTokenAsks;
@@ -457,7 +455,7 @@ class Quotation {
 
   private price_src_token(ammContext: AmmContext, sourceObject: any) {
     const { bids: srcTokenBids } =
-      this.quotationPrice.getCoinStableCoinOrderBookByCoinName(
+      this.quotationPrice.getCoinOrderBookByCoinName(
         ammContext.baseInfo.srcToken.symbol
       );
     const [[price]] = srcTokenBids;
@@ -482,11 +480,10 @@ class Quotation {
    * @param {*} sourceObject
    */
   private price_dst_token(ammContext: AmmContext, sourceObject: any) {
-    const { asks: dstTokenAsks } =
-      this.quotationPrice.getCoinStableCoinOrderBook(
-        ammContext.baseInfo.dstToken.address,
-        ammContext.baseInfo.dstToken.chainId
-      );
+    const { asks: dstTokenAsks } = this.quotationPrice.getCoinOrderBook(
+      ammContext.baseInfo.dstToken.address,
+      ammContext.baseInfo.dstToken.chainId
+    );
 
     const [[dstUsdPrice]] = dstTokenAsks;
     if (dstUsdPrice === 0) {
@@ -550,11 +547,11 @@ class Quotation {
     sourceObject: any = undefined
   ): [string, string, string] {
     // ETH/AVAX
-    const srcTokenPrice = this.quotationPrice.getCoinStableCoinOrderBook(
+    const srcTokenPrice = this.quotationPrice.getCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );
-    const dstTokenPrice = this.quotationPrice.getCoinStableCoinOrderBook(
+    const dstTokenPrice = this.quotationPrice.getCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
@@ -594,9 +591,9 @@ class Quotation {
     ammContext: AmmContext,
     sourceObject: any = undefined
   ): [string, string, string] {
-    let quoteOrderbookType = "getCoinStableCoinOrderBook";
+    let quoteOrderbookType = "getCoinOrderBook";
     if (ammContext.hedgeEnabled) {
-      quoteOrderbookType = "getCoinStableCoinExecuteOrderbook";
+      quoteOrderbookType = "getCoinExecuteOrderbook";
     }
     const { stdSymbol, bids, asks, timestamp } = this.quotationPrice[
       quoteOrderbookType
@@ -635,11 +632,11 @@ class Quotation {
     sourceObject: any = undefined
   ): [string, string, string] {
     // USDT/BUSD
-    const srcTokenPrice = this.quotationPrice.getCoinStableCoinOrderBook(
+    const srcTokenPrice = this.quotationPrice.getCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );
-    const dstTokenPrice = this.quotationPrice.getCoinStableCoinOrderBook(
+    const dstTokenPrice = this.quotationPrice.getCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
@@ -694,7 +691,7 @@ class Quotation {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
     const { stdSymbol, bids, asks, timestamp } =
-      this.quotationPrice.getCoinStableCoinOrderBook(
+      this.quotationPrice.getCoinOrderBook(
         ammContext.baseInfo.dstToken.address,
         ammContext.baseInfo.dstToken.chainId
       );
@@ -820,14 +817,29 @@ class Quotation {
     let hedgeCapacity = -1;
     let orderbookLiquidity = -1;
     if (ammContext.hedgeEnabled) {
-      orderbookLiquidity = await this.calculateLiquidity(ammContext);
+      if (
+        ammContext.quoteInfo.mode == "ss" ||
+        ammContext.quoteInfo.mode == "11"
+      ) {
+        // Unconstrained by liquidity limits
+        orderbookLiquidity = -1;
+      } else {
+        orderbookLiquidity = await this.calculateLiquidity(ammContext);
+      }
     }
 
     const dstBalanceMaxSwap = await this.dstBalanceMaxSwap(ammContext);
     if (ammContext.hedgeEnabled) {
-      hedgeCapacity = await ammContext.bridgeItem.hedge_info
-        .getHedgeIns()
-        .calculateCapacity(ammContext);
+      if (
+        ammContext.quoteInfo.mode == "ss" ||
+        ammContext.quoteInfo.mode == "11"
+      ) {
+        hedgeCapacity = -1;
+      } else {
+        hedgeCapacity = await ammContext.bridgeItem.hedge_info
+          .getHedgeIns()
+          .calculateCapacity(ammContext);
+      }
     }
 
     const capacity = SystemMath.min([
@@ -880,7 +892,7 @@ class Quotation {
       throw new Error(`unknown exchange mode`);
     }
     const { bids } =
-      quotationPrice.getCoinStableCoinOrderBookLiquidityByCoinName(leftSymbol);
+      quotationPrice.getCoinOrderBookLiquidityByCoinName(leftSymbol);
     let bidPrice = bids;
     if (ammContext.quoteInfo.mode === "sb") {
       bidPrice = SystemMath.execNumber(
@@ -928,13 +940,13 @@ class Quotation {
     );
     const {
       asks: [[dstTokenPrice]],
-    } = quotationPrice.getCoinStableCoinOrderBook(
+    } = quotationPrice.getCoinOrderBook(
       ammContext.baseInfo.dstToken.address,
       ammContext.baseInfo.dstToken.chainId
     );
     const {
       asks: [[srcTokenPrice]],
-    } = quotationPrice.getCoinStableCoinOrderBook(
+    } = quotationPrice.getCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
       ammContext.baseInfo.srcToken.chainId
     );

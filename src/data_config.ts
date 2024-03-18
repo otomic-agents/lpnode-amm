@@ -1,6 +1,6 @@
 /* eslint-disable arrow-parens */
 import { chainAdapter } from "./chain_adapter/chain_adapter";
-
+import * as fs from "fs";
 const bs58 = require("bs58");
 import * as _ from "lodash";
 import {
@@ -21,6 +21,7 @@ import { installModule } from "./mongo_module/install";
 import { statusReport } from "./status_report";
 import { extend_bridge_item } from "./data_config_bridge_extend";
 import { ICexAccountApiType } from "./interface/std_difi";
+import path from "path";
 
 const Web3 = require("web3");
 const web3 = new Web3();
@@ -86,7 +87,7 @@ class DataConfig {
    * @returns {*} "void"
    */
   public async prepareConfigResource() {
-    let configId: string | null;
+    let configId: string | null | undefined = undefined;
     let clientId: string;
     let configIdKey = "";
     try {
@@ -99,31 +100,42 @@ class DataConfig {
       configIdKey = `config_id_${appName}`;
       configId = await dataRedis.get(configIdKey);
       if (configId == null) {
-        throw new Error("Unable to get config from redis");
+        throw new Error("unable to get config from redis");
       }
+      await this.getConfigResource(configId);
     } catch (e) {
       const err: any = e;
       logger.warn("ConfigId not found", err.toString());
-      [configId, clientId] = await this.createConfigResource();
-      if (!clientId) {
-        logger.error("unable to create resources remotely");
-        process.exit(0);
-      }
-      await dataRedis.set(configIdKey, clientId).then(() => {
-        console.log("save clientId to database", clientId);
-      });
-      await (() => {
-        return new Promise(() => {
-          statusReport
-            .pendingStatus("Wait for the configuration to complete")
-            .catch((e) => {
-              logger.error(`Failed to write status`, e);
-            });
-          logger.warn("Wait for the configuration to complete..");
+      const errMessage = err.toString();
+      if (
+        errMessage.includes("configId is not exist") ||
+        errMessage.includes("unable to get config from redis")
+      ) {
+        logger.error("configId is not exist,||||||||||");
+        const [createConfigId, createClientId] =
+          await this.createConfigResource();
+        configId = createConfigId;
+        clientId = createClientId;
+        if (!clientId) {
+          logger.error("unable to create resources remotely");
+          process.exit(0);
+        }
+        await dataRedis.set(configIdKey, clientId).then(() => {
+          console.log("save clientId to database", clientId);
         });
-      })();
+        await (() => {
+          return new Promise(() => {
+            statusReport
+              .pendingStatus("Wait for the configuration to complete")
+              .catch((e) => {
+                logger.error(`Failed to write status`, e);
+              });
+            logger.warn("Wait for the configuration to complete..");
+          });
+        })();
+      }
     }
-    if (configId == null) {
+    if (!configId) {
       logger.error("The correct configId was not read");
       process.exit(1);
     }
@@ -157,6 +169,7 @@ class DataConfig {
       const rewriteHost = `obridge-amm-market-${marketServiceRow.name}-service`;
       logger.warn("rewrite market host ", rewriteHost);
       _.set(process, "_sys_config.lp_market_host", rewriteHost);
+      // Port is default available, no rewrite needed.
     }
     await TimeSleepMs(5000);
   }
@@ -248,6 +261,7 @@ class DataConfig {
     const lpAdminPanelUrl = appEnv.GetLpAdminUrl();
     const url = `${lpAdminPanelUrl}/lpnode/lpnode_admin_panel/configResource/get`;
     logger.info(`get configResource request :${url}`);
+
     try {
       result = await axios.request({
         url,
@@ -256,19 +270,44 @@ class DataConfig {
           clientId: configId,
         },
       });
-      const configData = JSON.parse(
-        _.get(result, "data.result.templateResult", {})
-      );
+      let template = _.get(result, "data.result.templateResult", "{}");
+      if (template === "") {
+        template = "{}";
+      }
+      console.log(template);
+      const configData = JSON.parse(template);
       return configData;
-    } catch (e) {
+    } catch (e: any) {
       const err: any = e;
-      logger.error(`get config error:`, err.toString());
-      // await TimeSleepMs(3000);
+      console.log("______________");
+      console.log(e.toString());
+      const serverErrorMessage = _.get(e, "response.data.message", "");
+      if (serverErrorMessage.includes("configId is not exist")) {
+        throw new Error("configId is not exist");
+      } else {
+        logger.error(`get config error:`, err.toString());
+        throw e;
+      }
     }
   }
 
   private async createConfigResource() {
     let result: any;
+    const ammConfigPath = path.join(
+      __dirname,
+      "../../data_config",
+      "amm_config.json"
+    );
+    console.log(ammConfigPath);
+    let template =
+      '{"chainDataConfig":[{"chainId":9006,"config":{"maxSwapNativeTokenValue":"50000","minSwapNativeTokenValue":"0.5"}}],"bridgeBaseConfig":{"defaultFee":"0.003","enabledHedge":false},"bridgeConfig":[],"orderBookType":"market","hedgeConfig":{"hedgeAccount":"001","hedgeType":"CoinSpotHedge","accountList":[{"enablePrivateStream":false,"apiType":"exchange_adapter","accountId":"001","exchangeName":"binance","spotAccount":{"apiKey":"","apiSecret":""},"usdtFutureAccount":{"apiKey":"","apiSecret":""},"coinFutureAccount":{"apiKey":"","apiSecret":""}}]}}';
+    try {
+      template = fs.readFileSync(ammConfigPath, { encoding: "utf-8" });
+      logger.info("amm config load from config map", template);
+    } catch (e) {
+      logger.error(e);
+      logger.warn("amm_config not found");
+    }
     const lpAdminPanelUrl = appEnv.GetLpAdminUrl();
     try {
       result = await axios.request({
@@ -280,8 +319,7 @@ class DataConfig {
           clientId: Buffer.from(new Date().getTime().toString()).toString(
             "base64"
           ),
-          template:
-            '{"chainDataConfig":[{"chainId":9006,"config":{"minSwapNativeTokenValue":"0.5"}},{"chainId":9000,"config":{"minSwapNativeTokenValue":"0.5"}}],"hedgeConfig":{"hedgeAccount":"a001","hedgeType":"CoinSpotHedge","accountList":[{"accountId":"a001","exchangeName":"binance","spotAccount":{"apiKey":"","apiSecret":""},"usdtFutureAccount":{"apiKey":"","apiSecret":""},"coinFutureAccount":{"apiKey":"","apiSecret":""}}]}}',
+          template,
         },
       });
       logger.debug("create configuration return:", _.get(result, "data", ""));
@@ -508,6 +546,7 @@ class DataConfig {
       dstToken: string;
       msmqName: string;
       walletName: string;
+      srcClientUri: string;
       dstClientUri: string;
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
@@ -518,7 +557,7 @@ class DataConfig {
         "findOption",
         findOption
       );
-      await TimeSleepMs(1000 * 10);
+      await TimeSleepMs(1000 * 20);
       process.exit(1);
     }
     for (const item of lpConfigList) {

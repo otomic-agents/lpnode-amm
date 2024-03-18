@@ -15,6 +15,7 @@ import BigNumber from "bignumber.js";
 interface IStdExchangeSpot {
   exchangeName: string;
   loadMarkets(): Promise<void>;
+  refreshMarkets(): Promise<void>;
   fetchMarkets(): Map<string, ISpotSymbolItem>;
   loadBalance(): Promise<any>;
   withdrawApply?(): Promise<any>;

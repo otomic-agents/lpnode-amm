@@ -4,11 +4,11 @@ const envFile = fs.existsSync(path.join(__dirname, "../", "env.js"));
 if (envFile) {
   require("../env.js");
 } else {
-  console.log("env File 不存在");
+  console.log("env file does not exist");
 }
 // import BigNumber from "bignumber.js";
-import { appEnv } from "../app_env"; // 这个要在最前边
-appEnv.initConfig(); // 初始化基本配置
+import { appEnv } from "../app_env";
+appEnv.initConfig();
 import { dataConfig } from "../data_config";
 import { logger } from "../sys_lib/logger";
 import * as _ from "lodash";
@@ -16,7 +16,7 @@ import { orderbook } from "../module/orderbook/orderbook";
 import { orderbookSymbolManager } from "../module/orderbook/orderbook_symbol_manager";
 
 async function main() {
-  await dataConfig.prepareConfigResource(); // 提前创建配置
+  await dataConfig.prepareConfigResource();
   orderbookSymbolManager.init();
   await orderbook.init();
   orderbook.setSymbolsManager(orderbookSymbolManager);

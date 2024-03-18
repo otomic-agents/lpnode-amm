@@ -32,7 +32,7 @@ class CexOrderbook implements IOrderbook {
         "diff:",
         timeNow - orderbookItem.timestamp
       );
-      if (timeNow - orderbookItem.timestamp > 1000 * 30) {
+      if (timeNow - orderbookItem.timestamp > 1000 * 300) {
         logger.warn(
           `order book expired.`,
           (timeNow - orderbookItem.timestamp) / 1000,
@@ -80,6 +80,7 @@ class CexOrderbook implements IOrderbook {
   private async syncSpotOrderbook(): Promise<void> {
     try {
       await this.requestSpotOrderbook(); // Update and set up Spotorderbook
+      // logger.info("orderbook load sucess");
       this.spotOrderbookOnceLoaded = true;
     } catch (e) {
       logger.error(`synchronizing orderbook error:`, e);
@@ -124,12 +125,16 @@ class CexOrderbook implements IOrderbook {
       ) {
         throw "Unable to obtain orderbook service address";
       }
-      let url: string = `http://${orderbookServiceHost}:${orderbookServicePort}/api/spotOrderbook`;
+      let url = `http://${orderbookServiceHost}:${orderbookServicePort}/api/spotOrderbook`;
       if (_.get(process.env, "LP_MARKET_SERVICE_URL", undefined)) {
         url = _.get(process.env, "LP_MARKET_SERVICE_URL", "");
       }
       logger.info(`request orderbook Url:`, url);
-      const result = await axios.get(url);
+      const result = await axios.request({
+        url,
+        method: "get",
+        timeout: 1000 * 10,
+      });
       const code = _.get(result, "data.code", { code: 1 });
       const data: IMarketOrderbookRet = _.get(result, "data.data", {});
       if (code !== 0) {

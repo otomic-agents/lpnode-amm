@@ -4,7 +4,7 @@ const envFile = fs.existsSync(path.join(__dirname, "../", "env.js"));
 if (envFile) {
   require("../env.js");
 } else {
-  console.log("env File 不存在");
+  console.log("env file does not exist");
 }
 import { RedisStore } from "../redis_store";
 import { logger } from "../sys_lib/logger";

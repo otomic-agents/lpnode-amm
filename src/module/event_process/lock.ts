@@ -475,7 +475,7 @@ class EventProcessLock extends BaseEventProcess {
     systemOrder.balanceLockedId = _.get(
       msg,
       "pre_business.swap_asset_information.balance_lock_id",
-      0
+      "0"
     );
     systemOrder.hash = quoteHash;
     systemOrder.baseInfo = {

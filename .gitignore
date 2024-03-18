@@ -13,3 +13,4 @@ src/dev.mongodb
 map/**/*
 panel.mongodb.js
 src/env.js
+env.sh

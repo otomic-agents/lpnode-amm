@@ -44,7 +44,7 @@ class StdAccount {
       _.get(this.accountInfo, "apiType", ICexAccountApiType.exchange) ===
         ICexAccountApiType.exchange
     ) {
-      // 直接对接币安
+      // directly connect to binance
       this.cexExchange = new BinanceExchange({
         spotAccount: {
           apiKey: _.get(this.accountInfo, "spotAccount.apiKey", ""),
@@ -82,6 +82,7 @@ class StdAccount {
       await this.cexExchange.exchangeSpot.loadMarkets(); // Initialize trading pairs in the spot market
       await this.cexExchange.exchangeUsdtFuture.loadMarkets(); //  initializes trading pairs
       await this.cexExchange.exchangeCoinFuture.loadMarkets(); // initializes trading pairs
+      this.cexExchange.exchangeSpot.refreshMarkets();
       await this.initBalance(this.cexExchange);
       await this.initOrder(this.cexExchange);
       await this.initInfo(this.cexExchange); // init markets

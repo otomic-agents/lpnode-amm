@@ -22,7 +22,6 @@ import {
   IOrderExecModel,
   ISpotOrderResult,
 } from "../../interface/std_difi";
-import { hedgeJobModule } from "../../mongo_module/hedge_job";
 import { AsyncOrderMonitor } from "./async_order_monitor";
 import { SysMongoQueue } from "../../sys_lib/mongo_queue";
 
@@ -54,29 +53,12 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
     // Start processing the hedge queue
     hedgeQueue.process(async (job, done) => {
-      const optAttempts = _.get(job, "opts.attempts", 0);
-      const attemptCount = _.get(job, "attemptsMade", 0);
       try {
         await this.worker.worker(job.data);
         done();
       } catch (e) {
         const err: any = e;
         done(new Error(err.toString()));
-        if (optAttempts >= 0 && attemptCount === optAttempts - 1) {
-          logger.error(`last attempt failed`, e);
-          try {
-            await hedgeJobModule.create({
-              jobRaw: {
-                id: _.get(job, "id", ""),
-                opts: _.get(job, "opts"),
-                data: _.get(job, "data"),
-                attemptsMade: _.get(job, "attemptsMade"),
-              },
-            });
-          } catch (writeErr) {
-            logger.error(writeErr);
-          }
-        }
         logger.error(`An error occurred while processing the queue`, e);
       }
     });
@@ -449,7 +431,9 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     );
     if (cexBalanceBn.minus(cexBalanceLockedBn).lt(srcTokenCountBn)) {
       logger.info(
-        `计算公式${cexBalanceBn.toFixed(8).toString()}-${cexBalanceLockedBn
+        `calculation formula: ${cexBalanceBn
+          .toFixed(8)
+          .toString()}-${cexBalanceLockedBn
           .toFixed(8)
           .toString()}>${srcTokenCountBn.toString()}`
       );

@@ -4,7 +4,7 @@ import { logger } from "./logger";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const Redis = require('ioredis');
 import Redis from "ioredis";
-
+let systemRedisConnCount = 0;
 class SysIoRedis {
   public static getRedis(
     host: string,
@@ -12,6 +12,7 @@ class SysIoRedis {
     port = 6379,
     db = 0
   ): IORedis.Redis {
+    systemRedisConnCount++;
     const redisClient = new Redis({
       host,
       port,
@@ -25,11 +26,19 @@ class SysIoRedis {
         return delay;
       },
     });
-
+    redisClient["keepRunner"] = setInterval(() => {
+      redisClient.ping();
+    }, 1000 * 5);
+    redisClient.on("close", () => {
+      logger.warn(`redis conn close,Host:${host},port:${port}`);
+    });
     redisClient.on("error", (err: any) => {
-      logger.error("connect redis error", host, pass, err);
+      logger.error("connect redis error", host, err);
     });
     return redisClient;
   }
 }
+setInterval(() => {
+  logger.info(`system redis conn count:${systemRedisConnCount}`);
+}, 1000 * 10);
 export { SysIoRedis };

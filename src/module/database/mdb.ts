@@ -73,6 +73,10 @@ class Mdb {
     });
     return conn;
   }
+  public getMongoDbUrl(key: string): string {
+    const url = _.get(process, `_sys_config.mdb.${key}.url`, "");
+    return url;
+  }
 }
 
 export { Mdb };

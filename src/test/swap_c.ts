@@ -84,9 +84,9 @@ const dst_native_amount = EthUnit.fromWei(
 );
 logger.debug(leftInputAmount, srcFee, dstAmount);
 const bnbPrice = 0.00314268;
-logger.debug("目标币价值 N 个 srcToken", (1 / orgPrice) * dstAmount);
+logger.debug("target token value N  srcToken", (1 / orgPrice) * dstAmount);
 logger.debug(
-  "目标原生币价值 N 个 srcToken",
+  "target native token value N srcToken",
   (1 / bnbPrice) * dst_native_amount
 );
 
@@ -98,8 +98,11 @@ logger.debug(evaluate(luma));
 const bnbluma = `${bnbPrice}*${leftInputAmount}`;
 logger.debug(bnbluma);
 const maxBnb = evaluate(bnbluma);
-logger.debug("全额兑换BNB可换:", maxBnb);
-logger.debug("按照比例可以兑换", maxBnb * 0.004999996817269037 * (1 - 0.0));
+logger.debug("full amount can be exchanged for bnb:", maxBnb);
+logger.debug(
+  "can be exchanged proportionally",
+  maxBnb * 0.004999996817269037 * (1 - 0.0)
+);
 
 // x * bnbPrice = 0.01571339
 logger.debug(0.01571339 / bnbPrice + 991.02000317);

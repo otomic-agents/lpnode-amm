@@ -5,7 +5,7 @@ import json
 import asyncio
 import redis
 from anyio import create_task_group, run
-# 连接到Redis服务器
+
 r = redis.Redis(host='localhost', port=6379, db=0)
 channel_name = '0x57e73db0eebd89f722e064d4c209f86eba9daeec/0xacda8bf66c2cadac9e99aa1aa75743f536e71094_9006_9006'
 logging.basicConfig(level=logging.INFO,
@@ -68,7 +68,6 @@ async def listen_message():
     pubsub = r.pubsub()
     pubsub.subscribe(channel_name)
 
-    # 无限循环，持续监听消息
     while True:
         message = pubsub.get_message(ignore_subscribe_messages=True)
         if message:
@@ -91,7 +90,7 @@ async def listen_message():
 
 async def test_runner():
 
-    # 调用 test_method1
+    # call test_method1
     print("Result of test_method1:")
     print(tester.test_method1())
 
@@ -102,7 +101,7 @@ async def task_group():
         await asyncio.sleep(5)
         tg.start_soon(test_runner)
 
-# 使用示例
+# usage example
 if __name__ == "__main__":
 
     run(task_group)
