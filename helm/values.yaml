@@ -1,10 +1,10 @@
 
 domain:
-  name: 'obridge-api-lpnode.edge-dev.xyz'
+  name: 'api-lpnode.edge-dev.xyz'
 
 lpconfig:
   market_env: 'production'
-  
+
 
 nameOverride: ""
 fullnameOverride: ""

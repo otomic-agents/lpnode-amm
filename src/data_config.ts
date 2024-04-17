@@ -18,8 +18,7 @@ import { TimeSleepForever, TimeSleepMs } from "./utils/utils";
 import { bridgesModule } from "./mongo_module/bridge";
 import { dataRedis } from "./redis_bus";
 import { installModule } from "./mongo_module/install";
-import { statusReport } from "./status_report";
-import { extend_bridge_item } from "./data_config_bridge_extend";
+
 import { ICexAccountApiType } from "./interface/std_difi";
 import path from "path";
 
@@ -61,7 +60,14 @@ class DataConfig {
   } = {
     quotationInterval: 1000 * 10,
   };
-
+  private extendFun: any = null;
+  private statusReport: any = null;
+  public setExtend(extendFun: any) {
+    this.extendFun = extendFun;
+  }
+  public setReport(report: any) {
+    this.statusReport = report;
+  }
   public getBaseConfig() {
     return this.baseConfig;
   }
@@ -87,7 +93,7 @@ class DataConfig {
    * @returns {*} "void"
    */
   public async prepareConfigResource() {
-    let configId: string | null | undefined = undefined;
+    let configId: string | null | undefined;
     let clientId: string;
     let configIdKey = "";
     try {
@@ -125,7 +131,7 @@ class DataConfig {
         });
         await (() => {
           return new Promise(() => {
-            statusReport
+            this.statusReport
               .pendingStatus("Wait for the configuration to complete")
               .catch((e) => {
                 logger.error(`Failed to write status`, e);
@@ -159,14 +165,14 @@ class DataConfig {
       logger.error(
         `The correct market address cannot be found, and the default value cannot be overridden`
       );
-      await statusReport.pendingStatus(
+      await this.statusReport.pendingStatus(
         "The correct market address cannot be found, and the default value cannot be overridden"
       );
       await TimeSleepForever(
         "The correct market address cannot be found, and the default value cannot be overridden"
       );
     } else {
-      const rewriteHost = `obridge-amm-market-${marketServiceRow.name}-service`;
+      const rewriteHost = `amm-market-${marketServiceRow.name}-service`;
       logger.warn("rewrite market host ", rewriteHost);
       _.set(process, "_sys_config.lp_market_host", rewriteHost);
       // Port is default available, no rewrite needed.
@@ -579,7 +585,7 @@ class DataConfig {
       };
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const context = this;
-      const proxyedFormatedItem: IBridgeTokenConfigItem = extend_bridge_item(
+      const proxyedFormatedItem: IBridgeTokenConfigItem = this.extendFun(
         formatedItem,
         context
       );

@@ -87,7 +87,7 @@ interface IEVENT_TRANSFER_OUT {
             price: string; // "1.11";
             native_token_price: string; // "0";
             capacity: string; // "0xa968163f0a57b000000";
-            lp_node_uri: string; // "https://obridge-api-lpnode-2.edge-dev.xyz/lpnode";
+            lp_node_uri: string; // "https://api-lpnode-2.edge-dev.xyz/lpnode";
           };
           quote_name: string; // "9006_9000_0x7E477f81Fb9E7184190Ca53C8B9069532408Cc9B_0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_9hQHZaZXcBJN3LJ";
           timestamp: number; // 1673409713110;
@@ -162,7 +162,7 @@ interface IEVENT_TRANSFER_OUT_CONFIRM {
             native_token_max: string; // "1";
             native_token_min: string; // "0";
             capacity: string; // "0xa968163f0a57b000000";
-            lp_node_uri: string; // "https://obridge-api-lpnode-1.edge-dev.xyz/lpnode";
+            lp_node_uri: string; // "https://api-lpnode-1.edge-dev.xyz/lpnode";
           };
           quote_name: string; // "9006_9000_0x61D35C6B6a7568542acA42448B47690650C69bb9_0x5b93c8BB3b5E29214FA16cbF062a4FF3cF4fbF23_mOtYFrcPyMwjeki";
           timestamp: number; // 1674013097443;

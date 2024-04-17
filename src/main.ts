@@ -30,6 +30,9 @@ import { chainBalance } from "./module/chain_balance";
 import { hedgeManager } from "./module/hedge_manager";
 import { systemRedisBus } from "./system_redis_bus";
 import { statusReport } from "./status_report";
+import { extend_bridge_item } from "./data_config_bridge_extend";
+dataConfig.setExtend(extend_bridge_item);
+dataConfig.setReport(statusReport);
 import { orderbookSymbolManager } from "./module/orderbook/orderbook_symbol_manager";
 import { portfolioRequestManager } from "./module/exchange/cex_exchange/portfolio/request/portfolio_request";
 
@@ -44,13 +47,12 @@ class Main {
       });
       if (_.get(result, "data.code", -1) === 0) {
         return true;
-      } else {
-        return false;
       }
+      return false;
     };
-    while (true) {
+    for (;;) {
       try {
-        let ready = await getAdminStatus();
+        const ready = await getAdminStatus();
         if (ready === true) {
           break;
         }

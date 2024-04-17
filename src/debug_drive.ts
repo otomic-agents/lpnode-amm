@@ -251,7 +251,7 @@ class DebugDrive {
     const debug: any = _.attempt(() => {
       const isProd = _.get(
         process.env,
-        "OBRIDGE_LPNODE_DB_REDIS_MASTER_SERVICE_HOST",
+        "REDIS_HOST",
         null
       );
       if (isProd != null) {

@@ -1,5 +1,5 @@
 # base image
-FROM docker.io/library/node:16.10.0-buster
+FROM docker.io/library/node:20.11.0-buster
 #  file system
 ADD ./ /data/lp_main/
 

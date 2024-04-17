@@ -33,7 +33,7 @@ function buildTs() {
       experimentalDecorators: true,
       esModuleInterop: true,
     }))
-    .pipe(sourcemaps.write('../map'))
+    .pipe(sourcemaps.write('../map',{includeContent: true, sourceRoot: process.cwd()+"/src"}))
     .pipe(gulp.dest('dist'));
 }
 

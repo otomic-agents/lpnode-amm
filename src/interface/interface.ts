@@ -63,7 +63,7 @@ interface ILPConfigCacheItem {
   lp_receiver_address: string; // '0x0648e55e37FbADa5ADD959243939d7A7b469d72a',
   msmq_name: string; // 'bridge-A-B',
   src_client_uri: "";
-  dst_client_uri: string; // 'http://obridge-chain-client-evm-bsc-server-9006:9100/evm-client-9006',
+  dst_client_uri: string; // 'http://chain-client-evm-bsc-server-9006:9100/evm-client-9006',
   relay_api_key: string; // '96OZBSog7PeRHBn'
 }
 

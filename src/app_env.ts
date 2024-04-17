@@ -5,7 +5,7 @@ class AppEnv {
   public isProd(): boolean {
     const isProd = _.get(
       process.env,
-      "OBRIDGE_REDIS_HOST",
+      "REDIS_HOST",
       null
     );
     if (isProd != null) {
@@ -41,7 +41,7 @@ class AppEnv {
       process.exit(1);
     }
     _.set(process, "_sys_config.app_name", appName);
-    const mongoHost = _.get(process.env, "OBRIDGE_MONGODB_HOST", "");
+    const mongoHost = _.get(process.env, "MONGODB_HOST", "");
     const mongoUser = _.get(process.env, "MONGODB_ACCOUNT", "");
     const mongoPass = _.get(process.env, "MONGODB_PASSWORD", "");
     const mongoPort = _.get(process.env, "MONGODB_PORT", "");
