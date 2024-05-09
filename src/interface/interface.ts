@@ -20,6 +20,7 @@ interface IBridgeTokenConfigItem {
     balance: { [key: string]: number };
   };
   dst_chain_client_uri: string;
+  src_chain_client_url: string;
   enable_hedge: boolean;
   fee_manager: FeeManager;
   status_manager: StatusManager;

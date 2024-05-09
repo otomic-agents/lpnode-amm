@@ -581,6 +581,7 @@ class DataConfig {
         },
         fee: undefined,
         dst_chain_client_uri: item.dstClientUri,
+        src_chain_client_url: item.srcClientUri,
         enable_hedge: false,
       };
       // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -601,6 +602,7 @@ class DataConfig {
         await TimeSleepForever("please add hedging account configuration");
       }
     }
+    console.log("bridge tokens:\r\n");
     console.table(this.bridgeTokenList);
   }
 

@@ -87,8 +87,9 @@ class ChainBalance {
         }
       }
       logger.debug(`request url ............${reqUrl}`);
+      let ret: any;
       try {
-        const ret = await axios.request({
+        ret = await axios.request({
           url: reqUrl,
           method: "POST",
         });
@@ -107,6 +108,7 @@ class ChainBalance {
         logger.error(
           `An error occurred with the request :${reqUrl} dex balance sync error:${err.toString()}`
         );
+        logger.warn("response on error:",_.get(ret, "data"));
       }
     };
     await AsyncEach(chainList, eachFun);
@@ -249,12 +251,20 @@ class ChainBalance {
     const ret: { chainId: number; clientUri }[] = [];
     const cacheChainId: Map<number, boolean> = new Map();
     for (const item of tokenList) {
-      const chainId = item.dst_chain_id;
-      if (!cacheChainId.get(chainId)) {
-        cacheChainId.set(chainId, true);
+      const dstChainId = item.dst_chain_id;
+      const srcChainId = item.src_chain_id;
+      if (!cacheChainId.get(dstChainId)) {
+        cacheChainId.set(dstChainId, true);
         ret.push({
           chainId: item.dst_chain_id,
           clientUri: item.dst_chain_client_uri,
+        });
+      }
+      if (!cacheChainId.get(srcChainId)) {
+        cacheChainId.set(srcChainId, true);
+        ret.push({
+          chainId: item.src_chain_id,
+          clientUri: item.src_chain_client_url,
         });
       }
     }
