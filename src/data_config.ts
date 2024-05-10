@@ -38,6 +38,14 @@ class DataConfig {
   private chainDataMap: Map<number, { chainType: string }> = new Map();
   private chainTokenMap: Map<number, string> = new Map();
   private tokenToSymbolMap: Map<string, ICexCoinConfig> = new Map();
+  private rawChainDataConfig: {
+    chainId: number;
+    config: {
+      maxSwapNativeTokenValue: string;
+      minSwapNativeTokenValue: string;
+      timeLimitForLock?: number;
+    };
+  }[] = [];
   private hedgeAccountList: {
     apiType: ICexAccountApiType;
     accountId: string;
@@ -179,6 +187,9 @@ class DataConfig {
     }
     await TimeSleepMs(5000);
   }
+  public getRawChainDataConfig() {
+    return this.rawChainDataConfig;
+  }
 
   private async initBaseConfig(baseConfig: any) {
     logger.info("baseConfig:", JSON.stringify(baseConfig));
@@ -199,6 +210,7 @@ class DataConfig {
         maxSwapNativeTokenValue: string;
       };
     }[] = _.get(baseConfig, "chainDataConfig", []);
+    this.rawChainDataConfig = chainDataConfigList;
     for (const chainData of chainDataConfigList) {
       this.chainTokenUsd.set(
         chainData.chainId,

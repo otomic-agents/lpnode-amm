@@ -25,7 +25,7 @@ interface IEVENT_LOCK_QUOTE {
       dst_address: string;
       dst_amount: string;
       dst_native_amount: string;
-      step_time_lock: number;
+      step_time_lock: number; // The maximum time allowed for the lock to execute.
       agreement_reached_time: number;
       quote: {
         quote_base: {

@@ -105,6 +105,7 @@ class EventProcessLock extends BaseEventProcess {
         throw new Error("It is not possible to lock the same quote repeatedly");
       }
       await this.runVerificationEngine(msg); // Validate data
+      await this.verificationStepTime(ammContext, msg); // Validate data
       await this.verificationDexBalance(ammContext); // Check Des balance
       await this.verificationHistory(ammContext, msg); // Check history quote
       await this.checkSpread(ammContext, msg); // Check spread
@@ -346,6 +347,67 @@ class EventProcessLock extends BaseEventProcess {
       ok: true,
       msg: "verification",
     };
+  }
+  public async verificationStepTime(
+    ammContext: AmmContext,
+    msg: IEVENT_LOCK_QUOTE
+  ): Promise<void> {
+    const limitTime = _.get(
+      msg,
+      "pre_business.swap_asset_information.step_time_lock",
+      0
+    );
+    const createTime = _.get(
+      msg,
+      "pre_business.swap_asset_information.agreement_reached_time",
+      0
+    );
+    const srcTimeLimitForLock = _.get(
+      _.find(dataConfig.getRawChainDataConfig(), {
+        chainId: ammContext.baseInfo.srcChain.id,
+      }),
+      "config.timeLimitForLock",
+      120
+    );
+    const dstTimeLimitForLock = _.get(
+      _.find(dataConfig.getRawChainDataConfig(), {
+        chainId: ammContext.baseInfo.dstChain.id,
+      }),
+      "config.timeLimitForLock",
+      120
+    );
+    const maxTimeLimitForLock = Math.max(
+      srcTimeLimitForLock,
+      dstTimeLimitForLock
+    );
+    logger.info("maxTimeLimitForLock:", maxTimeLimitForLock);
+    if (limitTime > maxTimeLimitForLock) {
+      throw new Error(
+        `the "steptime" parameter in the lock action input does not meet expectations,limitTime:${limitTime}`
+      );
+    }
+    if (
+      !_.isFinite(limitTime) ||
+      !_.isFinite(createTime) ||
+      limitTime === 0 ||
+      createTime == 0
+    ) {
+      throw new Error("incorrect lock time parameter");
+    }
+    const systemTime = new Date().getTime() / 1000;
+    logger.info(
+      systemTime,
+      limitTime,
+      createTime + limitTime,
+      `systemTime>createTime + limitTime? ${
+        systemTime > createTime + limitTime
+      }`
+    );
+    if (systemTime > createTime + limitTime) {
+      throw new Error(
+        "failed to complete the operation within the specified time limit"
+      );
+    }
   }
 
   /**
