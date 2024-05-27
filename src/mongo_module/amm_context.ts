@@ -22,6 +22,10 @@ const ammContextSchema = new Schema({
   tradeStatus: Number,
   profitStatus: Number,
   flowStatus: String,
+  createtime: {
+    type: Date, 
+    default: Date.now,
+  },
 });
 
 ammContextSchema.index({ "systemOrder.id": 1, type: -1 });
