@@ -1,7 +1,6 @@
 /* eslint-disable arrow-parens */
 import { chainAdapter } from "./chain_adapter/chain_adapter";
 import * as fs from "fs";
-const bs58 = require("bs58");
 import * as _ from "lodash";
 import {
   IBridgeTokenConfigItem,
@@ -22,8 +21,6 @@ import { installModule } from "./mongo_module/install";
 import { ICexAccountApiType } from "./interface/std_difi";
 import path from "path";
 
-const Web3 = require("web3");
-const web3 = new Web3();
 
 class DataConfig {
   private baseConfig: any;
@@ -367,8 +364,9 @@ class DataConfig {
         logger.error("synchronize TokenList error");
       });
     }, 1000 * 60 * 2);
-    await this.loadTokenToSymbol();
     await this.loadChainConfig();
+    await this.loadTokenToSymbol();
+    
   }
 
   private async loadTokenToSymbol() {
@@ -384,6 +382,7 @@ class DataConfig {
     tokenList.map((it) => {
       const uniqAddress = this.convertAddressToUniq(it.address, it.chainId);
       const key = `${it.chainId}_${uniqAddress}`;
+      console.log(it.address,"🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁")
       this.tokenToSymbolMap.set(key, {
         chainId: it.chainId,
         address: this.convertAddressToHex(it.address, it.chainId),
@@ -425,6 +424,7 @@ class DataConfig {
 
     _.map(chainList, (item) => {
       this.chainMap.set(item.chainId, item.chainName);
+      logger.info(item.chainId,item.chainType,"0000000--")
       this.chainDataMap.set(item.chainId, { chainType: item.chainType });
       this.chainTokenMap.set(item.chainId, item.tokenName);
     });
@@ -456,6 +456,7 @@ class DataConfig {
     const key1 = `${token1ChainId}_${uniqAddress1}`;
     const token0Symbol = this.tokenToSymbolMap.get(key0);
     const token1Symbol = this.tokenToSymbolMap.get(key1);
+    logger.debug(token0Symbol,token1Symbol,"🚁🚁🚁🚁🚁🚁")
     if (!token0Symbol || !token1Symbol) {
       logger.warn(`【${token0}/${token1}】not found`);
       return undefined;
@@ -476,21 +477,16 @@ class DataConfig {
 
   public convertAddressToUniq(address: string, chainId: number): string {
     if (address.startsWith("0x")) {
-      return web3.utils.hexToNumberString(address);
+      return chainAdapter[`AddressToUniq_0`](address);
     }
-    const chainType = _.get(
-      this.chainDataMap.get(chainId),
-      "chainType",
-      undefined
-    );
-    if (chainType === "near") {
-      const bytes = bs58.decode(address);
-      const ud = web3.utils.hexToNumberString(
-        `0x${Buffer.from(bytes).toString("hex")}`
-      );
+    
+    try {
+      const ud: string = chainAdapter[`AddressToUniq_${chainId}`](address);
       return ud;
+    } catch (e) {
+      logger.error("unprocessable address.", address);
+      throw new Error("unprocessable address.");
     }
-    return address;
   }
 
   private convertAddressToHex(address: string, chainId: number): string {

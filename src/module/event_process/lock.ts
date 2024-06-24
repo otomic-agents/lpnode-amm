@@ -251,6 +251,7 @@ class EventProcessLock extends BaseEventProcess {
       dstNativeTokenToSrcTokenValue
     );
     const feeFormula = `1-(${dstTokenToSrcTokenValue}+${dstNativeTokenToSrcTokenValue})/${ammContext.swapInfo.inputAmountNumber}`;
+    logger.info(feeFormula);
     const fee = SystemMath.execNumber(feeFormula, "fee calculate");
     logger.info("swap fee:", fee);
     ammContext.lockInfo.fee = fee.toString();
@@ -367,20 +368,25 @@ class EventProcessLock extends BaseEventProcess {
         chainId: ammContext.baseInfo.srcChain.id,
       }),
       "config.timeLimitForLock",
-      120
+      300
     );
     const dstTimeLimitForLock = _.get(
       _.find(dataConfig.getRawChainDataConfig(), {
         chainId: ammContext.baseInfo.dstChain.id,
       }),
       "config.timeLimitForLock",
-      120
+      300
     );
     const maxTimeLimitForLock = Math.max(
       srcTimeLimitForLock,
       dstTimeLimitForLock
     );
-    logger.info("maxTimeLimitForLock:", maxTimeLimitForLock);
+    logger.info(
+      "maxTimeLimitForLock:",
+      maxTimeLimitForLock,
+      srcTimeLimitForLock,
+      dstTimeLimitForLock
+    );
     if (limitTime > maxTimeLimitForLock) {
       throw new Error(
         `the "steptime" parameter in the lock action input does not meet expectations,limitTime:${limitTime}`
