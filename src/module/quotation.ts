@@ -859,6 +859,7 @@ class Quotation {
       `maximum supply`,
       new BigNumber(capacity).toFixed(8).toString()
     );
+    logger.info("convert info ", capacity.toString(), ammContext.baseInfo.srcToken.precision)
     const etherWei = EthUnit.toWei(
       capacity.toString(),
       ammContext.baseInfo.srcToken.precision
