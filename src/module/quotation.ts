@@ -857,7 +857,7 @@ class Quotation {
 
     logger.debug(
       `maximum supply`,
-      new BigNumber(capacity).toFixed(8).toString()
+      new BigNumber(capacity).toFixed(ammContext.baseInfo.srcToken.precision).toString()
     );
     logger.info("convert info ", capacity.toString(), ammContext.baseInfo.srcToken.precision)
     const etherWei = EthUnit.toWei(
@@ -865,7 +865,7 @@ class Quotation {
       ammContext.baseInfo.srcToken.precision
     );
     _.assign(sourceObject.quote_data, {
-      capacity_num: new BigNumber(capacity).toFixed(8).toString(),
+      capacity_num: new BigNumber(capacity).toFixed(ammContext.baseInfo.srcToken.precision).toString(),
       capacity: `0x${etherWei}`,
     });
   }
