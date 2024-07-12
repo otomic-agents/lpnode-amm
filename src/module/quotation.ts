@@ -861,7 +861,7 @@ class Quotation {
     );
     logger.info("convert info ", capacity.toString(), ammContext.baseInfo.srcToken.precision)
     const etherWei = EthUnit.toWei(
-      capacity.toString(),
+      new BigNumber(capacity).toFixed(ammContext.baseInfo.srcToken.precision).toString(),
       ammContext.baseInfo.srcToken.precision
     );
     _.assign(sourceObject.quote_data, {
