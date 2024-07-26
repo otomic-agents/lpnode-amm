@@ -14,3 +14,4 @@ map/**/*
 panel.mongodb.js
 src/env.js
 env.sh
+build.sh

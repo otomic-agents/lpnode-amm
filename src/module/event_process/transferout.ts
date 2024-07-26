@@ -21,16 +21,28 @@ class EventProcessTransferOut extends BaseEventProcess {
     let ammContext: AmmContext;
     try {
       logger.debug(`🏠🏠🏠🏠🏠:process event  【IEVENT_TRANSFER_OUT】symbol `);
+      
+      const  verified =  this.checkTransferOut(msg)
+      if (!verified){
+        throw new Error(`checkTransferOut Failed`);
+      }
       const orderId = await this.verificationBaseParameters(msg);
       ammContext = await ammContextModule
         .findOne({
           "systemOrder.orderId": orderId,
         })
         .lean();
+      
+
+
+      // logger.debug(ammContext)
       if (!ammContext) {
         throw new Error(`No order found`);
       }
+      
       await this.verificationTime(msg);
+      
+      
       await this.updateOrderInfo(ammContext, orderId, msg);
     } catch (e) {
       logger.error(e);
@@ -41,6 +53,54 @@ class EventProcessTransferOut extends BaseEventProcess {
       business_full_data: _.get(msg, "business_full_data"),
     };
     await this.responseMessage(responseMsg, ammContext.systemInfo.msmqName);
+  }
+  private checkTransferOut(msg:IEVENT_TRANSFER_OUT): boolean {
+    console.log(JSON.stringify(msg))
+    const preAmount = _.get(msg, "business_full_data.pre_business.swap_asset_information.amount", null)
+    const afterAmount = _.get(msg, "business_full_data.event_transfer_out.amount", null)
+    const preLpAddress = _.get(msg, "business_full_data.pre_business.swap_asset_information.quote.quote_base.lp_bridge_address", null)
+    const afterLpAddress = _.get(msg, "business_full_data.event_transfer_out.receiver", null)
+    const preTime = _.get(msg, "business_full_data.pre_business.swap_asset_information.agreement_reached_time", null)
+    const afterTime = _.get(msg, "business_full_data.event_transfer_out.agreement_reached_time", null)
+    const preToken = _.get(msg, "business_full_data.pre_business.swap_asset_information.quote.quote_base.bridge.src_token", null)
+    const afterToken = _.get(msg, "business_full_data.event_transfer_out.token", null)
+    const values = {
+      preAmount,
+      afterAmount,
+      preLpAddress,
+      afterLpAddress,
+      preTime,
+      afterTime,
+      preToken,
+      afterToken
+    }
+    let allNonNull = true;
+    for (const key in values) {
+      if (values[key] === null) {
+        logger.error(`${key} is empty`)
+        allNonNull = false;
+        break;
+      }
+    }
+    if (!allNonNull) {
+      return false
+    }
+    if (!(preAmount === afterAmount)) {
+      logger.info("amount diff", preAmount, afterAmount)
+      logger.error(new Error("amount error"))
+      return false
+    }
+    if (!(preLpAddress === afterLpAddress)) {
+      logger.info("LpAddress diff", preLpAddress, afterLpAddress)
+      logger.error(new Error("afterLpAddress error"))
+      return false
+    }
+
+    // logger.debug(msg.business_full_data.pre_business.swap_asset_information.amount);
+    // logger.debug(msg.business_full_data.event_transfer_out.amount)
+    // sender
+    // receiver
+    return true
   }
 
   private async updateOrderInfo(

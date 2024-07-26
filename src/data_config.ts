@@ -456,7 +456,7 @@ class DataConfig {
     const key1 = `${token1ChainId}_${uniqAddress1}`;
     const token0Symbol = this.tokenToSymbolMap.get(key0);
     const token1Symbol = this.tokenToSymbolMap.get(key1);
-    logger.debug(token0Symbol,token1Symbol,"🚁🚁🚁🚁🚁🚁")
+    // logger.debug(token0Symbol,token1Symbol,"🚁🚁🚁🚁🚁🚁")
     if (!token0Symbol || !token1Symbol) {
       logger.warn(`【${token0}/${token1}】not found`);
       return undefined;

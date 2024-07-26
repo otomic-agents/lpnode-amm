@@ -98,7 +98,7 @@ class ChainBalance {
           logger.error(`${reqUrl}`, serviceCode);
           throw new Error("The server returned an error. status !==200");
         }
-        logger.debug("client response", _.get(ret, "data.data", {}));
+        // logger.debug("client response", _.get(ret, "data.data", {}));
         this.setRemoteInfoToLocalBalance(
           _.get(ret, "data.data", {}),
           item.chainId
