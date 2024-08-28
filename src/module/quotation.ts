@@ -296,6 +296,8 @@ class Quotation {
     const maxCountBN = SystemMath.exec(
       `${dstChainMaxSwapUsd} / ${nativeTokenPrice}`
     );
+
+    logger.info("🐸",dstChainMaxSwapUsd,nativeTokenPrice)
     if (!maxCountBN.isFinite()) {
       throw `An error occurred in calculating the maximum quotation of the target chain token !isFinite`;
     }
@@ -313,6 +315,7 @@ class Quotation {
       maxSwapGasCount, // supply value convertible quantity
       orderbookLiquidity, // order book liquidity
     ];
+    logger.debug("minSourceData",minSourceData)
     let nativeTokenMax = SystemMath.min(minSourceData);
     if (!_.isFinite(nativeTokenMax)) {
       logger.error(`Error in calculating the maximum amount of tokens`);

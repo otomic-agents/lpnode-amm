@@ -530,6 +530,7 @@ class DataConfig {
     }
     const usd = this.chainMaxTokenUsd.get(chainId);
     if (!usd) {
+      logger.warn("There is no configuration for the maximum limit of native tokens.")
       return 0;
     }
     return usd;
