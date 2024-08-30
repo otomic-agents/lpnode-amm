@@ -21,6 +21,7 @@ class LpWalletManager {
     logger.info(formula);
     let lpReceive = evaluate(formula);
     lpReceive = math.format(lpReceive, { precision: 6 });
+    lpReceive = parseFloat(lpReceive)
     logger.info("lp wallet receive", formula, "result:", lpReceive);
     if (!_.isFinite(lpReceive)) {
       logger.error(`evaluate error:`, "isFinite");
