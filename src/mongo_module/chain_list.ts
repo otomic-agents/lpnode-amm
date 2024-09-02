@@ -9,6 +9,7 @@ const chainListSchema = new Schema({
   name: String,
   tokenName: String,
   tokenUsd: Number,
+  precision:Number,
   chainType: String,
 });
 export const chainListModule = mongoConn.model(

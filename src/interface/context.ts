@@ -19,10 +19,14 @@ interface AmmContext {
     fee: number;
     srcChain: {
       id: number;
+      nativeTokenPrecision: number,
+      nativeTokenName: string,
       tokenName: string;
     };
     dstChain: {
       id: number;
+      nativeTokenPrecision: number,
+      nativeTokenName: string,
       tokenName: string;
     };
     srcToken: {

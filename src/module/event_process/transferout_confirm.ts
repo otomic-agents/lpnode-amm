@@ -85,7 +85,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     );
     const dstChainPayNativeTokenAmountNumber = getNumberFrom16(
       dstChainPayNativeTokenAmountRaw,
-      18
+      ammContext.baseInfo.dstChain.nativeTokenPrecision
     );
 
     ammContext.chainOptInfo.dstChainPayNativeTokenAmount =

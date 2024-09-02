@@ -113,10 +113,14 @@ class Business {
         fee: item.fee_manager.getQuotationPriceFee(),
         srcChain: {
           id: token0.chainId,
+          nativeTokenName: dataConfig.getChainTokenName(token0.chainId),
+          nativeTokenPrecision: dataConfig.getChainNativeTokenPrecision(token0.chainId),
           tokenName: dataConfig.getChainTokenName(token0.chainId),
         },
         dstChain: {
           id: token1.chainId,
+          nativeTokenName: dataConfig.getChainTokenName(token1.chainId),
+          nativeTokenPrecision: dataConfig.getChainNativeTokenPrecision(token1.chainId),
           tokenName: dataConfig.getChainTokenName(token1.chainId),
         },
         srcToken: {

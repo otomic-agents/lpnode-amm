@@ -1,6 +1,6 @@
 import { AmmContext } from "../../interface/context";
 import { IEVENT_TRANSFER_OUT } from "../../interface/event";
-import { ILpCmd } from "../../interface/interface";
+import { EFlowStatus, ILpCmd } from "../../interface/interface";
 import { ammContextModule } from "../../mongo_module/amm_context";
 import { logger } from "../../sys_lib/logger";
 import { BaseEventProcess } from "./base_event_process";
@@ -42,7 +42,7 @@ class EventProcessTransferOut extends BaseEventProcess {
       
       await this.verificationTime(msg);
       
-      
+      // await ammContextManager.appendContext(orderId, 'flowStatus', EFlowStatus.TransferOut)
       await this.updateOrderInfo(ammContext, orderId, msg);
     } catch (e) {
       logger.error(e);
@@ -116,6 +116,7 @@ class EventProcessTransferOut extends BaseEventProcess {
         { "systemOrder.orderId": orderId },
         {
           $set: {
+            flowStatus: EFlowStatus.TransferOut,
             "systemOrder.transferOutInfo": {
               amount: _.get(
                 msg,
