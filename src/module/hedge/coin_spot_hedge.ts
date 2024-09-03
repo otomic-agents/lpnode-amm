@@ -18,7 +18,7 @@ import { EthUnit } from "../../utils/eth";
 import { SystemMath } from "../../utils/system_math";
 import { ConsoleDirDepth5 } from "../../utils/console";
 import {
-  ICexExchangeList,
+  // ICexExchangeList,
   IOrderExecModel,
   ISpotOrderResult,
 } from "../../interface/std_difi";
@@ -107,18 +107,23 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
   }
 
-  public getHedgeFeeSymbol() {
+  public getHedgeFeeSymbol(): string {
+
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
       throw `account ins not initialized`;
     }
-    const exchangeName = accountIns.getExchangeName();
-    if (exchangeName === ICexExchangeList.binance) {
-      return "BNB";
+    // const exchangeName = accountIns.getExchangeName();
+    // if (exchangeName === ICexExchangeList.binance) {
+    //   return "BNB";
+    // }
+    const symbol = dataConfig.getHedgeConfig().feeSymbol
+    if (symbol === "") {
+      throw "Please configure feeSymbol.";
     }
-    throw "no compatible exchange";
+    return symbol;
   }
 
   private async initAccount() {

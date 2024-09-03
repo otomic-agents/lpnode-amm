@@ -43,6 +43,7 @@ enum ICoinType {
 interface IHedgeConfig {
   hedgeType: IHedgeType;
   hedgeAccount: string;
+  feeSymbol: string;
 }
 
 interface ILPConfig {

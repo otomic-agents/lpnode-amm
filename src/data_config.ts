@@ -27,6 +27,7 @@ class DataConfig {
   private hedgeConfig: IHedgeConfig = {
     hedgeType: IHedgeType.Null,
     hedgeAccount: "",
+    feeSymbol:"",
   };
   private chainTokenUsd: Map<number, number> = new Map();
   // @ts-ignore
@@ -227,6 +228,7 @@ class DataConfig {
     }
     let hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
     const hedgeAccount = _.get(baseConfig, "hedgeConfig.hedgeAccount", null);
+    const feeSymbol = _.get(baseConfig, "hedgeConfig.feeSymbol", "");
     if (!hedgeType) {
       logger.error(`Incorrect base configuration data`);
       await TimeSleepForever(
@@ -238,6 +240,7 @@ class DataConfig {
     }
     this.hedgeConfig.hedgeType = hedgeType;
     this.hedgeConfig.hedgeAccount = hedgeAccount;
+    this.hedgeConfig.feeSymbol = feeSymbol;
     this.hedgeAccountList = _.get(baseConfig, "hedgeConfig.accountList", []);
     if (hedgeAccount.length <= 0 && hedgeType !== "Null") {
       logger.error(
