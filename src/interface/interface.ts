@@ -165,13 +165,13 @@ interface IBalanceLock {
 enum EFlowStatus {
   Init = "Init",
   AnswerOffer = "AnswerOffer",
-  TransferOut = "TransferOut",
   Locked = "Locked",
+  TransferOut = "TransferOut",
   WaitHedge = "WaitHedge",
+  NoHedge = "NoHedge",
   HedgeCompletion = "HedgeCompletion",
   HedgeSubmitted = "HedgeSubmitted",
   HedgeFailure = "HedgeFailure",
-  NoHedge = "NoHedge",
   HedgeAnalyzeCompletion = "HedgeAnalyzeCompletion",
 }
 

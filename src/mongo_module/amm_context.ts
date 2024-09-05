@@ -22,8 +22,14 @@ const ammContextSchema = new Schema({
   tradeStatus: Number,
   profitStatus: Number,
   flowStatus: String,
+  dexTradeInfo_out: Object,
+  dexTradeInfo_out_confirm: Object,
+  dexTradeInfo_out_refund: Object,
+  dexTradeInfo_in: Object,
+  dexTradeInfo_in_confirm: Object,
+  dexTradeInfo_in_refund: Object,
   createtime: {
-    type: Date, 
+    type: Date,
     default: Date.now,
   },
 });

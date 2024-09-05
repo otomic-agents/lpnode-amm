@@ -19,6 +19,8 @@ import { eventProcessTransferOutConfirm } from "./event_process/transferout_conf
 import { quotation } from "./quotation";
 import { AmmContext } from "../interface/context";
 import { ammContextModule } from "../mongo_module/amm_context";
+import { eventProcessTransferInConfirm } from "./event_process/transferin_confirm";
+import { eventProcessTransferIn } from "./event_process/transferin";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
@@ -200,6 +202,13 @@ class Business {
     await eventProcessTransferOutConfirm.process(msg);
   }
 
+
+  public async onTransferIn(msg:any){
+    eventProcessTransferIn.process(msg)
+  }
+  public async onTransferInConfirm(msg:any) {
+    eventProcessTransferInConfirm.process(msg)
+  }
   private getLpOrderId(msg: IEVENT_TRANSFER_OUT_CONFIRM): number {
     const orderInfo = _.get(
       msg,

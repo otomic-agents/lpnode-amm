@@ -116,6 +116,7 @@ class EventProcessTransferOut extends BaseEventProcess {
         { "systemOrder.orderId": orderId },
         {
           $set: {
+            dexTradeInfo_out: _.get(msg, "business_full_data.event_transfer_out"),
             flowStatus: EFlowStatus.TransferOut,
             "systemOrder.transferOutInfo": {
               amount: _.get(

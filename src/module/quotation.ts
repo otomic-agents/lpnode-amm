@@ -355,7 +355,7 @@ class Quotation {
     _.set(quoteInfo, "cid", ammContext.AskInfo.cid);
     _.set(quoteInfo, "cmd", ILpCmd.EVENT_ASK_REPLY);
     const quoteCmd = JSON.stringify(quoteInfo);
-    console.dir(quoteInfo.quote_data, { depth: null });
+    // console.dir(quoteInfo.quote_data, { depth: null });
     logger.info(`send Message`, ammContext.systemInfo.msmqName, quoteInfo.cmd);
     redisPub
       .publish(ammContext.systemInfo.msmqName, quoteCmd)

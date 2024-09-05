@@ -467,7 +467,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       const orderList = await this.worker.prepareOrder(ammContext);
       console.log(`orders requiring pre-execution`);
       console.dir(orderList, ConsoleDirDepth5);
-      await this.worker.simulationExec(orderList);
+      // await this.worker.simulationExec(orderList);
       return true;
     } catch (e) {
       logger.error(`simulation order execute error`, e);

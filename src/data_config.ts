@@ -423,13 +423,13 @@ class DataConfig {
       chainType: string;
       tokenName: string;
       tokenUsd: number;
-      nativeTokenPrecision: number;
+      precision: number;
     }[] = await chainListModule.find({}).lean();
 
     _.map(chainList, (item) => {
       this.chainMap.set(item.chainId, item.chainName);
       logger.info(item.chainId,item.chainType,"0000000--")
-      this.chainDataMap.set(item.chainId, { chainType: item.chainType, nativeTokenPrecision: item.nativeTokenPrecision });
+      this.chainDataMap.set(item.chainId, { chainType: item.chainType, nativeTokenPrecision: item.precision });
       this.chainTokenMap.set(item.chainId, item.tokenName);
       
     });

@@ -240,7 +240,8 @@ class EventProcessLock extends BaseEventProcess {
     if (!dstNativeAmountRaw) {
       throw new Error(`dst_native_amount amount is empty`);
     }
-    const dstNativeAmount = EthUnit.fromWei(dstNativeAmountRaw, 18);
+    // console.log(ammContext);
+    const dstNativeAmount = EthUnit.fromWei(dstNativeAmountRaw, ammContext.baseInfo.dstChain.nativeTokenPrecision);
     const formulaNative = `1/${ammContext.quoteInfo.native_token_orig_price}*${dstNativeAmount}`;
     const dstNativeTokenToSrcTokenValue = SystemMath.exec(
       formulaNative,

@@ -80,7 +80,7 @@ class EventProcess {
 
   private startProcessQueue() {
     logger.info("consumption queue");
-    lockEventQueue.process(async (job, done) => {
+    lockEventQueue.process(async (job:any, done:any) => {
       const msg: IEVENT_LOCK_QUOTE = _.get(job, "data", undefined);
       try {
         if (!msg) {
@@ -105,6 +105,8 @@ class EventProcess {
       IEVENT_NAME.EVENT_TRANSFER_OUT,
       IEVENT_NAME.EVENT_TRANSFER_OUT_CONFIRM,
       IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND,
+      IEVENT_NAME.EVENT_TRANSFER_IN,
+      IEVENT_NAME.EVENT_TRANSFER_IN_CONFIRM
     ];
     if (processCmdList.includes(msg.cmd)) {
       logger.debug(
@@ -142,6 +144,13 @@ class EventProcess {
       if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND) {
         await business.onTransferOutRefund(msg);
         return;
+      }
+      if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_IN) {
+        await business.onTransferIn(msg);
+        return;
+      }
+      if (msg.cmd=== IEVENT_NAME.EVENT_TRANSFER_IN_CONFIRM){
+        await business.onTransferInConfirm(msg)
       }
     } catch (e) {
       logger.error(`process Event Error Cmd ${msg.cmd}`, e);
