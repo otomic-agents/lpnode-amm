@@ -1,10 +1,11 @@
 import { AmmContext } from "../../interface/context";
-import { IEVENT_TRANSFER_IN_CONFIRM } from "../../interface/event";
-import { ammContextModule } from "../../mongo_module/amm_context";
 import { BaseEventProcess } from "./base_event_process";
-import * as _ from "lodash";
-class EventProcessTransferInConfirm extends BaseEventProcess {
-    public async process(msg: IEVENT_TRANSFER_IN_CONFIRM): Promise<void> {
+import { ammContextModule } from "../../mongo_module/amm_context";
+import * as _ from "lodash"
+import { EFlowStatus } from "../../interface/interface";
+class EventProcessTransferInRefund extends BaseEventProcess {
+
+    public async process(msg: any): Promise<void> {
         let ammContext: AmmContext;
         const orderId = await this.verificationBaseParameters(msg);
         ammContext = await ammContextModule
@@ -20,14 +21,15 @@ class EventProcessTransferInConfirm extends BaseEventProcess {
                 { "systemOrder.orderId": orderId },
                 {
                     $set: {
-                        "dexTradeInfo_in_confirm": {
+                        "flowStatus": EFlowStatus.TransferInefund,
+                        "dexTradeInfo_in_refund": {
                             rawData: _.get(
                                 msg,
-                                "business_full_data.event_transfer_in_confirm",
+                                "business_full_data.event_transfer_in_refund",
                                 {}
                             ),
                         },
-                        "systemOrder.transferInConfirmTimestamp": new Date().getTime(),
+                        "systemOrder.transferInRefundTimestamp": new Date().getTime(),
                     },
                 },
                 {
@@ -39,7 +41,7 @@ class EventProcessTransferInConfirm extends BaseEventProcess {
             throw new Error(`No documentation was found that should be updated`);
         }
     }
-    private verificationBaseParameters(msg: IEVENT_TRANSFER_IN_CONFIRM): number {
+    private verificationBaseParameters(msg: any): number {
         const orderInfo = _.get(
             msg,
             "business_full_data.pre_business.order_append_data",
@@ -55,8 +57,7 @@ class EventProcessTransferInConfirm extends BaseEventProcess {
         return orderId;
     }
 }
-
-const eventProcessTransferInConfirm: EventProcessTransferInConfirm = new EventProcessTransferInConfirm()
+const eventProcessTransferInRefund: EventProcessTransferInRefund = new EventProcessTransferInRefund()
 export {
-    eventProcessTransferInConfirm
+    eventProcessTransferInRefund
 }

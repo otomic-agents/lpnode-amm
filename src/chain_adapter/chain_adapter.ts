@@ -15,17 +15,17 @@ class ChainAdapter {
     return `0x${Buffer.from(bytes)
       .toString("hex")}`;
   }
-  public AddressToUniq_0(address){
+  public AddressToUniq_0(address:string){
     return web3.utils.hexToNumberString(address);
   }
-  public AddressToUniq_397(address){
+  public AddressToUniq_397(address:string){
     const bytes = bs58.decode(address);
     const ud = web3.utils.hexToNumberString(
       `0x${Buffer.from(bytes).toString("hex")}`
     );
     return ud;
   }
-  public AddressToUniq_501(address){
+  public AddressToUniq_501(address:string){
     const bytes = bs58.decode(address);
     const ud = web3.utils.hexToNumberString(
       `0x${Buffer.from(bytes).toString("hex")}`

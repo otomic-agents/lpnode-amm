@@ -27,13 +27,13 @@ class DataConfig {
   private hedgeConfig: IHedgeConfig = {
     hedgeType: IHedgeType.Null,
     hedgeAccount: "",
-    feeSymbol:"",
+    feeSymbol: "",
   };
   private chainTokenUsd: Map<number, number> = new Map();
   // @ts-ignore
   private chainMaxTokenUsd: Map<number, number> = new Map();
   private chainMap: Map<number, string> = new Map();
-  private chainDataMap: Map<number, { chainType: string,nativeTokenPrecision:number }> = new Map();
+  private chainDataMap: Map<number, { chainType: string, nativeTokenPrecision: number }> = new Map();
   private chainTokenMap: Map<number, string> = new Map();
   private tokenToSymbolMap: Map<string, ICexCoinConfig> = new Map();
   private rawChainDataConfig: {
@@ -64,8 +64,8 @@ class DataConfig {
   private lpConfig: {
     quotationInterval: number;
   } = {
-    quotationInterval: 1000 * 10,
-  };
+      quotationInterval: 1000 * 10,
+    };
   private extendFun: any = null;
   private statusReport: any = null;
   public setExtend(extendFun: any) {
@@ -139,7 +139,7 @@ class DataConfig {
           return new Promise(() => {
             this.statusReport
               .pendingStatus("Wait for the configuration to complete")
-              .catch((e) => {
+              .catch((e: any) => {
                 logger.error(`Failed to write status`, e);
               });
             logger.warn("Wait for the configuration to complete..");
@@ -369,7 +369,7 @@ class DataConfig {
     }, 1000 * 60 * 2);
     await this.loadChainConfig();
     await this.loadTokenToSymbol();
-    
+
   }
 
   private async loadTokenToSymbol() {
@@ -385,7 +385,7 @@ class DataConfig {
     tokenList.map((it) => {
       const uniqAddress = this.convertAddressToUniq(it.address, it.chainId);
       const key = `${it.chainId}_${uniqAddress}`;
-      console.log(it.address,"🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁")
+      console.log(it.address, "🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁")
       this.tokenToSymbolMap.set(key, {
         chainId: it.chainId,
         address: this.convertAddressToHex(it.address, it.chainId),
@@ -428,17 +428,17 @@ class DataConfig {
 
     _.map(chainList, (item) => {
       this.chainMap.set(item.chainId, item.chainName);
-      logger.info(item.chainId,item.chainType,"0000000--")
+      logger.info(item.chainId, item.chainType, "0000000--")
       this.chainDataMap.set(item.chainId, { chainType: item.chainType, nativeTokenPrecision: item.precision });
       this.chainTokenMap.set(item.chainId, item.tokenName);
-      
+
     });
     console.log("chain base data:");
     console.table(chainList);
     await TimeSleepMs(100);
   }
 
-  public getStdCoinSymbolInfoByToken(token: string, chainId: number) {
+  public getStdCoinSymbolInfoByToken(token: string, chainId: number): { symbol: string | null, coinType: string } {
     const chainKey = `${chainId}`;
     const uniqAddress = this.convertAddressToUniq(token, chainId);
     const key = `${chainKey}_${uniqAddress}`;
@@ -484,8 +484,9 @@ class DataConfig {
     if (address.startsWith("0x")) {
       return chainAdapter[`AddressToUniq_0`](address);
     }
-    
+
     try {
+      //@ts-ignore
       const ud: string = chainAdapter[`AddressToUniq_${chainId}`](address);
       return ud;
     } catch (e) {
@@ -499,7 +500,9 @@ class DataConfig {
       return address;
     }
     try {
+
       const hexAddress: string =
+        //@ts-ignore
         chainAdapter[`AddressAdapter_${chainId}`](address);
       return hexAddress;
     } catch (e) {
@@ -651,6 +654,12 @@ class DataConfig {
       "defFeeSetting:",
       defFeeSetting
     );
+    const minChargeUsdt = _.get(this.baseConfig, "bridgeBaseConfig.minChargeUsdt", 0)
+    if (minChargeUsdt === 0) {
+      logger.debug("bridgeBaseConfig.minChargeUsdt Can not be empty");
+      await TimeSleepForever("bridgeBaseConfig.minChargeUsdt Can not be empty");
+      return;
+    }
     this.bridgeTokenList = this.bridgeTokenList.map((it) => {
       const itemConfig = _.find(bridgeConfig, { bridgeId: it.id.toString() });
       if (itemConfig) {

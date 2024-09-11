@@ -12,8 +12,8 @@ function extend_bridge_item(
 ): IBridgeTokenConfigItem {
   const handle = {};
   const proxy = new Proxy(source_object, handle);
-
-  handle["get"] = function get(target_object, key, receiver): any {
+  // @ts-ignore
+  handle["get"] = function get(target_object:any, key:any, receiver:any): any {
     if (key === "std_symbol") {
       const uniqAddress0 = context.convertAddressToUniq(
         target_object.srcToken,

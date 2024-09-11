@@ -9,7 +9,7 @@ import { ammContextManager } from "../amm_context_manager/amm_context_manager";
 import { EFlowStatus } from "../../interface/interface";
 import { dataConfig } from "../../data_config";
 import { IOrderExecModel } from "../../interface/std_difi";
-
+const retry = require('async-retry');
 interface IHedgeOrderItem {
   orderId: string;
   symbol: string;
@@ -65,18 +65,30 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
         status: 0,
       };
       try {
-        execRow.result = await accountIns.order[executeFun](
-          order.orderId,
-          order.symbol,
-          new BigNumber(order.amountNumber).toString()
-        );
-        execRow.status = 1;
-        if (accountIns.order.getSpotExecModel() === IOrderExecModel.ASYNC) {
-          execRow.commitResult = execRow.result;
-          execRow.status = 2;
+        const executeAction = async () => {
+          // @ts-ignore
+          execRow.result = await accountIns.order[executeFun](
+            order.orderId,
+            order.symbol,
+            new BigNumber(order.amountNumber).toString()
+          );
+          execRow.status = 1;
+          if (accountIns.order.getSpotExecModel() === IOrderExecModel.ASYNC) {
+            execRow.commitResult = execRow.result;
+            execRow.status = 2;
+          }
         }
+        // @ts-ignore
+        await retry(executeAction, {
+          retries: 3,
+          maxTimeout: 2000,
+          onFailedAttempt: async (error: any) => {
+            logger.error("retry-error:", error)
+            execRow.error = execRow + error.toString()
+          }
+        });
       } catch (e: any) {
-        execRow.error = e.toString();
+        execRow.error = execRow.error.toString() + e.toString();
       } finally {
         accountIns
           .getCexExchange()
@@ -152,6 +164,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
           status: 0,
         };
         try {
+          //@ts-ignore
           execRow.result = await accountIns.order[executeFun](
             order.orderId,
             order.symbol,
@@ -176,6 +189,7 @@ class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
     ammContext: AmmContext
   ): Promise<IHedgeOrderItem[]> {
     const mode = _.get(ammContext, "quoteInfo.mode", undefined);
+    // @ts-ignore
     const orderList: IHedgeOrderItem[] = await this[`prepareOrder_${mode}`](
       ammContext
     );

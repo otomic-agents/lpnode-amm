@@ -17,6 +17,7 @@ class AppEnv {
   public initConfig() {
     this.initBaseConfig();
     this.preProcessEnv();
+    //@ts-ignore
     console.log(process["_sys_config"]);
   }
 

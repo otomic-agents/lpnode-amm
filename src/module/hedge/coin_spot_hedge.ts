@@ -25,6 +25,7 @@ import {
 import { AsyncOrderMonitor } from "./async_order_monitor";
 import { SysMongoQueue } from "../../sys_lib/mongo_queue";
 
+
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
 const appName = _.get(process.env, "APP_NAME", undefined);
@@ -52,7 +53,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     logger.debug(`Start consuming the hedging queue......`);
 
     // Start processing the hedge queue
-    hedgeQueue.process(async (job, done) => {
+    hedgeQueue.process(async (job: any, done: Function) => {
       try {
         await this.worker.worker(job.data);
         done();
@@ -439,13 +440,12 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
         `calculation formula: ${cexBalanceBn
           .toFixed(8)
           .toString()}-${cexBalanceLockedBn
-          .toFixed(8)
-          .toString()}>${srcTokenCountBn.toString()}`
+            .toFixed(8)
+            .toString()}>${srcTokenCountBn.toString()}`
       );
       //  if cex balance lt swap amount  return false
       logger.warn(
-        `symbol:[${
-          cexSymbol[0].symbol
+        `symbol:[${cexSymbol[0].symbol
         }] Insufficient balance for hedging Cex:${cexBalanceBn
           .toFixed(8)
           .toString()} amount:${srcTokenCountBn.toFixed(8).toString()}`

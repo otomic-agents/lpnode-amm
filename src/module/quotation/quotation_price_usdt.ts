@@ -217,7 +217,7 @@ class QuotationPrice {
       });
 
       let cost = 0;
-      execResult.map((it) => {
+      execResult.map((it:any) => {
         cost = SystemMath.execNumber(
           `${cost} +${it.executeAmount} * ${it.price}`,
           "",
@@ -255,7 +255,7 @@ class QuotationPrice {
       });
 
       let cost = 0;
-      execResult.map((it) => {
+      execResult.map((it:any) => {
         cost = SystemMath.execNumber(
           `${cost} +${it.executeAmount} * ${it.price}`,
           "",

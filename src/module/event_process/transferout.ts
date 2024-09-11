@@ -76,6 +76,7 @@ class EventProcessTransferOut extends BaseEventProcess {
     }
     let allNonNull = true;
     for (const key in values) {
+      //@ts-ignore
       if (values[key] === null) {
         logger.error(`${key} is empty`)
         allNonNull = false;

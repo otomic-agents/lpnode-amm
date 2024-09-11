@@ -1,5 +1,6 @@
 import { AmmContext } from "../../interface/context";
 import { IEVENT_TRANSFER_IN } from "../../interface/event";
+import { EFlowStatus } from "../../interface/interface";
 import { ammContextModule } from "../../mongo_module/amm_context";
 import { BaseEventProcess } from "./base_event_process";
 import * as _ from "lodash";
@@ -21,6 +22,7 @@ class EventProcessTransferIn extends BaseEventProcess {
                 { "systemOrder.orderId": orderId },
                 {
                     $set: {
+                        "flowStatus": EFlowStatus.TransferIn,
                         "dexTradeInfo_in": {
                             rawData: _.get(
                                 msg,
@@ -28,7 +30,7 @@ class EventProcessTransferIn extends BaseEventProcess {
                                 {}
                             ),
                         },
-                        "systemOrder.transferOutTimestamp": new Date().getTime(),
+                        "systemOrder.transferInTimestamp": new Date().getTime(),
                     },
                 },
                 {

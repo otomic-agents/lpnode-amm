@@ -116,7 +116,6 @@ class EventProcessLock extends BaseEventProcess {
       if (ammContext.hedgeEnabled) {
         await this.verificationHedge(ammContext, msg); // Verify that hedging is possible
       }
-
       [orderId, systemOrder] = await this.createSystemOrder(ammContext, msg); // Create system order
       _.set(
         msg,
@@ -313,11 +312,12 @@ class EventProcessLock extends BaseEventProcess {
     const historyBN = new BigNumber(historyPrice);
     const curBN = new BigNumber(curPrice);
     const spreadBN = historyBN.minus(curBN).div(historyBN);
-    const spread = spreadBN.toString();
+    const spread = spreadBN.toFixed(3);
     logger.info(`locked spread is:${spread}`);
 
-    logger.info(`Lock quote spread ${spread.toString()}`);
+    logger.info(`Lock quote spread ${spread}`);
     if (spreadBN.gt(new BigNumber(0.003))) {
+      console.log("max spread")
       throw new Error(`max spread ${spread.toString()}`);
     }
   }
@@ -406,8 +406,7 @@ class EventProcessLock extends BaseEventProcess {
       systemTime,
       limitTime,
       createTime + limitTime,
-      `systemTime>createTime + limitTime? ${
-        systemTime > createTime + limitTime
+      `systemTime>createTime + limitTime? ${systemTime > createTime + limitTime
       }`
     );
     if (systemTime > createTime + limitTime) {

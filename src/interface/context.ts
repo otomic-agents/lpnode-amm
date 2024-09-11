@@ -17,6 +17,7 @@ interface AmmContext {
   };
   baseInfo: {
     fee: number;
+    sourceFee?: number;
     srcChain: {
       id: number;
       nativeTokenPrecision: number,
@@ -36,7 +37,7 @@ interface AmmContext {
       coinType: string;
       symbol: string;
       chainId: number;
-      tokenName:string;
+      tokenName: string;
     };
     dstToken: {
       precision: number;
@@ -45,7 +46,7 @@ interface AmmContext {
       coinType: string;
       symbol: string;
       chainId: number;
-      tokenName:string;
+      tokenName: string;
     };
   };
   swapInfo: {

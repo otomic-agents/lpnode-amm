@@ -319,6 +319,7 @@ class BinanceSpot implements IStdExchangeSpot {
     logger.debug(`User 【${this.apiKey}】create order:`);
     console.dir(orderData, { depth: 5 });
     lostAmount = _.get(orderData, "lostAmount", "");
+    //@ts-ignore
     delete orderData["lostAmount"];
 
     const postStr = signatureObject(orderData, this.apiSecret);
@@ -591,7 +592,7 @@ class BinanceSpot implements IStdExchangeSpot {
     // /sapi/v1/capital/config/getall
     const capitalAllUrl = `https://api.binance.com/sapi/v1/capital/config/getall`;
     // const capitalAllUrl = "https://api.binance.com/api/v3/pinssg";
-    const queryData = undefined;
+    const queryData:any = undefined;
     const request = new BinanceSpotRequest();
     const ret = await request.get(
       capitalAllUrl,

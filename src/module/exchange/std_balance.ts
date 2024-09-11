@@ -49,8 +49,10 @@ class StdBalance {
     }
     if (loadTestBalance === true) {
       // return test balance
+      // @ts-ignore
       if (this.testBalance[symbol]) {
         return {
+          // @ts-ignore
           free: this.testBalance[symbol].toString(),
           asset: symbol,
           locked: "0",

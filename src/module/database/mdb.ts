@@ -21,7 +21,7 @@ class Mdb {
 
   public awaitDbConn(key: string) {
     return new Promise((resolve, reject) => {
-      this.connPromise.set(key, (error, result) => {
+      this.connPromise.set(key, (error:any, result:any) => {
         if (error) {
           reject(error);
           return;

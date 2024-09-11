@@ -26,6 +26,7 @@ class SysIoRedis {
         return delay;
       },
     });
+    //@ts-ignore
     redisClient["keepRunner"] = setInterval(() => {
       redisClient.ping();
     }, 1000 * 5);

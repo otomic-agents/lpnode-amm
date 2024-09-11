@@ -128,16 +128,16 @@ interface IHedgeClass {
 
   getSwapMax(ammContext: AmmContext): Promise<BigNumber>; // Returns the maximum amount that can be swapped
 
-  checkHedgeCond(ammContext: AmmContext); // check Hedge Cond
+  checkHedgeCond(ammContext: AmmContext): any; // check Hedge Cond
   preExecOrder(ammContext: AmmContext): Promise<boolean>;
 
-  hedge(info: ISpotHedgeInfo);
+  hedge(info: ISpotHedgeInfo): any;
 
-  lockHedgeBalance(ammContext: AmmContext, accountId: string);
+  lockHedgeBalance(ammContext: AmmContext, accountId: string): any;
 
-  writeJob(hedgeinfo: ISpotHedgeInfo);
+  writeJob(hedgeinfo: ISpotHedgeInfo): any;
 
-  calculateCapacity(ammContext: AmmContext);
+  calculateCapacity(ammContext: AmmContext): any;
 }
 
 interface IOrderbookStoreItem {
@@ -167,6 +167,8 @@ enum EFlowStatus {
   AnswerOffer = "AnswerOffer",
   Locked = "Locked",
   TransferOut = "TransferOut",
+  TransferIn = "TransferIn",
+  TransferInefund = "TransferInefund",
   WaitHedge = "WaitHedge",
   NoHedge = "NoHedge",
   HedgeCompletion = "HedgeCompletion",

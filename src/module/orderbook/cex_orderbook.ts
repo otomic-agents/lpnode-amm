@@ -143,6 +143,7 @@ class CexOrderbook implements IOrderbook {
       }
       for (const key in data) {
         // update local orderbook data
+        // @ts-ignore
         this.spotOrderbook.set(key, data[key]);
       }
     } catch (e) {

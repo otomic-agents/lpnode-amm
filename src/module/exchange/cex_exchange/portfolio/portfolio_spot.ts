@@ -171,7 +171,9 @@ class PortfolioSpot implements IStdExchangeSpot {
     );
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
+      //@ts-ignore
       const total = accountSpotBalanceInfo["spot_balances"][key]["total"];
+      //@ts-ignore
       const free = accountSpotBalanceInfo["spot_balances"][key]["avaiable"];
       const locked = SystemMath.execNumber(`${total} - ${free}`).toString();
       this.balance.set(key, {
