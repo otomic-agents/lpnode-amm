@@ -103,8 +103,10 @@ class ChainBalance {
           _.get(ret, "data.data", {}),
           item.chainId
         );
+        
       } catch (e) {
         const err: any = e;
+
         logger.error(
           `An error occurred with the request :${reqUrl} dex balance sync error:${err.toString()}`
         );
@@ -248,7 +250,7 @@ class ChainBalance {
    */
   private uniqDstChain(): { chainId: number; clientUri: string }[] {
     const tokenList = this.bridgeItemList;
-    const ret: { chainId: number; clientUri }[] = [];
+    const ret: { chainId: number; clientUri:string }[] = [];
     const cacheChainId: Map<number, boolean> = new Map();
     for (const item of tokenList) {
       const dstChainId = item.dst_chain_id;

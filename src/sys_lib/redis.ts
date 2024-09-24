@@ -26,6 +26,7 @@ class SysIoRedis {
         return delay;
       },
     });
+    //@ts-ignore
     redisClient["keepRunner"] = setInterval(() => {
       redisClient.ping();
     }, 1000 * 5);
@@ -39,6 +40,6 @@ class SysIoRedis {
   }
 }
 setInterval(() => {
-  logger.info(`system redis conn count:${systemRedisConnCount}`);
+  logger.debug(`system redis conn count:${systemRedisConnCount}`);
 }, 1000 * 10);
 export { SysIoRedis };

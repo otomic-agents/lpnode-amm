@@ -1,7 +1,6 @@
 /* eslint-disable arrow-parens */
 import { chainAdapter } from "./chain_adapter/chain_adapter";
 import * as fs from "fs";
-const bs58 = require("bs58");
 import * as _ from "lodash";
 import {
   IBridgeTokenConfigItem,
@@ -22,20 +21,19 @@ import { installModule } from "./mongo_module/install";
 import { ICexAccountApiType } from "./interface/std_difi";
 import path from "path";
 
-const Web3 = require("web3");
-const web3 = new Web3();
 
 class DataConfig {
   private baseConfig: any;
   private hedgeConfig: IHedgeConfig = {
     hedgeType: IHedgeType.Null,
     hedgeAccount: "",
+    feeSymbol: "",
   };
   private chainTokenUsd: Map<number, number> = new Map();
   // @ts-ignore
   private chainMaxTokenUsd: Map<number, number> = new Map();
   private chainMap: Map<number, string> = new Map();
-  private chainDataMap: Map<number, { chainType: string }> = new Map();
+  private chainDataMap: Map<number, { chainType: string, nativeTokenPrecision: number }> = new Map();
   private chainTokenMap: Map<number, string> = new Map();
   private tokenToSymbolMap: Map<string, ICexCoinConfig> = new Map();
   private rawChainDataConfig: {
@@ -66,8 +64,8 @@ class DataConfig {
   private lpConfig: {
     quotationInterval: number;
   } = {
-    quotationInterval: 1000 * 10,
-  };
+      quotationInterval: 1000 * 10,
+    };
   private extendFun: any = null;
   private statusReport: any = null;
   public setExtend(extendFun: any) {
@@ -141,7 +139,7 @@ class DataConfig {
           return new Promise(() => {
             this.statusReport
               .pendingStatus("Wait for the configuration to complete")
-              .catch((e) => {
+              .catch((e: any) => {
                 logger.error(`Failed to write status`, e);
               });
             logger.warn("Wait for the configuration to complete..");
@@ -230,6 +228,7 @@ class DataConfig {
     }
     let hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
     const hedgeAccount = _.get(baseConfig, "hedgeConfig.hedgeAccount", null);
+    const feeSymbol = _.get(baseConfig, "hedgeConfig.feeSymbol", "");
     if (!hedgeType) {
       logger.error(`Incorrect base configuration data`);
       await TimeSleepForever(
@@ -241,6 +240,7 @@ class DataConfig {
     }
     this.hedgeConfig.hedgeType = hedgeType;
     this.hedgeConfig.hedgeAccount = hedgeAccount;
+    this.hedgeConfig.feeSymbol = feeSymbol;
     this.hedgeAccountList = _.get(baseConfig, "hedgeConfig.accountList", []);
     if (hedgeAccount.length <= 0 && hedgeType !== "Null") {
       logger.error(
@@ -367,8 +367,9 @@ class DataConfig {
         logger.error("synchronize TokenList error");
       });
     }, 1000 * 60 * 2);
-    await this.loadTokenToSymbol();
     await this.loadChainConfig();
+    await this.loadTokenToSymbol();
+
   }
 
   private async loadTokenToSymbol() {
@@ -384,6 +385,7 @@ class DataConfig {
     tokenList.map((it) => {
       const uniqAddress = this.convertAddressToUniq(it.address, it.chainId);
       const key = `${it.chainId}_${uniqAddress}`;
+      console.log(it.address, "🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁🚁")
       this.tokenToSymbolMap.set(key, {
         chainId: it.chainId,
         address: this.convertAddressToHex(it.address, it.chainId),
@@ -421,19 +423,22 @@ class DataConfig {
       chainType: string;
       tokenName: string;
       tokenUsd: number;
+      precision: number;
     }[] = await chainListModule.find({}).lean();
 
     _.map(chainList, (item) => {
       this.chainMap.set(item.chainId, item.chainName);
-      this.chainDataMap.set(item.chainId, { chainType: item.chainType });
+      logger.info(item.chainId, item.chainType, "0000000--")
+      this.chainDataMap.set(item.chainId, { chainType: item.chainType, nativeTokenPrecision: item.precision });
       this.chainTokenMap.set(item.chainId, item.tokenName);
+
     });
     console.log("chain base data:");
     console.table(chainList);
     await TimeSleepMs(100);
   }
 
-  public getStdCoinSymbolInfoByToken(token: string, chainId: number) {
+  public getStdCoinSymbolInfoByToken(token: string, chainId: number): { symbol: string | null, coinType: string } {
     const chainKey = `${chainId}`;
     const uniqAddress = this.convertAddressToUniq(token, chainId);
     const key = `${chainKey}_${uniqAddress}`;
@@ -456,6 +461,7 @@ class DataConfig {
     const key1 = `${token1ChainId}_${uniqAddress1}`;
     const token0Symbol = this.tokenToSymbolMap.get(key0);
     const token1Symbol = this.tokenToSymbolMap.get(key1);
+    // logger.debug(token0Symbol,token1Symbol,"🚁🚁🚁🚁🚁🚁")
     if (!token0Symbol || !token1Symbol) {
       logger.warn(`【${token0}/${token1}】not found`);
       return undefined;
@@ -476,21 +482,17 @@ class DataConfig {
 
   public convertAddressToUniq(address: string, chainId: number): string {
     if (address.startsWith("0x")) {
-      return web3.utils.hexToNumberString(address);
+      return chainAdapter[`AddressToUniq_0`](address);
     }
-    const chainType = _.get(
-      this.chainDataMap.get(chainId),
-      "chainType",
-      undefined
-    );
-    if (chainType === "near") {
-      const bytes = bs58.decode(address);
-      const ud = web3.utils.hexToNumberString(
-        `0x${Buffer.from(bytes).toString("hex")}`
-      );
+
+    try {
+      //@ts-ignore
+      const ud: string = chainAdapter[`AddressToUniq_${chainId}`](address);
       return ud;
+    } catch (e) {
+      logger.error("unprocessable address.", address);
+      throw new Error("unprocessable address.");
     }
-    return address;
   }
 
   private convertAddressToHex(address: string, chainId: number): string {
@@ -498,7 +500,9 @@ class DataConfig {
       return address;
     }
     try {
+
       const hexAddress: string =
+        //@ts-ignore
         chainAdapter[`AddressAdapter_${chainId}`](address);
       return hexAddress;
     } catch (e) {
@@ -534,6 +538,7 @@ class DataConfig {
     }
     const usd = this.chainMaxTokenUsd.get(chainId);
     if (!usd) {
+      logger.warn("There is no configuration for the maximum limit of native tokens.")
       return 0;
     }
     return usd;
@@ -649,6 +654,12 @@ class DataConfig {
       "defFeeSetting:",
       defFeeSetting
     );
+    const minChargeUsdt = _.get(this.baseConfig, "bridgeBaseConfig.minChargeUsdt", 0)
+    if (minChargeUsdt === 0) {
+      logger.debug("bridgeBaseConfig.minChargeUsdt Can not be empty");
+      await TimeSleepForever("bridgeBaseConfig.minChargeUsdt Can not be empty");
+      return;
+    }
     this.bridgeTokenList = this.bridgeTokenList.map((it) => {
       const itemConfig = _.find(bridgeConfig, { bridgeId: it.id.toString() });
       if (itemConfig) {
@@ -719,8 +730,16 @@ class DataConfig {
         return item;
       }
     });
-    logger.error("precision not found");
-    throw new Error(`precision not found ${hexAddress}`);
+    logger.error("Precision data unavailable");
+    throw new Error(`Precision data unavailable ${hexAddress}`);
+  }
+  public getChainNativeTokenPrecision(chainId: number) {
+    let chainData = this.chainDataMap.get(chainId);
+    if (!chainData) {
+      logger.error("Unable to locate chain data")
+      throw new Error("Unable to locate chain data ")
+    }
+    return chainData.nativeTokenPrecision;
   }
 }
 

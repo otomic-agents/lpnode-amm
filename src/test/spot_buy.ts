@@ -22,9 +22,10 @@ async function main() {
   await accountManager.init();
   await TimeSleepMs(1000 * 10);
   logger.debug("execute");
+  accountManager.initAccountsInfo()
   accountManager
-    .getAccount("a001")
-    ?.order.spotTradeCheck("ETH/USDT", 0.0001, 0.334);
+    .getAccount("001")
+    ?.order.spotBuy("001BU", "BNB/USDT", "0.9", undefined, "518")
 }
 
 main()

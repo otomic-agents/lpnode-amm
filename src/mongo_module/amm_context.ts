@@ -22,11 +22,23 @@ const ammContextSchema = new Schema({
   tradeStatus: Number,
   profitStatus: Number,
   flowStatus: String,
+  dexTradeInfo_out: Object,
+  dexTradeInfo_out_confirm: Object,
+  dexTradeInfo_out_refund: Object,
+  dexTradeInfo_in: Object,
+  dexTradeInfo_in_confirm: Object,
+  dexTradeInfo_in_refund: Object,
+  createtime: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 ammContextSchema.index({ "systemOrder.id": 1, type: -1 });
 ammContextSchema.index({ tradeStatus: 1, type: -1 });
 ammContextSchema.index({ profitStatus: 1, type: -1 });
+ammContextSchema.index({ flowStatus: 1, type: -1 });
+
 
 export const ammContextModule = mongoConn.model(
   "ammContextModule",

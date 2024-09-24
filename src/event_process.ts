@@ -4,11 +4,13 @@ import { IBridgeTokenConfigItem } from "./interface/interface";
 import { business } from "./module/business";
 import { lockEventQueue } from "./module/event_process/lock_queue";
 import { redisSub } from "./redis_bus";
+import { getNewRedis } from "./redis_bus";
 import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
 import { systemRedisBus } from "./system_redis_bus";
 import { channelMessageModule } from "./mongo_module/channel_message";
-
+const crypto = require("crypto");
+const redis_ins = getNewRedis();
 class EventProcess {
   public async process() {
     systemRedisBus.on("bridgeUpdate", () => {
@@ -80,7 +82,7 @@ class EventProcess {
 
   private startProcessQueue() {
     logger.info("consumption queue");
-    lockEventQueue.process(async (job, done) => {
+    lockEventQueue.process(async (job: any, done: any) => {
       const msg: IEVENT_LOCK_QUOTE = _.get(job, "data", undefined);
       try {
         if (!msg) {
@@ -105,7 +107,11 @@ class EventProcess {
       IEVENT_NAME.EVENT_TRANSFER_OUT,
       IEVENT_NAME.EVENT_TRANSFER_OUT_CONFIRM,
       IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND,
+      IEVENT_NAME.EVENT_TRANSFER_IN,
+      IEVENT_NAME.EVENT_TRANSFER_IN_CONFIRM,
+      IEVENT_NAME.EVENT_TRANSFER_IN_REFUND,
     ];
+
     if (processCmdList.includes(msg.cmd)) {
       logger.debug(
         "received message",
@@ -130,7 +136,20 @@ class EventProcess {
         // await business.lockQuote(msg);
         return;
       }
-
+      if (
+        msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT ||
+        msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_CONFIRM ||
+        msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND
+      ) {
+        const hash = crypto.createHash("md5").update(message).digest("hex");
+        console.log(hash);
+        const existing = await redis_ins.get(hash);
+        if (existing !== null) {
+          console.log("Duplicate message detected, skipping processing.");
+          return;
+        }
+        await redis_ins.set(hash, "1", "EX", 600); // 600 sec = 10 m
+      }
       if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT) {
         await business.onTransferOut(msg);
         return;
@@ -142,6 +161,16 @@ class EventProcess {
       if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND) {
         await business.onTransferOutRefund(msg);
         return;
+      }
+      if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_IN) {
+        await business.onTransferIn(msg);
+        return;
+      }
+      if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_IN_CONFIRM) {
+        await business.onTransferInConfirm(msg);
+      }
+      if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_IN_REFUND) {
+        await business.onTransferInRefund(msg);
       }
     } catch (e) {
       logger.error(`process Event Error Cmd ${msg.cmd}`, e);

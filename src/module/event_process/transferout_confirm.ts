@@ -44,6 +44,11 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
         "flowStatus",
         EFlowStatus.WaitHedge
       );
+      await ammContextManager.appendContext(
+        orderId,
+        "dexTradeInfo_out_confirm",
+        _.get(msg, "business_full_data.event_transfer_out_confirm")
+      )
       await this.processHedge(msg, ammContext);
     } else {
       // mark no hedging required
@@ -85,7 +90,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     );
     const dstChainPayNativeTokenAmountNumber = getNumberFrom16(
       dstChainPayNativeTokenAmountRaw,
-      18
+      ammContext.baseInfo.dstChain.nativeTokenPrecision
     );
 
     ammContext.chainOptInfo.dstChainPayNativeTokenAmount =

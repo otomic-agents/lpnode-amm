@@ -17,12 +17,17 @@ interface AmmContext {
   };
   baseInfo: {
     fee: number;
+    sourceFee?: number;
     srcChain: {
       id: number;
+      nativeTokenPrecision: number;
+      nativeTokenName: string;
       tokenName: string;
     };
     dstChain: {
       id: number;
+      nativeTokenPrecision: number;
+      nativeTokenName: string;
       tokenName: string;
     };
     srcToken: {
@@ -32,7 +37,7 @@ interface AmmContext {
       coinType: string;
       symbol: string;
       chainId: number;
-      tokenName:string;
+      tokenName: string;
     };
     dstToken: {
       precision: number;
@@ -41,7 +46,7 @@ interface AmmContext {
       coinType: string;
       symbol: string;
       chainId: number;
-      tokenName:string;
+      tokenName: string;
     };
   };
   swapInfo: {
@@ -96,6 +101,7 @@ interface AmmContext {
   profitStatus: number;
   systemContext: {
     lockStepInfo: any;
+    transferoutInfo?: any;
     transferoutConfirmInfo: any;
   };
   flowStatus: EFlowStatus;

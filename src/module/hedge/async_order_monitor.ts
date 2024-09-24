@@ -97,8 +97,11 @@ class AsyncOrderMonitor {
     const key = `systemOrder.hedgeResult.${rowIndex}.commitResult`;
     const statusKey = `systemOrder.hedgeResult.${rowIndex}.status`;
     const data = {};
+    //@ts-ignore
     data[key] = rawData;
+    //@ts-ignore
     data[statusKey] = 3; // update status
+    //@ts-ignore
     data["flowStatus"] = EFlowStatus.HedgeFailure;
     try {
       const find = {
@@ -131,8 +134,11 @@ class AsyncOrderMonitor {
     const key = `systemOrder.hedgeResult.${rowIndex}.result`;
     const statusKey = `systemOrder.hedgeResult.${rowIndex}.status`;
     const data = {};
+    //@ts-ignore
     data[key] = orderData;
+    //@ts-ignore
     data[statusKey] = 1; // update status
+    //@ts-ignore
     data["flowStatus"] = EFlowStatus.HedgeCompletion;
     try {
       const find = {

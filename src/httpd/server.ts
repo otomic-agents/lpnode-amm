@@ -9,16 +9,16 @@ if (!_.get(process.env, "production", undefined)) {
   port = 18083;
 }
 app.use(express.json());
-app.post("/setTokenToSymbol", (req, res) => {
+app.post("/setTokenToSymbol", (req:any, res:any) => {
   setCtrl.setTokenToSymbol(req, res);
 });
-app.post("/setHedgeConfig", (req, res) => {
+app.post("/setHedgeConfig", (req:any, res:any) => {
   setCtrl.setHedgeConfig(req, res);
 });
-app.post("/setChainName", (req, res) => {
+app.post("/setChainName", (req:any, res:any) => {
   setCtrl.setChainName(req, res);
 });
-app.post("/eventTest", (req, res) => {
+app.post("/eventTest", (req:any, res:any) => {
   setCtrl.eventTest(req, res);
 });
 

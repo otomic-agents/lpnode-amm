@@ -37,7 +37,7 @@ class PortfolioExchange extends Emittery implements IStdExchange {
         this.accountId // test account
       );
       logger.debug("login to ws:", this.accountId);
-      this.exchangePrivateStream.on("streamEvent", (data) => {
+      this.exchangePrivateStream.on("streamEvent", (data:any) => {
         logger.debug(data);
         const action = _.get(data, "action", "unknow");
         const market = _.get(data, "payload.market", "");

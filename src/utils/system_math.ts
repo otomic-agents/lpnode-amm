@@ -1,6 +1,7 @@
 import * as mathlib from "mathjs";
 import { all, create } from "mathjs";
 import * as _ from "lodash";
+import { logger } from "../sys_lib/logger";
 // configure the default type of numbers as BigNumbers
 const replaceall = require("replaceall");
 const mathIns = create(all);
@@ -9,12 +10,15 @@ mathIns.config({ number: "BigNumber", precision: 20 });
 class SystemMath {
   static exec(formula: string, title = ""): mathlib.BigNumber {
     formula = replaceall("\n", "", formula);
+    const rest = mathIns.evaluate(formula);
     if (title !== "") {
-      console.log(`${title}\n`);
-      console.log("exec: ", formula);
+      logger.info({
+        "title": `${title}`,
+        "formula": formula,
+        "result": rest.toFixed(8)
+      })
     }
-
-    return mathIns.evaluate(formula);
+    return rest
   }
 
   static execNumber(formula: string, title = "", debug = false): number {

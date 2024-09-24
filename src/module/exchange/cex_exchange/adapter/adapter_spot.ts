@@ -43,7 +43,7 @@ class AdapterSpot implements IStdExchangeSpot {
         method: "get",
       });
 
-      logger.info(`Adapter loadBalances`);
+      // logger.info(`Adapter loadBalances`);
       const retData = _.get(response, "data");
       const retCode = _.get(retData, "code", 1);
 
@@ -265,7 +265,10 @@ class AdapterSpot implements IStdExchangeSpot {
       minNotional,
       {
         status: { limits: _.get(item, "limits.cost", {}) },
-        symbolInfo: item,
+        symbolInfo: {
+          id: _.get(item, "id"),
+          symbol: _.get(item, "symbol")
+        },
       }
     );
     throw new Error(

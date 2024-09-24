@@ -24,15 +24,15 @@ class CexOrderbook implements IOrderbook {
 
     if (orderbookItem) {
       const timeNow = new Date().getTime();
-      logger.info(
-        "orderbook timestamp:",
-        orderbookItem.timestamp,
-        "timeNow:",
-        timeNow,
-        "diff:",
-        timeNow - orderbookItem.timestamp
-      );
-      if (timeNow - orderbookItem.timestamp > 1000 * 300) {
+      // logger.info(
+      //   "orderbook timestamp:",
+      //   orderbookItem.timestamp,
+      //   "timeNow:",
+      //   timeNow,
+      //   "diff:",
+      //   timeNow - orderbookItem.timestamp
+      // );
+      if (timeNow - orderbookItem.timestamp > 1000 * 60) {
         logger.warn(
           `order book expired.`,
           (timeNow - orderbookItem.timestamp) / 1000,
@@ -129,7 +129,7 @@ class CexOrderbook implements IOrderbook {
       if (_.get(process.env, "LP_MARKET_SERVICE_URL", undefined)) {
         url = _.get(process.env, "LP_MARKET_SERVICE_URL", "");
       }
-      logger.info(`request orderbook Url:`, url);
+      // logger.info(`request orderbook Url:`, url);
       const result = await axios.request({
         url,
         method: "get",
@@ -143,6 +143,7 @@ class CexOrderbook implements IOrderbook {
       }
       for (const key in data) {
         // update local orderbook data
+        // @ts-ignore
         this.spotOrderbook.set(key, data[key]);
       }
     } catch (e) {

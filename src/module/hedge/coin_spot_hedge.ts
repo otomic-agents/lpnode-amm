@@ -18,12 +18,13 @@ import { EthUnit } from "../../utils/eth";
 import { SystemMath } from "../../utils/system_math";
 import { ConsoleDirDepth5 } from "../../utils/console";
 import {
-  ICexExchangeList,
+  // ICexExchangeList,
   IOrderExecModel,
   ISpotOrderResult,
 } from "../../interface/std_difi";
 import { AsyncOrderMonitor } from "./async_order_monitor";
 import { SysMongoQueue } from "../../sys_lib/mongo_queue";
+
 
 const stringify = require("json-stringify-safe");
 const { ethers } = require("ethers");
@@ -52,7 +53,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     logger.debug(`Start consuming the hedging queue......`);
 
     // Start processing the hedge queue
-    hedgeQueue.process(async (job, done) => {
+    hedgeQueue.process(async (job: any, done: Function) => {
       try {
         await this.worker.worker(job.data);
         done();
@@ -107,18 +108,23 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
   }
 
-  public getHedgeFeeSymbol() {
+  public getHedgeFeeSymbol(): string {
+
     const accountIns = accountManager.getAccount(
       dataConfig.getHedgeConfig().hedgeAccount
     );
     if (!accountIns) {
       throw `account ins not initialized`;
     }
-    const exchangeName = accountIns.getExchangeName();
-    if (exchangeName === ICexExchangeList.binance) {
-      return "BNB";
+    // const exchangeName = accountIns.getExchangeName();
+    // if (exchangeName === ICexExchangeList.binance) {
+    //   return "BNB";
+    // }
+    const symbol = dataConfig.getHedgeConfig().feeSymbol
+    if (symbol === "") {
+      throw "Please configure feeSymbol.";
     }
-    throw "no compatible exchange";
+    return symbol;
   }
 
   private async initAccount() {
@@ -434,13 +440,12 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
         `calculation formula: ${cexBalanceBn
           .toFixed(8)
           .toString()}-${cexBalanceLockedBn
-          .toFixed(8)
-          .toString()}>${srcTokenCountBn.toString()}`
+            .toFixed(8)
+            .toString()}>${srcTokenCountBn.toString()}`
       );
       //  if cex balance lt swap amount  return false
       logger.warn(
-        `symbol:[${
-          cexSymbol[0].symbol
+        `symbol:[${cexSymbol[0].symbol
         }] Insufficient balance for hedging Cex:${cexBalanceBn
           .toFixed(8)
           .toString()} amount:${srcTokenCountBn.toFixed(8).toString()}`
@@ -462,7 +467,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       const orderList = await this.worker.prepareOrder(ammContext);
       console.log(`orders requiring pre-execution`);
       console.dir(orderList, ConsoleDirDepth5);
-      await this.worker.simulationExec(orderList);
+      // await this.worker.simulationExec(orderList);
       return true;
     } catch (e) {
       logger.error(`simulation order execute error`, e);

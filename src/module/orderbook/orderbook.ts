@@ -15,7 +15,7 @@ class Orderbook {
 
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
     const ret = this.provider.getSpotOrderbook(stdSymbol);
-    console.dir(ret, { depth: 5 });
+    // console.dir(ret, { depth: 5 });
     return ret;
   }
 

@@ -116,7 +116,6 @@ class EventProcessLock extends BaseEventProcess {
       if (ammContext.hedgeEnabled) {
         await this.verificationHedge(ammContext, msg); // Verify that hedging is possible
       }
-
       [orderId, systemOrder] = await this.createSystemOrder(ammContext, msg); // Create system order
       _.set(
         msg,
@@ -199,7 +198,7 @@ class EventProcessLock extends BaseEventProcess {
     );
     const dstChainPayNativeTokenAmountNumber = getNumberFrom16(
       dstChainPayNativeTokenAmountRaw,
-      18
+      ammContext.baseInfo.dstChain.nativeTokenPrecision
     );
 
     ammContext.chainOptInfo.dstChainPayNativeTokenAmount =
@@ -240,7 +239,8 @@ class EventProcessLock extends BaseEventProcess {
     if (!dstNativeAmountRaw) {
       throw new Error(`dst_native_amount amount is empty`);
     }
-    const dstNativeAmount = EthUnit.fromWei(dstNativeAmountRaw, 18);
+    // console.log(ammContext);
+    const dstNativeAmount = EthUnit.fromWei(dstNativeAmountRaw, ammContext.baseInfo.dstChain.nativeTokenPrecision);
     const formulaNative = `1/${ammContext.quoteInfo.native_token_orig_price}*${dstNativeAmount}`;
     const dstNativeTokenToSrcTokenValue = SystemMath.exec(
       formulaNative,
@@ -251,6 +251,7 @@ class EventProcessLock extends BaseEventProcess {
       dstNativeTokenToSrcTokenValue
     );
     const feeFormula = `1-(${dstTokenToSrcTokenValue}+${dstNativeTokenToSrcTokenValue})/${ammContext.swapInfo.inputAmountNumber}`;
+    logger.info(feeFormula);
     const fee = SystemMath.execNumber(feeFormula, "fee calculate");
     logger.info("swap fee:", fee);
     ammContext.lockInfo.fee = fee.toString();
@@ -311,11 +312,12 @@ class EventProcessLock extends BaseEventProcess {
     const historyBN = new BigNumber(historyPrice);
     const curBN = new BigNumber(curPrice);
     const spreadBN = historyBN.minus(curBN).div(historyBN);
-    const spread = spreadBN.toString();
+    const spread = spreadBN.toFixed(3);
     logger.info(`locked spread is:${spread}`);
 
-    logger.info(`Lock quote spread ${spread.toString()}`);
+    logger.info(`Lock quote spread ${spread}`);
     if (spreadBN.gt(new BigNumber(0.003))) {
+      console.log("max spread")
       throw new Error(`max spread ${spread.toString()}`);
     }
   }
@@ -367,20 +369,25 @@ class EventProcessLock extends BaseEventProcess {
         chainId: ammContext.baseInfo.srcChain.id,
       }),
       "config.timeLimitForLock",
-      120
+      300
     );
     const dstTimeLimitForLock = _.get(
       _.find(dataConfig.getRawChainDataConfig(), {
         chainId: ammContext.baseInfo.dstChain.id,
       }),
       "config.timeLimitForLock",
-      120
+      300
     );
     const maxTimeLimitForLock = Math.max(
       srcTimeLimitForLock,
       dstTimeLimitForLock
     );
-    logger.info("maxTimeLimitForLock:", maxTimeLimitForLock);
+    logger.info(
+      "maxTimeLimitForLock:",
+      maxTimeLimitForLock,
+      srcTimeLimitForLock,
+      dstTimeLimitForLock
+    );
     if (limitTime > maxTimeLimitForLock) {
       throw new Error(
         `the "steptime" parameter in the lock action input does not meet expectations,limitTime:${limitTime}`
@@ -399,8 +406,7 @@ class EventProcessLock extends BaseEventProcess {
       systemTime,
       limitTime,
       createTime + limitTime,
-      `systemTime>createTime + limitTime? ${
-        systemTime > createTime + limitTime
+      `systemTime>createTime + limitTime? ${systemTime > createTime + limitTime
       }`
     );
     if (systemTime > createTime + limitTime) {

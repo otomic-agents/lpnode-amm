@@ -5,7 +5,7 @@ import { dataConfig } from "./data_config";
 const stringify = require("json-stringify-safe");
 class StatusReport {
   private store: any = {};
-
+  
   public init() {
     _.set(this.store, "status", "runing");
     setInterval(() => {

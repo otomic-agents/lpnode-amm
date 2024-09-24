@@ -4,7 +4,7 @@ import { logger } from "../../sys_lib/logger";
 
 class AmmContextManager {
   public async appendContext(orderId: number, key: string, value: any) {
-    const setObj = {};
+    const setObj :any= {};
     setObj[key] = value;
     try {
       await ammContextModule.findOneAndUpdate(

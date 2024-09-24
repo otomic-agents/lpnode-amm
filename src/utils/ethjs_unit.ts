@@ -56,8 +56,9 @@ const unitMapToMap = {
  * @returns {BigNumber} value of the unit (in Wei)
  * @throws error if the unit is not correct:w
  */
-function getValueOfUnit(unitInput) {
+function getValueOfUnit(unitInput:any) {
   const unit = unitInput ? unitInput.toLowerCase() : "ether";
+  // @ts-ignore
   var unitValue = unitMap[unit]; // eslint-disable-line
 
   if (typeof unitValue !== "string") {
@@ -89,7 +90,7 @@ function getNumber16Str(input: number, decimals = 18) {
   return new BigNumber(input).times(new BigNumber(10).pow(decimals)).toString();
 }
 
-function numberToString(arg) {
+function numberToString(arg:any) {
   if (typeof arg === "string") {
     if (!arg.match(/^-?[0-9.]+$/)) {
       throw new Error(
@@ -115,10 +116,11 @@ function numberToString(arg) {
   );
 }
 
-function fromWei(weiInput, unit, optionsInput: any = undefined) {
+function fromWei(weiInput:any, unit:any, optionsInput: any = undefined) {
   var wei = numberToBN(weiInput); // eslint-disable-line
   var negative = wei.lt(zero); // eslint-disable-line
   const base = getValueOfUnit(unit);
+  // @ts-ignore
   const baseLength = unitMap[unit].length - 1 || 1;
   const options = optionsInput || {};
 
@@ -151,9 +153,10 @@ function fromWei(weiInput, unit, optionsInput: any = undefined) {
   return value;
 }
 
-function toWei(etherInput, unit) {
+function toWei(etherInput:any, unit:any) {
   var ether = numberToString(etherInput); // eslint-disable-line
   const base = getValueOfUnit(unit);
+  // @ts-ignore
   const baseLength = unitMap[unit].length - 1 || 1;
 
   // Is it negative?
