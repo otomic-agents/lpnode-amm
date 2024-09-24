@@ -20,14 +20,14 @@ interface AmmContext {
     sourceFee?: number;
     srcChain: {
       id: number;
-      nativeTokenPrecision: number,
-      nativeTokenName: string,
+      nativeTokenPrecision: number;
+      nativeTokenName: string;
       tokenName: string;
     };
     dstChain: {
       id: number;
-      nativeTokenPrecision: number,
-      nativeTokenName: string,
+      nativeTokenPrecision: number;
+      nativeTokenName: string;
       tokenName: string;
     };
     srcToken: {
@@ -101,6 +101,7 @@ interface AmmContext {
   profitStatus: number;
   systemContext: {
     lockStepInfo: any;
+    transferoutInfo?: any;
     transferoutConfirmInfo: any;
   };
   flowStatus: EFlowStatus;
