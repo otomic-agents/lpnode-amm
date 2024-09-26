@@ -59,6 +59,9 @@ interface AmmContext {
     srcAmountNumber: number;
     dstAmount: string;
     dstAmountNumber: number;
+    dstNativeAmount: string;
+    dstNativeAmountNumber: number;
+    stepTimeLock: number;
   };
   chainOptInfo: {
     srcChainReceiveAmount: string;

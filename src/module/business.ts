@@ -21,7 +21,7 @@ import { AmmContext } from "../interface/context";
 import { ammContextModule } from "../mongo_module/amm_context";
 import { eventProcessTransferInConfirm } from "./event_process/transferin_confirm";
 import { eventProcessTransferIn } from "./event_process/transferin";
-import { eventProcessTransferInRefund } from "./event_process/transferin_refund"
+import { eventProcessTransferInRefund } from "./event_process/transferin_refund";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
@@ -39,7 +39,88 @@ class Business {
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
     await quotation.asksQuote(AmmContext);
   }
+  public async lockQuote(msg: IEVENT_LOCK_QUOTE) {
+    await eventProcessLock.process(msg);
+  }
 
+  /**
+   * onTransferOut Function
+   * @date 1/17/2023 - 9:08:53 PM
+   * @public
+   * @async
+   * @param {*} msg any
+   * @returns {*} void
+   */
+  public async onTransferOut(msg: IEVENT_TRANSFER_OUT) {
+    await eventProcessTransferOut.process(msg);
+  }
+
+  // eslint-disable-next-line valid-jsdoc
+  /**
+   * @msg {*} ""
+   */
+  public async onTransferOutConfirm(msg: any) {
+    await eventProcessTransferOutConfirm.process(msg);
+  }
+
+  public async onTransferIn(msg: any) {
+    eventProcessTransferIn.process(msg);
+  }
+  public async onTransferInConfirm(msg: any) {
+    eventProcessTransferInConfirm.process(msg);
+  }
+  public async onTransferInRefund(msg: any) {
+    eventProcessTransferInRefund.process(msg);
+  }
+  private getLpOrderId(msg: IEVENT_TRANSFER_OUT_CONFIRM): number {
+    const orderInfo = _.get(
+      msg,
+      "business_full_data.pre_business.order_append_data",
+      "{}"
+    );
+    if (!orderInfo) {
+      logger.error("order information could not be found...");
+      return 0;
+    }
+    const orderId = _.get(JSON.parse(orderInfo), "orderId", undefined);
+    if (!orderId || !_.isFinite(orderId)) {
+      logger.error("orderId parsing failed...");
+      return 0;
+    }
+    return orderId;
+  }
+
+  public async onTransferOutRefund(msg: any) {
+    const orderId = this.getLpOrderId(msg);
+    const ammContext: AmmContext = await ammContextModule
+      .findOne({
+        "systemOrder.orderId": orderId,
+      })
+      .lean();
+    if (!ammContext) {
+      throw new Error("No order information found");
+    }
+
+    const cmdMsg = JSON.stringify({
+      cmd: ILpCmd.CMD_TRANSFER_IN_REFUND,
+      business_full_data: _.get(msg, "business_full_data"),
+    });
+    logger.debug(
+      `🟦🟦🟦🟦🟦🟦🟦-->`,
+      ILpCmd.CMD_TRANSFER_IN_REFUND,
+      "Channel",
+      ammContext.systemInfo.msmqName,
+      cmdMsg
+    );
+    redisPub
+      .publish(ammContext.systemInfo.msmqName, cmdMsg)
+      .then(() => {
+        //
+      })
+      .catch((e: any) => {
+        logger.error(`Reply message to Lp Error:`, e);
+      });
+  }
   private async makeAmmContext(
     item: IBridgeTokenConfigItem,
     msg: IEVENT_ASK_QUOTE
@@ -117,13 +198,17 @@ class Business {
         srcChain: {
           id: token0.chainId,
           nativeTokenName: dataConfig.getChainTokenName(token0.chainId),
-          nativeTokenPrecision: dataConfig.getChainNativeTokenPrecision(token0.chainId),
+          nativeTokenPrecision: dataConfig.getChainNativeTokenPrecision(
+            token0.chainId
+          ),
           tokenName: dataConfig.getChainTokenName(token0.chainId),
         },
         dstChain: {
           id: token1.chainId,
           nativeTokenName: dataConfig.getChainTokenName(token1.chainId),
-          nativeTokenPrecision: dataConfig.getChainNativeTokenPrecision(token1.chainId),
+          nativeTokenPrecision: dataConfig.getChainNativeTokenPrecision(
+            token1.chainId
+          ),
           tokenName: dataConfig.getChainTokenName(token1.chainId),
         },
         srcToken: {
@@ -158,6 +243,9 @@ class Business {
         dstAmount: "",
         srcAmountNumber: 0,
         dstAmountNumber: 0,
+        dstNativeAmount: "0",
+        dstNativeAmountNumber: 0,
+        stepTimeLock: 0,
       },
       quoteInfo: {
         src_usd_price: "",
@@ -177,90 +265,6 @@ class Business {
       transferoutConfirmTime: 0,
     };
     return context;
-  }
-
-  public async lockQuote(msg: IEVENT_LOCK_QUOTE) {
-    await eventProcessLock.process(msg);
-  }
-
-  /**
-   * onTransferOut Function
-   * @date 1/17/2023 - 9:08:53 PM
-   * @public
-   * @async
-   * @param {*} msg any
-   * @returns {*} void
-   */
-  public async onTransferOut(msg: IEVENT_TRANSFER_OUT) {
-    await eventProcessTransferOut.process(msg);
-  }
-
-  // eslint-disable-next-line valid-jsdoc
-  /**
-   * @msg {*} ""
-   */
-  public async onTransferOutConfirm(msg: any) {
-    await eventProcessTransferOutConfirm.process(msg);
-  }
-
-
-  public async onTransferIn(msg: any) {
-    eventProcessTransferIn.process(msg)
-  }
-  public async onTransferInConfirm(msg: any) {
-    eventProcessTransferInConfirm.process(msg)
-  }
-  public async onTransferInRefund(msg: any) {
-    eventProcessTransferInRefund.process(msg)
-  }
-  private getLpOrderId(msg: IEVENT_TRANSFER_OUT_CONFIRM): number {
-    const orderInfo = _.get(
-      msg,
-      "business_full_data.pre_business.order_append_data",
-      "{}"
-    );
-    if (!orderInfo) {
-      logger.error("order information could not be found...");
-      return 0;
-    }
-    const orderId = _.get(JSON.parse(orderInfo), "orderId", undefined);
-    if (!orderId || !_.isFinite(orderId)) {
-      logger.error("orderId parsing failed...");
-      return 0;
-    }
-    return orderId;
-  }
-
-  public async onTransferOutRefund(msg: any) {
-    const orderId = this.getLpOrderId(msg);
-    const ammContext: AmmContext = await ammContextModule
-      .findOne({
-        "systemOrder.orderId": orderId,
-      })
-      .lean();
-    if (!ammContext) {
-      throw new Error("No order information found");
-    }
-
-    const cmdMsg = JSON.stringify({
-      cmd: ILpCmd.CMD_TRANSFER_IN_REFUND,
-      business_full_data: _.get(msg, "business_full_data"),
-    });
-    logger.debug(
-      `🟦🟦🟦🟦🟦🟦🟦-->`,
-      ILpCmd.CMD_TRANSFER_IN_REFUND,
-      "Channel",
-      ammContext.systemInfo.msmqName,
-      cmdMsg
-    );
-    redisPub
-      .publish(ammContext.systemInfo.msmqName, cmdMsg)
-      .then(() => {
-        //
-      })
-      .catch((e: any) => {
-        logger.error(`Reply message to Lp Error:`, e);
-      });
   }
 }
 

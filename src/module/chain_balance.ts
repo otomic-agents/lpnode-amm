@@ -15,6 +15,7 @@ import { eventBus } from "../sys_lib/event.bus";
 import { IBridgeTokenConfigItem } from "../interface/interface";
 import { systemRedisBus } from "../system_redis_bus";
 import { statusReport } from "../status_report";
+import { chainBalanceLockModule } from "../mongo_module/chain_balance_lock";
 
 // const var_dump = require("var_dump");
 
@@ -60,7 +61,13 @@ class ChainBalance {
       this.reportBalanceInfo();
     }, 1000 * 60);
   }
-
+  public async updateBalanceSync(): Promise<boolean> {
+    const chainList: IChainListItem[] = this.uniqDstChain();
+    await this.getChainWalletInfo(chainList);
+    logger.debug("emit", "balance:load:complete");
+    eventBus.emit("balance:load:complete");
+    return true;
+  }
   private intervalSyncBalance() {
     logger.debug(`sync dex account balance`);
     const chainList: IChainListItem[] = this.uniqDstChain();
@@ -103,14 +110,13 @@ class ChainBalance {
           _.get(ret, "data.data", {}),
           item.chainId
         );
-        
       } catch (e) {
         const err: any = e;
 
         logger.error(
           `An error occurred with the request :${reqUrl} dex balance sync error:${err.toString()}`
         );
-        logger.warn("response on error:",_.get(ret, "data"));
+        logger.warn("response on error:", _.get(ret, "data"));
       }
     };
     await AsyncEach(chainList, eachFun);
@@ -126,16 +132,68 @@ class ChainBalance {
    * @param {string} token address
    * @returns {*} cex balance number
    */
-  public getBalance(chainId: number, walletName: string, token: string): any {
+  public getBalance(
+    chainId: number,
+    walletName: string,
+    token: string
+  ): number {
     const uniqToken = dataConfig.convertAddressToUniq(token, chainId);
     const findKey = `Cid_${chainId}.${walletName}.balance.${uniqToken}.balance`;
     logger.debug(`Get Balance:Find Key ${findKey},tokenInfo ${token}`);
     const balance = Number(_.get(this.chainWalletBalance, findKey, 0));
     if (!_.isFinite(balance)) {
       logger.error(`balance is not a number`);
+      return 0;
     }
     logger.info({ findKey, balance });
     return balance;
+  }
+
+  public async getFreeBalance(
+    quoteHash: string,
+    chainId: number,
+    walletName: string,
+    token: string
+  ): Promise<number> {
+    const balance = this.getBalance(chainId, walletName, token);
+    const lockBalance = await this.getLockedBalance(
+      quoteHash,
+      chainId,
+      walletName,
+      token
+    );
+
+    const freeBalance = balance - lockBalance;
+    logger.info("🐽", {
+      balance,
+      lockBalance,
+      freeBalance,
+    });
+    if (freeBalance <= 0) {
+      logger.warn("The balance should not be less than zero.");
+    }
+    return freeBalance;
+  }
+  private async getLockedBalance(
+    quoteHash: string,
+    chainId: number,
+    walletName: string,
+    token: string
+  ): Promise<number> {
+    const totkenId = dataConfig.convertAddressToUniq(token, chainId);
+    const lockedRecord: {
+      amount: number;
+      locked: true;
+    }[] = await chainBalanceLockModule.find({
+      walletName: walletName,
+      tokenId: totkenId,
+      lock: true,
+    });
+    let totalAmount = 0;
+    for (const record of lockedRecord) {
+      totalAmount += record.amount;
+    }
+    return totalAmount;
   }
 
   private setRemoteInfoToLocalBalance(
@@ -229,7 +287,7 @@ class ChainBalance {
     console.table(balanceList);
   }
 
-  private formatChainBalance(
+  public formatChainBalance(
     hexBalance: string,
     decimals: number | undefined
   ): number {
@@ -250,7 +308,7 @@ class ChainBalance {
    */
   private uniqDstChain(): { chainId: number; clientUri: string }[] {
     const tokenList = this.bridgeItemList;
-    const ret: { chainId: number; clientUri:string }[] = [];
+    const ret: { chainId: number; clientUri: string }[] = [];
     const cacheChainId: Map<number, boolean> = new Map();
     for (const item of tokenList) {
       const dstChainId = item.dst_chain_id;
