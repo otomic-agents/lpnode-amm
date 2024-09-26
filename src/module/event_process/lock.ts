@@ -21,6 +21,8 @@ import { EthUnit } from "../../utils/eth";
 import { ammContextManager } from "../amm_context_manager/amm_context_manager";
 import { SystemMath } from "../../utils/system_math";
 import { getNumberFrom16 } from "../../utils/ethjs_unit";
+import { chainBalanceLock } from "../chain_balance_lock";
+import { chainBalance } from "../chain_balance";
 
 const stringify = require("json-stringify-safe");
 
@@ -67,6 +69,7 @@ class EventProcessLock extends BaseEventProcess {
   ];
 
   public async process(msg: IEVENT_LOCK_QUOTE): Promise<void> {
+    console.log(msg);
     const quoteHash = _.get(
       msg,
       "pre_business.swap_asset_information.quote.quote_base.quote_hash",
@@ -93,10 +96,26 @@ class EventProcessLock extends BaseEventProcess {
       "pre_business.swap_asset_information.amount",
       ""
     );
+    ammContext.swapInfo.stepTimeLock = _.get(
+      msg,
+      "pre_business.swap_asset_information.step_time_lock",
+      0
+    );
     ammContext.swapInfo.systemSrcFee = srcFee;
     _.set(ammContext, "systemContext.lockStepInfo", msg);
     ammContext.systemContext.lockStepInfo = msg;
     ammContext.swapInfo.systemDstFee = dstFee;
+    ammContext.swapInfo.dstAmount = _.get(
+      msg,
+      "pre_business.swap_asset_information.dst_amount_need",
+      "0"
+    );
+    ammContext.swapInfo.dstNativeAmount = _.get(
+      msg,
+      "pre_business.swap_asset_information.dst_native_amount_need",
+      "0"
+    );
+    ammContext.swapInfo;
     let systemOrder;
     let orderId;
     try {
@@ -125,14 +144,14 @@ class EventProcessLock extends BaseEventProcess {
         })
       ); // return orderId
       _.set(msg, "pre_business.locked", true);
-      _.set(msg, "pre_business.err_msg", "");
+      _.set(msg, "pre_business.lock_message", "");
       logger.info(`new orderId:${orderId}`);
     } catch (e) {
       const err: any = e;
       logger.error(`lock has been rejected Error:${err.toString()}`);
       _.set(msg, "pre_business.order_append_data", JSON.stringify({}));
       _.set(msg, "pre_business.locked", false);
-      _.set(msg, "pre_business.err_msg", err.toString());
+      _.set(msg, "pre_business.lock_message", err.toString());
     } finally {
       await this.response(msg, ammContext.systemInfo.msmqName);
     }
@@ -240,7 +259,10 @@ class EventProcessLock extends BaseEventProcess {
       throw new Error(`dst_native_amount amount is empty`);
     }
     // console.log(ammContext);
-    const dstNativeAmount = EthUnit.fromWei(dstNativeAmountRaw, ammContext.baseInfo.dstChain.nativeTokenPrecision);
+    const dstNativeAmount = EthUnit.fromWei(
+      dstNativeAmountRaw,
+      ammContext.baseInfo.dstChain.nativeTokenPrecision
+    );
     const formulaNative = `1/${ammContext.quoteInfo.native_token_orig_price}*${dstNativeAmount}`;
     const dstNativeTokenToSrcTokenValue = SystemMath.exec(
       formulaNative,
@@ -317,7 +339,7 @@ class EventProcessLock extends BaseEventProcess {
 
     logger.info(`Lock quote spread ${spread}`);
     if (spreadBN.gt(new BigNumber(0.003))) {
-      console.log("max spread")
+      console.log("max spread");
       throw new Error(`max spread ${spread.toString()}`);
     }
   }
@@ -406,7 +428,8 @@ class EventProcessLock extends BaseEventProcess {
       systemTime,
       limitTime,
       createTime + limitTime,
-      `systemTime>createTime + limitTime? ${systemTime > createTime + limitTime
+      `systemTime>createTime + limitTime? ${
+        systemTime > createTime + limitTime
       }`
     );
     if (systemTime > createTime + limitTime) {
@@ -426,8 +449,62 @@ class EventProcessLock extends BaseEventProcess {
    * @returns {void} ""
    */
   private async verificationDexBalance(ammContext: AmmContext) {
-    return true;
-    //
+    ammContext.swapInfo.dstAmount;
+    const chainId = ammContext.baseInfo.dstChain.id;
+    const dstTokenNumber: number = chainBalance.formatChainBalance(
+      ammContext.swapInfo.dstAmount,
+      ammContext.baseInfo.dstToken.precision
+    );
+    const dstNativeTokenNumber: number = chainBalance.formatChainBalance(
+      ammContext.swapInfo.dstNativeAmount,
+      ammContext.baseInfo.dstChain.nativeTokenPrecision
+    );
+
+    const dstTokenFree = await chainBalance.getFreeBalance(
+      ammContext.quoteInfo.quote_hash,
+      chainId,
+      ammContext.walletInfo.walletName,
+      ammContext.baseInfo.dstToken.address
+    );
+    const dstNativeTokenFree = await chainBalance.getFreeBalance(
+      ammContext.quoteInfo.quote_hash,
+      chainId,
+      ammContext.walletInfo.walletName,
+      "0x0"
+    );
+    if (dstTokenFree < dstTokenNumber) {
+      const errMsg =
+        "Insufficient balance: The destination token balance is less than the required amount.";
+
+      logger.error(errMsg);
+      throw new Error(errMsg);
+    }
+    if (dstNativeTokenFree < dstNativeTokenNumber) {
+      const errMsg =
+        "Insufficient native token balance: The available native token balance is less than the required amount.";
+      logger.error(errMsg);
+      throw new Error(errMsg);
+    }
+
+    await chainBalanceLock.updateAndUnLock(
+      ammContext.quoteInfo.quote_hash,
+      ammContext.baseInfo.dstChain.id,
+      ammContext.walletInfo.walletName,
+      dataConfig.convertAddressToUniq(
+        ammContext.baseInfo.dstToken.address,
+        ammContext.baseInfo.dstChain.id
+      ),
+      "0",
+      chainBalance.formatChainBalance(
+        ammContext.swapInfo.dstAmount,
+        ammContext.baseInfo.dstToken.precision
+      ),
+      chainBalance.formatChainBalance(
+        ammContext.swapInfo.dstNativeAmount,
+        ammContext.baseInfo.dstChain.nativeTokenPrecision
+      ),
+      ammContext.swapInfo.stepTimeLock
+    );
   }
 
   /**

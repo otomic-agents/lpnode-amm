@@ -298,12 +298,12 @@ class Quotation {
       `${dstChainMaxSwapUsd} / ${nativeTokenPrice}`
     );
 
-    logger.info("🐸", dstChainMaxSwapUsd, nativeTokenPrice)
+    logger.info("🐸", dstChainMaxSwapUsd, nativeTokenPrice);
     if (!maxCountBN.isFinite()) {
       throw `An error occurred in calculating the maximum quotation of the target chain token !isFinite`;
     }
     const maxCount = Number(maxCountBN.toFixed(8).toString());
-    const nativeTokenBalance = chainBalance.getBalance(
+    const nativeTokenBalance = await chainBalance.getBalance(
       ammContext.baseInfo.dstChain.id,
       ammContext.walletInfo.walletName,
       "0x0"
@@ -316,7 +316,7 @@ class Quotation {
       maxSwapGasCount, // supply value convertible quantity
       orderbookLiquidity, // order book liquidity
     ];
-    logger.debug("minSourceData", minSourceData)
+    logger.debug("minSourceData", minSourceData);
     let nativeTokenMax = SystemMath.min(minSourceData);
     if (!_.isFinite(nativeTokenMax)) {
       logger.error(`Error in calculating the maximum amount of tokens`);
@@ -342,8 +342,8 @@ class Quotation {
 
   public async queryRealtimeQuote(ammContext: AmmContext): Promise<string> {
     await orderbook.refreshOrderbook(); // Immediately refresh the latest orderbook
-    const quoteData = { quote_data: {} }
-    this.price_dst_token(ammContext, quoteData)
+    const quoteData = { quote_data: {} };
+    this.price_dst_token(ammContext, quoteData);
     const [price] = this.calculatePrice(ammContext, quoteData);
     return price;
   }
@@ -351,14 +351,22 @@ class Quotation {
   @measure
   @memo()
   public async asksQuote(ammContext: AmmContext) {
-    const enable = _.get(dataConfig.getBaseConfig(), "bridgeBaseConfig.enable", "true")
+    const enable = _.get(
+      dataConfig.getBaseConfig(),
+      "bridgeBaseConfig.enable",
+      "true"
+    );
     if (enable === "false") {
-      console.log("amm status:", enable)
-      logger.warn("amm is closed.")
+      console.log("amm status:", enable);
+      logger.warn("amm is closed.");
       return;
     }
-    if (mathlib.bignumber(ammContext.swapInfo.inputAmount).eq(mathlib.bignumber(0))) {
-      logger.warn("The inputAmount must be greater than 0")
+    if (
+      mathlib
+        .bignumber(ammContext.swapInfo.inputAmount)
+        .eq(mathlib.bignumber(0))
+    ) {
+      logger.warn("The inputAmount must be greater than 0");
       return;
     }
 
@@ -577,10 +585,16 @@ class Quotation {
       srcTokenPrice,
       dstTokenPrice
     );
-    this.resizeFee(ammContext, _.get(sourceObject.quote_data, "dst_usd_price"), ammContext.swapInfo.inputAmount, priceBn)
+    this.resizeFee(
+      ammContext,
+      _.get(sourceObject.quote_data, "dst_usd_price"),
+      ammContext.swapInfo.inputAmount,
+      priceBn
+    );
     const targetPriceBN = SystemMath.exec(
-      `${priceBn} * (1-${ammContext.baseInfo.fee})`
-      , "Calculate the price");
+      `${priceBn} * (1-${ammContext.baseInfo.fee})`,
+      "Calculate the price"
+    );
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: srcTokenPrice,
@@ -590,7 +604,6 @@ class Quotation {
     const totalOrigPrice = SystemMath.exec(
       `${ammContext.swapInfo.inputAmountNumber}*${priceBn}`
     );
-
 
     return [
       targetPriceBN.toString(),
@@ -632,7 +645,12 @@ class Quotation {
     }
     logger.info("get orderbook ", stdSymbol);
     const [[price]] = bids;
-    this.resizeFee(ammContext, _.get(sourceObject.quote_data, "dst_usd_price"), ammContext.swapInfo.inputAmount, price)
+    this.resizeFee(
+      ammContext,
+      _.get(sourceObject.quote_data, "dst_usd_price"),
+      ammContext.swapInfo.inputAmount,
+      price
+    );
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: { bids, asks, timestamp },
@@ -641,7 +659,10 @@ class Quotation {
     });
 
     return [
-      SystemMath.exec(`${price} * (1 - ${ammContext.baseInfo.fee})`, "Calculate the price").toString(),
+      SystemMath.exec(
+        `${price} * (1 - ${ammContext.baseInfo.fee})`,
+        "Calculate the price"
+      ).toString(),
       SystemMath.exec(`1* ${price}`).toString(),
       SystemMath.exec(
         `${ammContext.swapInfo.inputAmountNumber} * ${price}`
@@ -668,9 +689,15 @@ class Quotation {
       srcTokenPrice,
       dstTokenPrice
     );
-    this.resizeFee(ammContext, _.get(sourceObject.quote_data, "dst_usd_price"), ammContext.swapInfo.inputAmount, priceBn)
+    this.resizeFee(
+      ammContext,
+      _.get(sourceObject.quote_data, "dst_usd_price"),
+      ammContext.swapInfo.inputAmount,
+      priceBn
+    );
     const targetPriceBN = SystemMath.exec(
-      `${priceBn} * (1-${ammContext.baseInfo.fee})`, "Calculate the price"
+      `${priceBn} * (1-${ammContext.baseInfo.fee})`,
+      "Calculate the price"
     );
     Object.assign(sourceObject.quote_data, {
       orderbook: {
@@ -693,15 +720,23 @@ class Quotation {
     sourceObject: any = undefined
   ): [string, string, string] {
     const priceBn = mathlib.bignumber(1);
-    this.resizeFee(ammContext, _.get(sourceObject.quote_data, "dst_usd_price"), ammContext.swapInfo.inputAmount, priceBn)
+    this.resizeFee(
+      ammContext,
+      _.get(sourceObject.quote_data, "dst_usd_price"),
+      ammContext.swapInfo.inputAmount,
+      priceBn
+    );
 
-    const targetPriceBN = SystemMath.exec(`${priceBn}* (1-${ammContext.baseInfo.fee})`, "Calculate the price")
+    const targetPriceBN = SystemMath.exec(
+      `${priceBn}* (1-${ammContext.baseInfo.fee})`,
+      "Calculate the price"
+    );
     Object.assign(sourceObject.quote_data, {
       orderbook: {},
     });
-    const totalOrigPrice = mathlib.bignumber(
-      ammContext.swapInfo.inputAmountNumber
-    ).times(priceBn);
+    const totalOrigPrice = mathlib
+      .bignumber(ammContext.swapInfo.inputAmountNumber)
+      .times(priceBn);
     return [
       targetPriceBN.toString(),
       priceBn.toString(),
@@ -730,15 +765,25 @@ class Quotation {
 
     const [[price]] = asks;
     const priceBn = mathlib.bignumber(1).div(mathlib.bignumber(price));
-    this.resizeFee(ammContext, _.get(sourceObject.quote_data, "dst_usd_price"), ammContext.swapInfo.inputAmount, priceBn)
-    const targetPriceBN = SystemMath.exec(`${priceBn} * (1 - ${ammContext.baseInfo.fee})`, "Calculate the price");
+    this.resizeFee(
+      ammContext,
+      _.get(sourceObject.quote_data, "dst_usd_price"),
+      ammContext.swapInfo.inputAmount,
+      priceBn
+    );
+    const targetPriceBN = SystemMath.exec(
+      `${priceBn} * (1 - ${ammContext.baseInfo.fee})`,
+      "Calculate the price"
+    );
     Object.assign(sourceObject.quote_data, {
       orderbook: {
         A: null,
         B: { bids, asks, timestamp },
       },
     });
-    const totalOrigPrice = SystemMath.execNumber(`${ammContext.swapInfo.inputAmountNumber}*${priceBn}`)
+    const totalOrigPrice = SystemMath.execNumber(
+      `${ammContext.swapInfo.inputAmountNumber}*${priceBn}`
+    );
     return [
       targetPriceBN.toFixed(8).toString(),
       SystemMath.exec(`1/${price}`).toFixed(8).toString(),
@@ -880,15 +925,25 @@ class Quotation {
 
     logger.debug(
       `maximum supply`,
-      new BigNumber(capacity).toFixed(ammContext.baseInfo.srcToken.precision).toString()
+      new BigNumber(capacity)
+        .toFixed(ammContext.baseInfo.srcToken.precision)
+        .toString()
     );
-    logger.info("convert info ", capacity.toString(), ammContext.baseInfo.srcToken.precision)
+    logger.info(
+      "convert info ",
+      capacity.toString(),
+      ammContext.baseInfo.srcToken.precision
+    );
     const etherWei = EthUnit.toWei(
-      new BigNumber(capacity).toFixed(ammContext.baseInfo.srcToken.precision).toString(),
+      new BigNumber(capacity)
+        .toFixed(ammContext.baseInfo.srcToken.precision)
+        .toString(),
       ammContext.baseInfo.srcToken.precision
     );
     _.assign(sourceObject.quote_data, {
-      capacity_num: new BigNumber(capacity).toFixed(ammContext.baseInfo.srcToken.precision).toString(),
+      capacity_num: new BigNumber(capacity)
+        .toFixed(ammContext.baseInfo.srcToken.precision)
+        .toString(),
       capacity: `0x${etherWei}`,
     });
   }
@@ -954,7 +1009,7 @@ class Quotation {
    * @private
    */
   private async dstBalanceMaxSwap(ammContext: AmmContext): Promise<number> {
-    const dstTokenBalance = chainBalance.getBalance(
+    const dstTokenBalance = await chainBalance.getBalance(
       ammContext.baseInfo.dstToken.chainId,
       ammContext.walletInfo.walletName,
       ammContext.baseInfo.dstToken.address
@@ -1015,32 +1070,44 @@ class Quotation {
       );
     }
   }
-  private resizeFee(ammContext: AmmContext, targetCoinUsdPrice: mathlib.BigNumber, leftInputAmount: string, price: mathlib.BigNumber): void {
-    const minChargeUsdt = _.get(dataConfig.getBaseConfig(), "bridgeBaseConfig.minChargeUsdt", "0")
-    const minChargeUsdtBn: mathlib.BigNumber = mathlib.bignumber(minChargeUsdt)
-    logger.info(`min charge usdt ${minChargeUsdtBn.toFixed(3)}`)
+  private resizeFee(
+    ammContext: AmmContext,
+    targetCoinUsdPrice: mathlib.BigNumber,
+    leftInputAmount: string,
+    price: mathlib.BigNumber
+  ): void {
+    const minChargeUsdt = _.get(
+      dataConfig.getBaseConfig(),
+      "bridgeBaseConfig.minChargeUsdt",
+      "0"
+    );
+    const minChargeUsdtBn: mathlib.BigNumber = mathlib.bignumber(minChargeUsdt);
+    logger.info(`min charge usdt ${minChargeUsdtBn.toFixed(3)}`);
     if (minChargeUsdtBn.eq(mathlib.bignumber(0))) {
-      logger.warn("There is no minimum charge configured.")
-      return
+      logger.warn("There is no minimum charge configured.");
+      return;
     }
 
+    const total_usd_value = SystemMath.exec(
+      `${leftInputAmount}*${price}* ${targetCoinUsdPrice}`
+    );
 
-    const total_usd_value = SystemMath.exec(`${leftInputAmount}*${price}* ${targetCoinUsdPrice}`)
-
-    const want_usdt_percentage = SystemMath.exec(`${mathlib.bignumber(minChargeUsdt)}/${total_usd_value}`)
+    const want_usdt_percentage = SystemMath.exec(
+      `${mathlib.bignumber(minChargeUsdt)}/${total_usd_value}`
+    );
     logger.info({
-      "title": "⚖️⚖️⚖️⚖️⚖️⚖️⚖️⚖️⚖️",
-      "total_usd_value": total_usd_value,
-      "want_usdt_percentage": want_usdt_percentage
-    })
+      title: "⚖️⚖️⚖️⚖️⚖️⚖️⚖️⚖️⚖️",
+      total_usd_value: total_usd_value,
+      want_usdt_percentage: want_usdt_percentage,
+    });
     if (want_usdt_percentage.gt(ammContext.baseInfo.fee)) {
-      logger.info("🚩resize fee:", want_usdt_percentage.toFixed(3))
-      ammContext.baseInfo.sourceFee = ammContext.baseInfo.fee
-      ammContext.baseInfo.fee = parseFloat(want_usdt_percentage.toFixed(3))
+      logger.info("🚩resize fee:", want_usdt_percentage.toFixed(3));
+      ammContext.baseInfo.sourceFee = ammContext.baseInfo.fee;
+      ammContext.baseInfo.fee = parseFloat(want_usdt_percentage.toFixed(3));
       logger.info({
-        "fee": `${want_usdt_percentage.toFixed(3)}--${ammContext.baseInfo.fee}`,
-        "resized_fee": ammContext.baseInfo.fee
-      })
+        fee: `${want_usdt_percentage.toFixed(3)}--${ammContext.baseInfo.fee}`,
+        resized_fee: ammContext.baseInfo.fee,
+      });
     }
   }
   // @ts-ignore
