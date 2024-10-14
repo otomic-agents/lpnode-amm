@@ -376,6 +376,7 @@ class EventProcessLock extends BaseEventProcess {
     ammContext: AmmContext,
     msg: IEVENT_LOCK_QUOTE
   ): Promise<void> {
+    return;
     const limitTime = _.get(
       msg,
       "pre_business.swap_asset_information.step_time_lock",

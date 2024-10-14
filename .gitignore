@@ -16,3 +16,4 @@ src/env.js
 env.sh
 build.sh
 .venv
+result.log
