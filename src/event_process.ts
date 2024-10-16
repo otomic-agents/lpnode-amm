@@ -72,10 +72,10 @@ class EventProcess {
     const itemList: IBridgeTokenConfigItem[] = dataConfig.getBridgeTokenList();
     for (const item of itemList) {
       logger.debug(
-        `subscribe bridgeItem channel ${item.msmq_name} ${item.srcToken}/${item.dstToken}`
+        `subscribe bridgeItem channel ${item.msmq_name}_${item.relay_api_key} ${item.srcToken}/${item.dstToken}`
       );
-      await redisSub.subscribe(item.msmq_name);
-      subList.push(item.msmq_name);
+      await redisSub.subscribe(item.msmq_name + "_" + item.relay_api_key);
+      subList.push(item.msmq_name + "_" + item.relay_api_key);
     }
     _.set(redisSub, "_subList", subList);
   }
@@ -121,6 +121,7 @@ class EventProcess {
     } else {
       logger.debug(
         "received message skip",
+        `【${channel}】`,
         `【${msg.cmd}】`,
         JSON.stringify(msg).substring(0, 100)
       );

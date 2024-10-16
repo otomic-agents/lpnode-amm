@@ -578,6 +578,8 @@ class DataConfig {
       walletName: string;
       srcClientUri: string;
       dstClientUri: string;
+      relayApiKey:string;
+      
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
     logger.info(`loaded BridgeConfigs count: [${lpConfigList.length}] `);
@@ -599,6 +601,7 @@ class DataConfig {
         srcToken: item.srcToken,
         dstToken: item.dstToken,
         msmq_name: item.msmqName,
+        msmq_path :item.msmqName+"_"+ item.relayApiKey,
         wallet: {
           name: item.walletName,
           balance: {},
@@ -607,6 +610,7 @@ class DataConfig {
         dst_chain_client_uri: item.dstClientUri,
         src_chain_client_url: item.srcClientUri,
         enable_hedge: false,
+        relay_api_key: item.relayApiKey,
       };
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const context = this;
@@ -727,8 +731,16 @@ class DataConfig {
   }
 
   public findItemByMsmqName(name: string) {
+
+
     const ret: any = _.find(this.bridgeTokenList, {
       msmq_name: name,
+    });
+    return ret;
+  }
+  public findItemByMsmqPath(name:string){
+    const ret: any = _.find(this.bridgeTokenList, {
+      msmq_path: name,
     });
     return ret;
   }

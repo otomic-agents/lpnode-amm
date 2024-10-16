@@ -33,7 +33,7 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     if (_.get(ammContext, "systemOrder.cexResult", undefined)) {
       throw new Error("Confirm cannot be repeated");
     }
-    ammContext.bridgeItem = dataConfig.findItemByMsmqName(
+    ammContext.bridgeItem = dataConfig.findItemByMsmqPath(
       ammContext.systemInfo.msmqName
     );
     await this.setChainOptInfoData(ammContext, msg);

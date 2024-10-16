@@ -83,7 +83,7 @@ class EventProcessLock extends BaseEventProcess {
     if (!ammContext) {
       throw new Error(`no context found`);
     }
-    ammContext.bridgeItem = dataConfig.findItemByMsmqName(
+    ammContext.bridgeItem = dataConfig.findItemByMsmqPath(
       ammContext.systemInfo.msmqName
     );
     if (!ammContext) {
@@ -664,7 +664,7 @@ class EventProcessLock extends BaseEventProcess {
     if (srcToken === "" || dstToken === "") {
       throw new Error(`Exchange currency pair information not found`);
     }
-    const config: IBridgeTokenConfigItem = dataConfig.findItemByMsmqName(
+    const config: IBridgeTokenConfigItem = dataConfig.findItemByMsmqPath(
       ammContext.systemInfo.msmqName
     );
     if (!config) {

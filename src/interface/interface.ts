@@ -14,6 +14,8 @@ interface IBridgeTokenConfigItem {
   srcToken: string;
   dstToken: string;
   msmq_name: string;
+  msmq_path :string;
+  relay_api_key:string;
   std_symbol: string;
   wallet: {
     name: string;

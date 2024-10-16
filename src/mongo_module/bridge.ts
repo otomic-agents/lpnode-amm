@@ -16,6 +16,7 @@ const bridgesSchema = new Schema({
   ammName: String,
   dstClientUri: String,
   srcClientUri: String,
+  relayApiKey:String,
 });
 export const bridgesModule = mongoConn.model(
   "bridgesModule",
