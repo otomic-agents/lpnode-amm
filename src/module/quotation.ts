@@ -179,7 +179,7 @@ class Quotation {
     };
     // logger.debug(`send update quote to keep alive.${item.msmq_name}`);
     const quoteCmd = JSON.stringify(quoteInfo);
-    redisPub.publish(item.msmq_name, quoteCmd).catch((e: any) => {
+    redisPub.publish(item.msmq_name + "_" + item.relay_api_key, quoteCmd).catch((e: any) => {
       logger.debug(`quotation error:`, e);
     });
   }

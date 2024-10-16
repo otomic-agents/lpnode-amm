@@ -31,13 +31,20 @@ class Business {
       return;
     }
     const bridgeItem: IBridgeTokenConfigItem =
-      dataConfig.findItemByMsmqName(channel);
+      dataConfig.findItemByMsmqPath(channel);
     if (!bridgeItem) {
       logger.error(`The correct bridge configuration was not found:${channel}`);
       return;
     }
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
     await quotation.asksQuote(AmmContext);
+  }
+  private channelNameToMsmqName(input:string):string{
+        const lastIndex = input.lastIndexOf('_');
+        if (lastIndex !== -1) {
+            return input.substring(0, lastIndex);
+        }
+        return input;
   }
   public async lockQuote(msg: IEVENT_LOCK_QUOTE) {
     await eventProcessLock.process(msg);
@@ -180,7 +187,7 @@ class Business {
         dstChainPayNativeTokenAmountNumber: 0,
       },
       systemInfo: {
-        msmqName: item.msmq_name,
+        msmqName: item.msmq_name + "_" + item.relay_api_key,
       },
       lockInfo: {
         fee: "",

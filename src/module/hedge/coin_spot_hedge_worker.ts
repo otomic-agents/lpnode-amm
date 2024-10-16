@@ -20,7 +20,7 @@ interface IHedgeOrderItem {
 
 class CoinSpotHedgeWorker extends CoinSpotHedgeBase {
   public async worker(call: { orderId: number; ammContext: AmmContext }) {
-    call.ammContext.bridgeItem = dataConfig.findItemByMsmqName(
+    call.ammContext.bridgeItem = dataConfig.findItemByMsmqPath(
       call.ammContext.systemInfo.msmqName
     );
     const optOrderList = await this.prepareOrder(call.ammContext);
