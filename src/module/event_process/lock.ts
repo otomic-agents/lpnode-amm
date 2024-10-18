@@ -474,6 +474,7 @@ class EventProcessLock extends BaseEventProcess {
       "0x0"
     );
     if (dstTokenFree < dstTokenNumber) {
+      logger.info("dstTokenFree < dstTokenNumber", dstTokenFree, dstTokenNumber)
       const errMsg =
         "Insufficient balance: The destination token balance is less than the required amount.";
 
