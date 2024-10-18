@@ -187,7 +187,7 @@ class ChainBalance {
     }[] = await chainBalanceLockModule.find({
       walletName: walletName,
       tokenId: totkenId,
-      lock: true,
+      locked: true,
     });
     let totalAmount = 0;
     for (const record of lockedRecord) {
