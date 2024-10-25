@@ -9,6 +9,45 @@ import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
 import { systemRedisBus } from "./system_redis_bus";
 import { channelMessageModule } from "./mongo_module/channel_message";
+class SingleQueue {
+  private tasks: any[];
+  private isRunning: boolean;
+
+  constructor() {
+    this.tasks = [];  // Array to store tasks
+    this.isRunning = false;  // Indicates whether a task is currently executing
+    this.run();  // Start task processing in the constructor
+  }
+
+  // Add a task to the queue
+  add(task: any) {
+    this.tasks.push(task);
+  }
+
+  // Run tasks in the queue
+  async run() {
+    while (true) {  // Infinite loop to handle queue tasks
+      if (this.tasks.length === 0) {
+        this.isRunning = false;  // Mark as not running when there are no tasks
+        await new Promise(resolve => setTimeout(resolve, 50));  // Brief sleep to avoid excessive CPU usage
+        continue;  // Continue looping waiting for tasks
+      }
+
+      if (!this.isRunning) {
+        this.isRunning = true;  // Start processing a task, mark as running
+        const task = this.tasks.shift();  // Remove a task from the queue
+        try {
+          await task();  // Execute the task
+        } catch (error) {
+          console.error('Task failed:', error);
+        } finally {
+          this.isRunning = false;  // Reset the running flag after task completion
+        }
+      }
+    }
+  }
+}
+const queue = new SingleQueue();
 const crypto = require("crypto");
 const redis_ins = getNewRedis();
 class EventProcess {
@@ -83,18 +122,20 @@ class EventProcess {
   private startProcessQueue() {
     logger.info("consumption queue");
     lockEventQueue.process(async (job: any, done: any) => {
-      const msg: IEVENT_LOCK_QUOTE = _.get(job, "data", undefined);
-      try {
-        if (!msg) {
-          throw new Error(`no data available`);
+      queue.add(async () => {
+        const msg: IEVENT_LOCK_QUOTE = _.get(job, "data", undefined);
+        try {
+          if (!msg) {
+            throw new Error(`no data available`);
+          }
+          await business.lockQuote(msg);
+        } catch (e) {
+          const err: any = e;
+          logger.error(`execute quote job error:${err.toString()}`);
+        } finally {
+          done();
         }
-        await business.lockQuote(msg);
-      } catch (e) {
-        const err: any = e;
-        logger.error(`execute quote job error:${err.toString()}`);
-      } finally {
-        done();
-      }
+      });
     });
   }
 

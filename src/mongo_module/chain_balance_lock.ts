@@ -12,6 +12,7 @@ const chainBalanceLockSchema = new Schema({
   stepTimeLock: number,
   locked: boolean,
   isTimeout: boolean,
+  isTxIn: boolean,
   lockedTime: {
     type: Number, // 使用 Number 类型来存储时间戳（毫秒格式）
     default: Date.now, // 默认值为当前时间戳

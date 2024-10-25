@@ -20,6 +20,7 @@ class EventProcessTransferIn extends BaseEventProcess {
     if (!ammContext) {
       throw new Error(`No order found`);
     }
+    
     await chainBalanceLock.freeBalance(ammContext.quoteInfo.quote_hash);
     logger.info(
       "free balance ok",

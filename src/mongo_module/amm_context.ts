@@ -38,6 +38,9 @@ ammContextSchema.index({ "systemOrder.id": 1, type: -1 });
 ammContextSchema.index({ tradeStatus: 1, type: -1 });
 ammContextSchema.index({ profitStatus: 1, type: -1 });
 ammContextSchema.index({ flowStatus: 1, type: -1 });
+ammContextSchema.index({ "quoteInfo.quote_hash": 1, type: -1 });
+
+
 
 
 export const ammContextModule = mongoConn.model(

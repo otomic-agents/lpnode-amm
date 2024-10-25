@@ -7,8 +7,8 @@ class ChainBalanceLock {
     this.scheduledBalanceLockMaintenance();
   }
   public async scheduledBalanceLockMaintenance() {
-    for (;;) {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    for (; ;) {
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 10));
       try {
         await this.updateLockedStatus();
       } catch (e) {
@@ -43,7 +43,7 @@ class ChainBalanceLock {
       console.error("Error updating locked status:", err);
     }
   }
-  public async updateAndUnLock(
+  public async updateAndLock(
     qotationHash: string,
     chainId: number,
     walletName: string,
@@ -54,7 +54,11 @@ class ChainBalanceLock {
     stepTimeLock: number
   ): Promise<void> {
     try {
-      await chainBalance.updateBalanceSync();
+      stepTimeLock = 120
+      if (chainBalance.shouldUpdateBalance()) {
+        await chainBalance.updateBalanceSync();
+      }
+
       await chainBalanceLockModule.updateOne(
         {
           walletName: walletName,
@@ -100,12 +104,15 @@ class ChainBalanceLock {
     }
   }
   public async freeBalance(qotationHash: string): Promise<void> {
+    chainBalance.updateBalanceSync();
+    logger.info("free chain balance qotationHash", qotationHash)
     await chainBalanceLockModule.updateMany(
       {
         qotationHash: qotationHash,
       },
       {
         $set: {
+          isTxIn: true,
           locked: false,
         },
       }
