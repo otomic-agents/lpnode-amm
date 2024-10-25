@@ -25,6 +25,7 @@ interface IChainListItem {
 }
 
 class ChainBalance {
+  private lastUpdatedTime: number;
   private bridgeItemList: IBridgeTokenConfigItem[] = [];
   // @ts-ignore
   private chainWalletBalance: {
@@ -61,6 +62,12 @@ class ChainBalance {
       this.reportBalanceInfo();
     }, 1000 * 60);
   }
+  public shouldUpdateBalance(): boolean {
+    if (new Date().getTime() - this.lastUpdatedTime > 800) {
+      return true
+    }
+    return false
+  }
   public async updateBalanceSync(): Promise<boolean> {
     const chainList: IChainListItem[] = this.uniqDstChain();
     await this.getChainWalletInfo(chainList);
@@ -85,20 +92,13 @@ class ChainBalance {
   private async getChainWalletInfo(chainList: IChainListItem[]) {
     const eachFun = async (item: IChainListItem) => {
       let reqUrl = `${item.clientUri}/lpnode/get_wallets`;
-      if (_.get(process.env, "UseTestWalletsUrl", "false") === "true") {
-        const reqUrlHost = _.get(process.env, "TestWalletsHost", "");
-        reqUrl = `${reqUrlHost}/lpnode/get_wallets`;
-        if (reqUrl === "") {
-          logger.error("address empty ");
-          return;
-        }
-      }
       logger.debug(`request url ............${reqUrl}`);
       let ret: any;
       try {
         ret = await axios.request({
           url: reqUrl,
           method: "POST",
+          timeout: 5000
         });
         const serviceCode = _.get(ret, "data.code", 1);
         if (serviceCode !== 200) {
@@ -120,6 +120,7 @@ class ChainBalance {
       }
     };
     await AsyncEach(chainList, eachFun);
+    this.lastUpdatedTime = new Date().getTime();
     // var_dump(this.chainWalletBalance);
   }
 

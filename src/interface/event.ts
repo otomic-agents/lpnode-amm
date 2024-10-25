@@ -13,6 +13,7 @@ interface IEVENT_ASK_QUOTE {
   cmd: string;
   amount: string;
   cid: string;
+  lpId: string;
 }
 
 interface IEVENT_LOCK_QUOTE {

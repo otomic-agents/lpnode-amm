@@ -14,6 +14,7 @@ interface AmmContext {
   };
   AskInfo: {
     cid: string;
+    lpId: string;
   };
   baseInfo: {
     fee: number;

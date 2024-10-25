@@ -43,6 +43,14 @@ class AmmContextManager {
       .lean();
     return ammContext;
   }
+  public async getContextByBusinessHash(hash: string) {
+    const ammContext: AmmContext = await ammContextModule
+      .findOne({
+        "businessHash": hash,
+      })
+      .lean();
+    return ammContext;
+  }
 }
 
 const ammContextManager: AmmContextManager = new AmmContextManager();

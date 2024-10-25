@@ -23,6 +23,7 @@ import { SystemMath } from "../../utils/system_math";
 import { getNumberFrom16 } from "../../utils/ethjs_unit";
 import { chainBalanceLock } from "../chain_balance_lock";
 import { chainBalance } from "../chain_balance";
+import { LogExecutionTime } from "../../utils/utils";
 
 const stringify = require("json-stringify-safe");
 
@@ -67,7 +68,7 @@ class EventProcessLock extends BaseEventProcess {
       },
     },
   ];
-
+  @LogExecutionTime
   public async process(msg: IEVENT_LOCK_QUOTE): Promise<void> {
     console.log(msg);
     const quoteHash = _.get(
@@ -429,8 +430,7 @@ class EventProcessLock extends BaseEventProcess {
       systemTime,
       limitTime,
       createTime + limitTime,
-      `systemTime>createTime + limitTime? ${
-        systemTime > createTime + limitTime
+      `systemTime>createTime + limitTime? ${systemTime > createTime + limitTime
       }`
     );
     if (systemTime > createTime + limitTime) {
@@ -488,7 +488,7 @@ class EventProcessLock extends BaseEventProcess {
       throw new Error(errMsg);
     }
 
-    await chainBalanceLock.updateAndUnLock(
+    await chainBalanceLock.updateAndLock(
       ammContext.quoteInfo.quote_hash,
       ammContext.baseInfo.dstChain.id,
       ammContext.walletInfo.walletName,

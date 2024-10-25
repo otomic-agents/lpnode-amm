@@ -239,6 +239,7 @@ class Business {
       },
       AskInfo: {
         cid: _.get(msg, "cid", ""),
+        lpId: _.get(msg, "lpId", ""),
       },
       swapInfo: {
         inputAmount: _.get(msg, "amount", ""),

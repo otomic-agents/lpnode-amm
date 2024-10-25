@@ -7,6 +7,8 @@ import {
   ILpCmd,
 } from "../interface/interface";
 const dayjs = require("dayjs");
+import axios from 'axios';
+import stringify from 'json-stringify-safe';
 import { redisPub } from "../redis_bus";
 import { logger } from "../sys_lib/logger";
 import { orderbook } from "./orderbook/orderbook";
@@ -16,6 +18,7 @@ import { dataConfig } from "../data_config";
 import * as _ from "lodash";
 import * as mathlib from "mathjs";
 import { quotationListHistory } from "./quotation/quotation_history";
+
 import {
   quotationPrice,
   QuotationPrice,
@@ -136,12 +139,38 @@ class Quotation {
       await this.native_token_min(ammContext, quoteInfo); // native_token_min
       await this.native_token_max(ammContext, quoteInfo); // native_token_max
 
-      await this.analysis(ammContext, quoteInfo);
+      // await this.analysis(ammContext, quoteInfo);
     } catch (e) {
       logger.error(e);
+      this.reportQuotationError(ammContext, e)
       return [undefined, undefined];
     }
     return [quoteHash, quoteInfo];
+  }
+  private async reportQuotationError(ammContext: AmmContext, e: any) {
+
+    const headers = { 'Content-Type': 'application/json' };
+    let errorInfo = {
+      errorMsg: '',
+      errorStack: '',
+      ammContext: ammContext
+    };
+    if (e instanceof Error) {
+      // e 是 Error 对象，可以安全地访问 message 和 stack
+      errorInfo.errorMsg = e.message;
+      errorInfo.errorStack = e.stack || 'No stack trace available'; // 有些环境可能不提供栈追踪
+    } else {
+      errorInfo.errorMsg = e.toString(); // 直接转换为字符串
+    }
+    const body = stringify(errorInfo);
+    logger.info("🪰", body)
+    const url = "http://n8n.edge-dev.xyz/webhook/bd3ae405-e3df-4f99-b8ec-890391d5dfe9";
+    try {
+      const response = await axios.post(url, body, { headers });
+      console.log('Server response:', response.data);
+    } catch (error) {
+      console.error('Error sending JSON data:', error);
+    }
   }
 
   public async amount_check(ammContext: AmmContext) {
