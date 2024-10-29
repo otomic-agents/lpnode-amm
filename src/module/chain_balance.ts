@@ -165,7 +165,9 @@ class ChainBalance {
     );
 
     const freeBalance = balance - lockBalance;
-    logger.info("🐽", {
+    logger.info("freeBalanceInfo")
+    console.log({
+      token,
       balance,
       lockBalance,
       freeBalance,
