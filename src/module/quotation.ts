@@ -139,7 +139,7 @@ class Quotation {
       await this.native_token_min(ammContext, quoteInfo); // native_token_min
       await this.native_token_max(ammContext, quoteInfo); // native_token_max
 
-      // await this.analysis(ammContext, quoteInfo);
+      await this.analysis(ammContext, quoteInfo);
     } catch (e) {
       logger.error(e);
       this.reportQuotationError(ammContext, e)
