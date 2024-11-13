@@ -152,7 +152,7 @@ class EventProcess {
       IEVENT_NAME.EVENT_TRANSFER_IN_CONFIRM,
       IEVENT_NAME.EVENT_TRANSFER_IN_REFUND,
     ];
-
+    console.log(msg)
     if (processCmdList.includes(msg.cmd)) {
       logger.debug(
         "received message",
