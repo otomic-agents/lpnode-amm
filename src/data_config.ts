@@ -480,7 +480,7 @@ class DataConfig {
     const key = `${chainId}_${uniqAddress}`;
     const tokenSymbol = this.tokenToSymbolMap.get(key);
     if (!tokenSymbol) {
-      logger.warn("token was not found", chainId, token);
+      logger.warn("Token was not found", chainId, token, uniqAddress);
       return undefined;
     }
     return tokenSymbol;

@@ -60,7 +60,7 @@
     "json-stringify-safe": "^5.0.1",
     "mathjs": "^11.8.0",
     "md5": "^2.3.0",
-    "mongoose": "^6.10.0",
+    "mongoose": "^7.0.0",
     "number-to-bn": "^1.7.0",
     "p-queue": "^8.0.1",
     "rate-limiter-flexible": "^2.3.6",

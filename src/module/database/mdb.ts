@@ -21,7 +21,7 @@ class Mdb {
 
   public awaitDbConn(key: string) {
     return new Promise((resolve, reject) => {
-      this.connPromise.set(key, (error:any, result:any) => {
+      this.connPromise.set(key, (error: any, result: any) => {
         if (error) {
           reject(error);
           return;
@@ -52,7 +52,14 @@ class Mdb {
       console.log(process._sys_config);
       throw "configuration file not found";
     }
-    const conn = mongoose.createConnection(url);
+    const options = {
+      serverSelectionTimeoutMS: 1000 * 10,
+      socketTimeoutMS: 45000,
+      heartbeatFrequencyMS: 1000 * 10,
+      maxPoolSize: 100,
+      family: 4,
+    };
+    const conn = mongoose.createConnection(url, options);
     this.dbList.set(key, conn);
     conn.__dbKey = key;
     conn.on("connected", () => {
@@ -63,6 +70,9 @@ class Mdb {
       }
       logger.debug("mongoos connection succeeded");
     });
+    conn.on("reconnected", () => {
+      logger.debug("mongodb  reconnected...")
+    })
     conn.on("error", (e: any) => {
       const connPromise = this.connPromise.get(key);
       if (connPromise) {

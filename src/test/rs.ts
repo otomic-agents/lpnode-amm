@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// 定义接口
 interface BridgeInfo {
   src_chain_id: number;
   dst_chain_id: number;
@@ -31,13 +30,14 @@ interface QuoteAuthenticationLimiter {
 }
 
 interface RealtimeQuote {
+  time: number;
   quote_base: QuoteBase;
   authentication_limiter: QuoteAuthenticationLimiter;
   cid: string;
 }
 
-// 构造发送的数据
 const data: RealtimeQuote = {
+  time: new Date().getTime(),
   quote_base: {
     bridge: {
       src_chain_id: 9006,
@@ -66,11 +66,9 @@ const data: RealtimeQuote = {
   cid: "J68dRZmmPgYNBUTtAAky"
 };
 
-// URL 配置
 const relay_api_key = "DlJ2LAYyJNw3Wav";
 const url = `https://5b4522f4.vaughnmedellins394.myterminus.com/relay/lpnode/${relay_api_key}/realtime_quote`;
 
-// 创建并发请求
 const promises = [];
 for (let i = 0; i < 150; i++) {
   const startTime = new Date().getTime();
@@ -101,7 +99,6 @@ for (let i = 0; i < 150; i++) {
   promises.push(promise);
 }
 
-// 使用 Promise.all 处理所有并发请求
 Promise.all(promises)
   .then(responses => {
     responses.forEach((response, index) => {
@@ -114,7 +111,6 @@ Promise.all(promises)
   })
   .catch(error => {
     if (error.response && error.response.status !== 403) {
-      // 对于非403错误的处理
       console.error('Error Response:', {
         status: error.response.status,
         data: error.response.data,
