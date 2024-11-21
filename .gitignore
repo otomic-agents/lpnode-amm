@@ -18,3 +18,5 @@ build.sh
 .venv
 result.log
 amm-result.log
+tm.log
+tm.ts

@@ -1,15 +1,17 @@
 /**
  * It is used to synchronize the order book data of Cex market service. The current market service already supports spot currency perpetual and U perpetual
  */
+import { Console } from "console";
 import {
   IMarketOrderbookRet,
   IOrderbookStoreItem,
 } from "../../interface/interface";
 import { IOrderbook } from "../../interface/orderbook";
 import { ISymbolsManager } from "../../interface/symbols_manager";
+import { getNewRedis } from "../../redis_bus";
 import { eventBus } from "../../sys_lib/event.bus";
 import { logger } from "../../sys_lib/logger";
-
+const marketRedisIns = getNewRedis()
 const axios = require("axios");
 import * as _ from "lodash";
 
@@ -79,7 +81,7 @@ class CexOrderbook implements IOrderbook {
    */
   private async syncSpotOrderbook(): Promise<void> {
     try {
-      await this.requestSpotOrderbook(); // Update and set up Spotorderbook
+      await this.requestSpotOrderbookByRedis(); // Update and set up Spotorderbook
       // logger.info("orderbook load sucess");
       this.spotOrderbookOnceLoaded = true;
     } catch (e) {
@@ -101,7 +103,7 @@ class CexOrderbook implements IOrderbook {
    */
   public async refreshOrderbook() {
     try {
-      await this.requestSpotOrderbook();
+      await this.requestSpotOrderbookByRedis();
     } catch (e) {
       logger.error(e);
     }
@@ -145,6 +147,8 @@ class CexOrderbook implements IOrderbook {
         // update local orderbook data
         // @ts-ignore
         this.spotOrderbook.set(key, data[key]);
+        // @ts-ignore
+        // console.log(key, data[key])
       }
     } catch (e) {
       const error: any = e;
@@ -154,6 +158,33 @@ class CexOrderbook implements IOrderbook {
       );
       throw e;
     }
+  }
+
+  private async requestSpotOrderbookByRedis() {
+    const symbolsStr = await marketRedisIns.get("LP_MARKET_SYMBOLS")
+    const symbols = JSON.parse(symbolsStr);
+    for (let symbol of symbols) {
+      const orderbookStr = await marketRedisIns.get(symbol)
+      const orderbook = JSON.parse(orderbookStr)
+      if (!_.get(orderbook, "bids", undefined)) {
+        logger.warn(`empty bid orderbook ${symbol}`)
+        continue;
+      }
+      const bids = (orderbook.bids as number[][]).map(bid => bid.map(item => item.toString()));
+      const asks = (orderbook.asks as number[][]).map(ask => ask.map(item => item.toString()));
+      const orderbookItem: IOrderbookStoreItem = {
+        stdSymbol: orderbook.symbol,
+        symbol: orderbook.symbol,
+        lastUpdateId: 0,
+        timestamp: orderbook.timestamp,
+        incomingTimestamp: Date.now(),
+        stream: 'spot',
+        bids,
+        asks
+      };
+      this.spotOrderbook.set(symbol, orderbookItem)
+    }
+
   }
 
   /**

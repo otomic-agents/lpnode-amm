@@ -70,7 +70,7 @@ class EventProcessLock extends BaseEventProcess {
   ];
   @LogExecutionTime
   public async process(msg: IEVENT_LOCK_QUOTE): Promise<void> {
-    console.log(msg);
+    console.dir(msg, { depth: 5 });
     const quoteHash = _.get(
       msg,
       "pre_business.swap_asset_information.quote.quote_base.quote_hash",
