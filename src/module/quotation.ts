@@ -127,7 +127,7 @@ class Quotation {
       this.process_quote_type(ammContext, quoteInfo); //  quote_orderbook_type
       this.price_src_token(ammContext, quoteInfo); // src_usd_price
       this.price_dst_token(ammContext, quoteInfo);
-      this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice dst_usd_price mode
+      await this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice dst_usd_price mode
       this.price_hedge_fee_price(ammContext, quoteInfo); // Process the price of the hedge target account fee currency pair
 
       this.price_native_token(ammContext, quoteInfo); // native_token_usdt_price native_token_price  native_token_orig_price native_token_symbol
@@ -373,7 +373,7 @@ class Quotation {
     await orderbook.refreshOrderbook(); // Immediately refresh the latest orderbook
     const quoteData = { quote_data: {} };
     this.price_dst_token(ammContext, quoteData);
-    const [price] = this.calculatePrice(ammContext, quoteData);
+    const [price] = await this.calculatePrice(ammContext, quoteData);
     return price;
   }
 
@@ -431,8 +431,8 @@ class Quotation {
    * @param {any} sourceObject ""
    * @returns {*} ""
    */
-  public price(ammContext: AmmContext, sourceObject: any) {
-    const [priceBn, origPrice, origTotalPriceBn] = this.calculatePrice(
+  public async price(ammContext: AmmContext, sourceObject: any): Promise<any> {
+    const [priceBn, origPrice, origTotalPriceBn] = await this.calculatePrice(
       ammContext,
       sourceObject
     );
@@ -596,10 +596,10 @@ class Quotation {
     throw "unsupported type";
   }
 
-  private calculatePrice_bb(
+  private async calculatePrice_bb(
     ammContext: AmmContext,
     sourceObject: any = undefined
-  ): [string, string, string] {
+  ): Promise<[string, string, string]> {
     // ETH/AVAX
     const srcTokenPrice = this.quotationPrice.getCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
@@ -614,7 +614,7 @@ class Quotation {
       srcTokenPrice,
       dstTokenPrice
     );
-    this.resizeFee(
+    await this.resizeFee(
       ammContext,
       _.get(sourceObject.quote_data, "dst_usd_price"),
       ammContext.swapInfo.inputAmount,
@@ -649,10 +649,10 @@ class Quotation {
    * @param {*} [sourceObject=undefined] ""
    * @returns {[string, string, string]} ""
    */
-  private calculatePrice_bs(
+  private async calculatePrice_bs(
     ammContext: AmmContext,
     sourceObject: any = undefined
-  ): [string, string, string] {
+  ): Promise<[string, string, string]> {
     let quoteOrderbookType = "getCoinOrderBook";
     if (ammContext.hedgeEnabled) {
       quoteOrderbookType = "getCoinExecuteOrderbook";
@@ -674,7 +674,7 @@ class Quotation {
     }
     logger.info("get orderbook ", stdSymbol);
     const [[price]] = bids;
-    this.resizeFee(
+    await this.resizeFee(
       ammContext,
       _.get(sourceObject.quote_data, "dst_usd_price"),
       ammContext.swapInfo.inputAmount,
@@ -699,10 +699,10 @@ class Quotation {
     ];
   }
 
-  private calculatePrice_ss(
+  private async calculatePrice_ss(
     ammContext: AmmContext,
     sourceObject: any = undefined
-  ): [string, string, string] {
+  ): Promise<[string, string, string]> {
     // USDT/BUSD
     const srcTokenPrice = this.quotationPrice.getCoinOrderBook(
       ammContext.baseInfo.srcToken.address,
@@ -718,7 +718,7 @@ class Quotation {
       srcTokenPrice,
       dstTokenPrice
     );
-    this.resizeFee(
+    await this.resizeFee(
       ammContext,
       _.get(sourceObject.quote_data, "dst_usd_price"),
       ammContext.swapInfo.inputAmount,
@@ -744,12 +744,12 @@ class Quotation {
     ];
   }
 
-  private calculatePrice_11(
+  private async calculatePrice_11(
     ammContext: AmmContext,
     sourceObject: any = undefined
-  ): [string, string, string] {
+  ): Promise<[string, string, string]> {
     const priceBn = mathlib.bignumber(1);
-    this.resizeFee(
+    await this.resizeFee(
       ammContext,
       _.get(sourceObject.quote_data, "dst_usd_price"),
       ammContext.swapInfo.inputAmount,
@@ -773,10 +773,10 @@ class Quotation {
     ];
   }
 
-  private calculatePrice_sb(
+  private async calculatePrice_sb(
     ammContext: AmmContext,
     sourceObject: any = undefined
-  ): [string, string, string] {
+  ): Promise<[string, string, string]> {
     // return { stdSymbol: null, bids: [[0, 0]], asks: [[0, 0]] };
     // ETH/USDT
     const { stdSymbol, bids, asks, timestamp } =
@@ -794,7 +794,7 @@ class Quotation {
 
     const [[price]] = asks;
     const priceBn = mathlib.bignumber(1).div(mathlib.bignumber(price));
-    this.resizeFee(
+    await this.resizeFee(
       ammContext,
       _.get(sourceObject.quote_data, "dst_usd_price"),
       ammContext.swapInfo.inputAmount,
@@ -820,40 +820,40 @@ class Quotation {
     ];
   }
 
-  private calculatePrice(
+  private async calculatePrice(
     ammContext: AmmContext,
     sourceObject: any = undefined
-  ): [string, string, string] {
+  ): Promise<[string, string, string]> {
     const swapType = this.getSwapType(ammContext);
     logger.info(`swapType :`, swapType);
     if (swapType === "bb") {
       // ETH-AVAX
       ammContext.quoteInfo.mode = "bb";
       Object.assign(sourceObject.quote_data, { mode: "bb" });
-      return this.calculatePrice_bb(ammContext, sourceObject);
+      return await this.calculatePrice_bb(ammContext, sourceObject);
     }
     if (swapType === "bs") {
       // ETH-USDT
       ammContext.quoteInfo.mode = "bs";
       Object.assign(sourceObject.quote_data, { mode: "bs" });
-      return this.calculatePrice_bs(ammContext, sourceObject);
+      return await this.calculatePrice_bs(ammContext, sourceObject);
     }
     if (swapType === "ss") {
       // USDT/USDT  or  USDT/USDC
       ammContext.quoteInfo.mode = "ss";
       Object.assign(sourceObject.quote_data, { mode: "ss" });
-      return this.calculatePrice_ss(ammContext, sourceObject);
+      return await this.calculatePrice_ss(ammContext, sourceObject);
     }
     if (swapType === "11") {
       // ETH/ETH or  BTC/BTC
       ammContext.quoteInfo.mode = "11";
       Object.assign(sourceObject.quote_data, { mode: "11" });
-      return this.calculatePrice_11(ammContext, sourceObject);
+      return await this.calculatePrice_11(ammContext, sourceObject);
     }
     if (swapType === "sb") {
       ammContext.quoteInfo.mode = "sb";
       Object.assign(sourceObject.quote_data, { mode: "sb" });
-      return this.calculatePrice_sb(ammContext, sourceObject);
+      return await this.calculatePrice_sb(ammContext, sourceObject);
     }
     throw new Error("exchange not implemented");
   }
@@ -873,9 +873,10 @@ class Quotation {
           gasTokenPrice
         );
     }
-    const configConvertInput = SystemMath.execNumber(
-      `10/${srcTokenPrice}*100.3%`
-    );
+    const configConvertInput = -1
+    // SystemMath.execNumber(
+    //   `10/${srcTokenPrice}*100.3%`
+    // );
     const minAmount = SystemMath.max([configConvertInput, minHedgeInputNumber]);
     if (minAmount === undefined) {
       throw new Error("Minimum volume calculation error");
@@ -1099,12 +1100,12 @@ class Quotation {
       );
     }
   }
-  private resizeFee(
+  private async resizeFee(
     ammContext: AmmContext,
     targetCoinUsdPrice: mathlib.BigNumber,
     leftInputAmount: string,
     price: mathlib.BigNumber
-  ): void {
+  ): Promise<void> {
     const minChargeUsdt = _.get(
       dataConfig.getBaseConfig(),
       "bridgeBaseConfig.minChargeUsdt",
@@ -1121,14 +1122,19 @@ class Quotation {
       `${leftInputAmount}*${price}* ${targetCoinUsdPrice}`
     );
 
+    const gasResult = await this.calculateRecentGasAverage(ammContext.baseInfo.dstChain.id);
+    logger.info(`🌍 gas used is:${gasResult}`)
     const want_usdt_percentage = SystemMath.exec(
-      `${mathlib.bignumber(minChargeUsdt)}/${total_usd_value}`
+      `${mathlib.bignumber(gasResult.averageGasUsd)}/${total_usd_value}`
     );
+
     logger.info({
       title: "⚖️⚖️⚖️⚖️⚖️⚖️⚖️⚖️⚖️",
       total_usd_value: total_usd_value,
       want_usdt_percentage: want_usdt_percentage,
+      average_gas_usd: gasResult.averageGasUsd
     });
+
     if (want_usdt_percentage.gt(ammContext.baseInfo.fee)) {
       logger.info("🚩resize fee:", want_usdt_percentage.toFixed(3));
       ammContext.baseInfo.sourceFee = ammContext.baseInfo.fee;
@@ -1137,6 +1143,62 @@ class Quotation {
         fee: `${want_usdt_percentage.toFixed(3)}--${ammContext.baseInfo.fee}`,
         resized_fee: ammContext.baseInfo.fee,
       });
+    }
+  }
+  private async calculateRecentGasAverage(chainId: number) {
+    try {
+      const transactions = await ammContextModule.find({
+        "dexTradeInfo_in": { $exists: true },
+        "dexTradeInfo_in_confirm": { $exists: true },
+        "baseInfo.dstChain.id": chainId
+      })
+        .sort({ "createtime": -1 })
+        .limit(10)
+        .lean();
+
+      if (transactions.length === 0) {
+        return { averageGasUsd: 0 };
+      }
+
+      let totalGasUsd = 0;
+      let validTxCount = 0;
+
+      for (const tx of transactions) {
+        try {
+          const nativeTokenPrice = parseFloat(tx.quoteInfo.native_token_usdt_price);
+          const nativeTokenPrecision = tx.baseInfo.dstChain.nativeTokenPrecision;
+
+          let totalGasForTx = 0;
+
+          if (tx.dexTradeInfo_in?.rawData) {
+            const gasUsedIn = JSON.parse(tx.dexTradeInfo_in.rawData.transfer_info).gasUsed;
+            totalGasForTx += parseInt(gasUsedIn);
+          }
+
+          if (tx.dexTradeInfo_in_confirm?.rawData) {
+            const gasUsedConfirm = JSON.parse(tx.dexTradeInfo_in_confirm.rawData.transfer_info).gasUsed;
+            totalGasForTx += parseInt(gasUsedConfirm);
+          }
+
+          const transferInfo = JSON.parse(tx.dexTradeInfo_in.rawData.transfer_info);
+          const gasPrice = transferInfo.effectiveGasPrice ?
+            parseInt(transferInfo.effectiveGasPrice, 16) : 1;
+          const gasUsd = (totalGasForTx * gasPrice * Math.pow(10, -nativeTokenPrecision) * nativeTokenPrice);
+
+          totalGasUsd += gasUsd;
+          validTxCount++;
+        } catch (err) {
+          logger.error(`Error processing transaction ${tx._id}:`, err);
+          continue;
+        }
+      }
+
+      return {
+        averageGasUsd: validTxCount > 0 ? totalGasUsd / validTxCount : 0
+      };
+    } catch (err) {
+      logger.error("Error calculating gas average:", err);
+      return { averageGasUsd: 0 };
     }
   }
   // @ts-ignore
