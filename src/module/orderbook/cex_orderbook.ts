@@ -18,7 +18,7 @@ import * as _ from "lodash";
 class CexOrderbook implements IOrderbook {
   private spotOrderbook: Map<string, IOrderbookStoreItem> = new Map();
   public spotOrderbookOnceLoaded = false;
-
+  private model = "REDIS" // HTTP
   // public cumulativeErrorCount = 0;
 
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
@@ -81,7 +81,14 @@ class CexOrderbook implements IOrderbook {
    */
   private async syncSpotOrderbook(): Promise<void> {
     try {
-      await this.requestSpotOrderbookByRedis(); // Update and set up Spotorderbook
+      if (this.model == "REDIS") {
+        await this.requestSpotOrderbookByRedis(); // Update and set up Spotorderbook  
+      }
+      if (this.model === "HTTP") {
+        await this.requestSpotOrderbook()
+      }
+
+
       // logger.info("orderbook load sucess");
       this.spotOrderbookOnceLoaded = true;
     } catch (e) {
@@ -103,7 +110,12 @@ class CexOrderbook implements IOrderbook {
    */
   public async refreshOrderbook() {
     try {
-      await this.requestSpotOrderbookByRedis();
+      if (this.model == "REDIS") {
+        await this.requestSpotOrderbookByRedis(); // Update and set up Spotorderbook  
+      }
+      if (this.model === "HTTP") {
+        await this.requestSpotOrderbook()
+      }
     } catch (e) {
       logger.error(e);
     }
