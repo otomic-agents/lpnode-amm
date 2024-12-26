@@ -21,9 +21,9 @@ class EventProcessTransferOut extends BaseEventProcess {
     let ammContext: AmmContext;
     try {
       logger.debug(`🏠🏠🏠🏠🏠:process event  【IEVENT_TRANSFER_OUT】symbol `);
-      
-      const  verified =  this.checkTransferOut(msg)
-      if (!verified){
+
+      const verified = this.checkTransferOut(msg)
+      if (!verified) {
         throw new Error(`checkTransferOut Failed`);
       }
       const orderId = await this.verificationBaseParameters(msg);
@@ -32,16 +32,16 @@ class EventProcessTransferOut extends BaseEventProcess {
           "systemOrder.orderId": orderId,
         })
         .lean();
-      
+
 
 
       // logger.debug(ammContext)
       if (!ammContext) {
         throw new Error(`No order found`);
       }
-      
+
       await this.verificationTime(msg);
-      
+
       // await ammContextManager.appendContext(orderId, 'flowStatus', EFlowStatus.TransferOut)
       await this.updateOrderInfo(ammContext, orderId, msg);
     } catch (e) {
@@ -54,7 +54,7 @@ class EventProcessTransferOut extends BaseEventProcess {
     };
     await this.responseMessage(responseMsg, ammContext.systemInfo.msmqName);
   }
-  private checkTransferOut(msg:IEVENT_TRANSFER_OUT): boolean {
+  private checkTransferOut(msg: IEVENT_TRANSFER_OUT): boolean {
     console.log(JSON.stringify(msg))
     const preAmount = _.get(msg, "business_full_data.pre_business.swap_asset_information.amount", null)
     const afterAmount = _.get(msg, "business_full_data.event_transfer_out.amount", null)
@@ -91,10 +91,17 @@ class EventProcessTransferOut extends BaseEventProcess {
       logger.error(new Error("amount error"))
       return false
     }
-    if (!(preLpAddress === afterLpAddress)) {
-      logger.info("LpAddress diff", preLpAddress, afterLpAddress)
-      logger.error(new Error("afterLpAddress error"))
-      return false
+    if (!(preLpAddress.toLowerCase() === afterLpAddress.toLowerCase())) {
+      logger.info(`🔍 LP Address Comparison:
+    ⛔️ Previous LP: ${preLpAddress}
+    ⛔️ Current LP: ${afterLpAddress}
+    ❌ Status: Mismatch Detected!`);
+
+      logger.error(`🚨 LP Address Validation Error:
+    Expected: ${preLpAddress}
+    Received: ${afterLpAddress}`);
+
+      return false;
     }
 
     // logger.debug(msg.business_full_data.pre_business.swap_asset_information.amount);
@@ -159,24 +166,24 @@ class EventProcessTransferOut extends BaseEventProcess {
     return orderId;
   }
 
-    private async verificationTime(msg: IEVENT_TRANSFER_OUT) {
+  private async verificationTime(msg: IEVENT_TRANSFER_OUT) {
     // const lockQuoteTimestamp = Number(
-      //   _.get(
-        //     msg,
-        //     "business_full_data.pre_business.swap_asset_information.time_lock",
-        //     0
+    //   _.get(
+    //     msg,
+    //     "business_full_data.pre_business.swap_asset_information.time_lock",
+    //     0
     //   )
     // );
     // if (!_.isFinite(lockQuoteTimestamp) || lockQuoteTimestamp === 0) {
-      //   logger.debug(`lockQuoteTimestamp incorrect`);
-      //   throw new Error(`lockQuoteTimestamp incorrect ${lockQuoteTimestamp}`);
+    //   logger.debug(`lockQuoteTimestamp incorrect`);
+    //   throw new Error(`lockQuoteTimestamp incorrect ${lockQuoteTimestamp}`);
     // }
     // const eventDelay = new Date().getTime() - lockQuoteTimestamp * 1000;
     // if (eventDelay > 1000 * 60 * 5) {
-      //   logger.error(`the time to lock in the price is too long :${eventDelay}`);
-      //   throw new Error(
-        //     `the time to lock in the price is too long :${eventDelay}`
-      //   );
+    //   logger.error(`the time to lock in the price is too long :${eventDelay}`);
+    //   throw new Error(
+    //     `the time to lock in the price is too long :${eventDelay}`
+    //   );
     // }
   }
 }
