@@ -14,8 +14,8 @@ interface IBridgeTokenConfigItem {
   srcToken: string;
   dstToken: string;
   msmq_name: string;
-  msmq_path :string;
-  relay_api_key:string;
+  msmq_path: string;
+  relay_api_key: string;
   std_symbol: string;
   wallet: {
     name: string;
@@ -31,7 +31,16 @@ interface IBridgeTokenConfigItem {
   hedge_info: BridgeHedgeInfo;
   fee: string;
 }
-
+interface ISpecialTokenConfig {
+  symbol: string;
+  orderBookConfig: {
+    price: string;
+    quantity: string;
+    depthLevels: number;
+    enabled: boolean;
+    stream: string;
+  };
+}
 enum ISwapStep {
   ASK = "ASK",
   LOCK = "LOCK",
@@ -170,7 +179,7 @@ enum EFlowStatus {
   Locked = "Locked",
   TransferOut = "TransferOut",
   TransferIn = "TransferIn",
-  TransferInefund = "TransferInefund",
+  TransferInRefund = "TransferInRefund",
   WaitHedge = "WaitHedge",
   NoHedge = "NoHedge",
   HedgeCompletion = "HedgeCompletion",
@@ -178,8 +187,22 @@ enum EFlowStatus {
   HedgeFailure = "HedgeFailure",
   HedgeAnalyzeCompletion = "HedgeAnalyzeCompletion",
 }
+enum ETradeStatus {
+  Empty = "Empty",
+  Locked = "Locked",
+  TransferOut = "TransferOut",
+  TransferIn = "TransferIn",
+  TransferOutRefund = "TransferOutRefund",
+  TransferInRefund = "TransferInRefund",
+  TransferOutConfirm = "TransferOutConfirm",
+  TransferInConfirm = "TransferInConfirm",
+  TransferInitSwap = "TransferInitSwap",
+  TransferConfirmSwap = "TransferConfirmSwap",
+  TransferRefundSwap = "TransferRefundSwap"
+}
 
 export {
+  ETradeStatus,
   ISpotHedgeInfo,
   IBridgeTokenConfigItem,
   ILpCmd,
@@ -195,4 +218,5 @@ export {
   IBalanceLock,
   ISwapStep,
   EFlowStatus,
+  ISpecialTokenConfig
 };

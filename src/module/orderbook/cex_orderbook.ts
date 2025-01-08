@@ -14,15 +14,54 @@ import { logger } from "../../sys_lib/logger";
 const marketRedisIns = getNewRedis()
 const axios = require("axios");
 import * as _ from "lodash";
+import { dataConfig } from "../../data_config";
 
 class CexOrderbook implements IOrderbook {
   private spotOrderbook: Map<string, IOrderbookStoreItem> = new Map();
   public spotOrderbookOnceLoaded = false;
   private model = "REDIS" // HTTP
   // public cumulativeErrorCount = 0;
+  /**
+ * Generate orderbook data for special tokens with fixed price and quantity
+ * @param stdSymbol - Standard symbol format (e.g., 'UGG/USDT')
+ * @returns IOrderbookStoreItem - Fixed orderbook data
+ * @throws Error if special token config not found
+ */
+  private getSpecialOrderbook(stdSymbol: string): IOrderbookStoreItem {
+    const tokenConfig = dataConfig.getSpecialTokenConfig(stdSymbol);
+    if (!tokenConfig) {
+      throw new Error(`Special token config not found for ${stdSymbol}`);
+    }
 
+    const fixedDepth: string[][] = [];
+    for (let i = 0; i < tokenConfig.orderBookConfig.depthLevels; i++) {
+      fixedDepth.push([
+        tokenConfig.orderBookConfig.price,
+        tokenConfig.orderBookConfig.quantity
+      ]);
+    }
+
+    return {
+      stdSymbol: tokenConfig.symbol,
+      symbol: tokenConfig.symbol.replace('/', ''),
+      lastUpdateId: 1000001,
+      timestamp: new Date().getTime(),
+      incomingTimestamp: new Date().getTime(),
+      stream: tokenConfig.orderBookConfig.stream,
+      bids: fixedDepth,
+      asks: fixedDepth
+    };
+  }
+  /**
+ * Get spot orderbook data for a given symbol
+ * @param stdSymbol - Standard symbol format (e.g., 'BTC/USDT', 'UGG/USDT')
+ * @returns IOrderbookStoreItem | undefined - Orderbook data or undefined if not found
+ */
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
     const orderbookItem = this.spotOrderbook.get(stdSymbol);
+    if (dataConfig.isSpecialToken(stdSymbol)) {
+      return this.getSpecialOrderbook(stdSymbol);
+    }
 
     if (orderbookItem) {
       const timeNow = new Date().getTime();
@@ -179,7 +218,10 @@ class CexOrderbook implements IOrderbook {
       const orderbookStr = await marketRedisIns.get(symbol)
       const orderbook = JSON.parse(orderbookStr)
       if (!_.get(orderbook, "bids", undefined)) {
-        logger.warn(`empty bid orderbook ${symbol}`)
+        // Skip warning log for special configured tokens
+        if (!dataConfig.isSpecialToken(symbol)) {
+          logger.warn(`empty bid orderbook ${symbol}`)
+        }
         continue;
       }
       const bids = (orderbook.bids as number[][]).map(bid => bid.map(item => item.toString()));

@@ -1,6 +1,6 @@
 import { AmmContext } from "../../interface/context";
 import { IEVENT_TRANSFER_OUT } from "../../interface/event";
-import { EFlowStatus, ILpCmd } from "../../interface/interface";
+import { EFlowStatus, ETradeStatus, ILpCmd } from "../../interface/interface";
 import { ammContextModule } from "../../mongo_module/amm_context";
 import { logger } from "../../sys_lib/logger";
 import { BaseEventProcess } from "./base_event_process";
@@ -124,8 +124,12 @@ class EventProcessTransferOut extends BaseEventProcess {
         { "systemOrder.orderId": orderId },
         {
           $set: {
-            dexTradeInfo_out: _.get(msg, "business_full_data.event_transfer_out"),
+            dexTradeInfo_out: {
+              "rawData": _.get(msg, "business_full_data.event_transfer_out")
+            },
+            hasTransaction: true,
             flowStatus: EFlowStatus.TransferOut,
+            tradeStatus: ETradeStatus.TransferOut,
             "systemOrder.transferOutInfo": {
               amount: _.get(
                 msg,

@@ -1,3 +1,6 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from "./app.module";
+import { initSysConfig } from './config/sys.config';
 const fs = require("fs");
 const path = require("path");
 const envFile = fs.existsSync(path.join(__dirname, "env.js"));
@@ -50,7 +53,7 @@ class Main {
       }
       return false;
     };
-    for (;;) {
+    for (; ;) {
       try {
         const ready = await getAdminStatus();
         if (ready === true) {
@@ -166,12 +169,19 @@ class Main {
     logger.info("bus init");
   }
 }
-
+async function bootstrap() {
+  initSysConfig();
+  const app = await NestFactory.create(AppModule);
+  await app.init();
+  // await app.listen(3000);
+}
 const mainIns: Main = new Main();
 mainIns
   .main()
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  .then(() => {})
+  .then(() => {
+    bootstrap();
+  })
   .catch((e: any) => {
     logger.error(e);
     logger.error("main process error", _.get(e, "message", "message"));

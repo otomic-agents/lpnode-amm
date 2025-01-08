@@ -5,6 +5,7 @@ import { logger } from "../../sys_lib/logger";
 import { redisPub } from "../../redis_bus";
 import {
   EFlowStatus,
+  ETradeStatus,
   IBridgeTokenConfigItem,
   ILpCmd,
 } from "../../interface/interface";
@@ -106,6 +107,16 @@ class EventProcessLock extends BaseEventProcess {
     _.set(ammContext, "systemContext.lockStepInfo", msg);
     ammContext.systemContext.lockStepInfo = msg;
     ammContext.swapInfo.systemDstFee = dstFee;
+    ammContext.swapInfo.dstSourceAmount = ammContext.swapInfo.dstAmount = _.get(
+      msg,
+      "pre_business.swap_asset_information.dst_amount",
+      "0"
+    );
+    ammContext.swapInfo.dstSourceNativeAmount = ammContext.swapInfo.dstAmount = _.get(
+      msg,
+      "pre_business.swap_asset_information.dst_native_amount",
+      "0"
+    );
     ammContext.swapInfo.dstAmount = _.get(
       msg,
       "pre_business.swap_asset_information.dst_amount_need",
@@ -157,7 +168,14 @@ class EventProcessLock extends BaseEventProcess {
       await this.response(msg, ammContext.systemInfo.msmqName);
     }
     _.set(systemOrder, "orderId", orderId);
-
+    console.log(`
+    🚀 =============================================
+    📌 SWAP INFO DEBUG OUTPUT
+    =============================================
+    ${JSON.stringify(ammContext.swapInfo, null, 2)}
+    =============================================
+    ⏰ ${new Date().toISOString()}
+    `);
     await ammContextModule.updateOne(
       {
         "quoteInfo.quote_hash": _.get(
@@ -169,6 +187,7 @@ class EventProcessLock extends BaseEventProcess {
       {
         $set: {
           flowStatus: EFlowStatus.Locked,
+          tradeStatus: ETradeStatus.Locked,
           lockMsg: _.get(msg, "pre_business.err_msg", ""),
           systemContext: ammContext.systemContext,
           swapInfo: ammContext.swapInfo,
@@ -178,7 +197,7 @@ class EventProcessLock extends BaseEventProcess {
           "lockInfo.time": new Date().getTime(),
           "lockInfo.price": ammContext.quoteInfo.origPrice,
           "lockInfo.nativeTokenPrice":
-            ammContext.quoteInfo.native_token_usdt_price,
+            ammContext.quoteInfo.native_token_usdt_price.toString(),
           "lockInfo.dstTokenPrice": ammContext.quoteInfo.dst_usd_price,
           "lockInfo.srcTokenPrice": ammContext.quoteInfo.src_usd_price,
         },

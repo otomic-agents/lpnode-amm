@@ -10,6 +10,7 @@ import {
 } from "../interface/event";
 import {
   EFlowStatus,
+  ETradeStatus,
   IBridgeTokenConfigItem,
   ILpCmd,
 } from "../interface/interface";
@@ -22,6 +23,9 @@ import { ammContextModule } from "../mongo_module/amm_context";
 import { eventProcessTransferInConfirm } from "./event_process/transferin_confirm";
 import { eventProcessTransferIn } from "./event_process/transferin";
 import { eventProcessTransferInRefund } from "./event_process/transferin_refund";
+import { eventProcessInitSwap } from "./event_process/init_swap";
+import { eventProcessConfirmSwap } from "./event_process/confirm_swap";
+import { eventProcessRefundSwap } from "./event_process/refund_swap";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
@@ -39,12 +43,12 @@ class Business {
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
     await quotation.asksQuote(AmmContext);
   }
-  private channelNameToMsmqName(input:string):string{
-        const lastIndex = input.lastIndexOf('_');
-        if (lastIndex !== -1) {
-            return input.substring(0, lastIndex);
-        }
-        return input;
+  private channelNameToMsmqName(input: string): string {
+    const lastIndex = input.lastIndexOf('_');
+    if (lastIndex !== -1) {
+      return input.substring(0, lastIndex);
+    }
+    return input;
   }
   public async lockQuote(msg: IEVENT_LOCK_QUOTE) {
     await eventProcessLock.process(msg);
@@ -78,6 +82,15 @@ class Business {
   }
   public async onTransferInRefund(msg: any) {
     eventProcessTransferInRefund.process(msg);
+  }
+  public async onInitSwap(msg: any) {
+    eventProcessInitSwap.process(msg);
+  }
+  public async onConfirmSwap(msg: any) {
+    eventProcessConfirmSwap.process(msg);
+  }
+  public async onRefundSwap(msg: any) {
+    eventProcessRefundSwap.process(msg);
   }
   private getLpOrderId(msg: IEVENT_TRANSFER_OUT_CONFIRM): number {
     const orderInfo = _.get(
@@ -167,7 +180,7 @@ class Business {
         lockStepInfo: {},
         transferoutConfirmInfo: {},
       },
-      tradeStatus: 0,
+      tradeStatus: ETradeStatus.Empty,
       profitStatus: 0,
       bridgeItem: item,
       step: 0,
@@ -250,8 +263,10 @@ class Business {
         srcAmount: "",
         dstAmount: "",
         srcAmountNumber: 0,
+        dstSourceAmount: "0",
         dstAmountNumber: 0,
         dstNativeAmount: "0",
+        dstSourceNativeAmount: "0",
         dstNativeAmountNumber: 0,
         stepTimeLock: 0,
       },

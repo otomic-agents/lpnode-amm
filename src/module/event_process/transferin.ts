@@ -1,6 +1,6 @@
 import { AmmContext } from "../../interface/context";
 import { IEVENT_TRANSFER_IN } from "../../interface/event";
-import { EFlowStatus } from "../../interface/interface";
+import { EFlowStatus, ETradeStatus } from "../../interface/interface";
 import { ammContextModule } from "../../mongo_module/amm_context";
 import { logger } from "../../sys_lib/logger";
 import { chainBalance } from "../chain_balance";
@@ -20,7 +20,7 @@ class EventProcessTransferIn extends BaseEventProcess {
     if (!ammContext) {
       throw new Error(`No order found`);
     }
-    
+
     await chainBalanceLock.freeBalance(ammContext.quoteInfo.quote_hash);
     logger.info(
       "free balance ok",
@@ -33,8 +33,9 @@ class EventProcessTransferIn extends BaseEventProcess {
         {
           $set: {
             flowStatus: EFlowStatus.TransferIn,
+            tradeStatus: ETradeStatus.TransferIn,
             dexTradeInfo_in: {
-              rawData: _.get(msg, "business_full_data.event_transfer_in", {}),
+              "rawData": _.get(msg, "business_full_data.event_transfer_in", {})
             },
             "systemOrder.transferInTimestamp": new Date().getTime(),
           },

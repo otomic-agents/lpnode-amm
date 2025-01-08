@@ -58,9 +58,11 @@ interface AmmContext {
     lpReceiveAmount: number;
     srcAmount: string;
     srcAmountNumber: number;
-    dstAmount: string;
+    dstAmount: string;  // need
+    dstSourceAmount: string;
     dstAmountNumber: number;
-    dstNativeAmount: string;
+    dstSourceNativeAmount: string;
+    dstNativeAmount: string; // need
     dstNativeAmountNumber: number;
     stepTimeLock: number;
   };
@@ -101,7 +103,7 @@ interface AmmContext {
     hedgePlan: any[];
     hedgeResult: any[];
   };
-  tradeStatus: number;
+  tradeStatus: string;
   profitStatus: number;
   systemContext: {
     lockStepInfo: any;
