@@ -3,6 +3,7 @@ import { AmmContext } from "../../interface/context";
 import { IEVENT_TRANSFER_OUT_CONFIRM } from "../../interface/event";
 import {
   EFlowStatus,
+  ETradeStatus,
   IHedgeType,
   ILpCmd,
   ISpotHedgeInfo,
@@ -37,24 +38,25 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
       ammContext.systemInfo.msmqName
     );
     await this.setChainOptInfoData(ammContext, msg);
-
+    await ammContextManager.appendContext(
+      orderId,
+      "dexTradeInfo_out_confirm",
+      {
+        "tradeStatus": ETradeStatus.TransferOutConfirm,
+        "rawData": _.get(msg, "business_full_data.event_transfer_out_confirm")
+      }
+    )
     if (ammContext.hedgeEnabled) {
-      await ammContextManager.appendContext(
-        orderId,
-        "flowStatus",
-        EFlowStatus.WaitHedge
-      );
-      await ammContextManager.appendContext(
-        orderId,
-        "dexTradeInfo_out_confirm",
-        _.get(msg, "business_full_data.event_transfer_out_confirm")
-      )
+      await ammContextManager.set(orderId, {
+        "flowStatus": EFlowStatus.WaitHedge,
+        "systemOrder.transferoutConfirmTimestamp": new Date().getTime()
+      });
+
       await this.processHedge(msg, ammContext);
     } else {
-      // mark no hedging required
       await ammContextManager.set(orderId, {
-        flowStatus: EFlowStatus.NoHedge,
-        transferoutConfirmTime: new Date().getTime(),
+        "flowStatus": EFlowStatus.NoHedge,
+        "systemOrder.transferoutConfirmTimestamp": new Date().getTime()
       });
     }
 

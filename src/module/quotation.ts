@@ -542,10 +542,15 @@ class Quotation {
     const [[dstUsdPrice]] = dstTokenAsks;
     if (dstUsdPrice === 0) {
       logger.warn(
-        `No dstToken/USDT obtained, unable to quote ${ammContext.baseInfo.dstToken.symbol}/USDT`
+        `No dstToken/USDT price obtained: token=${ammContext.baseInfo.dstToken.symbol}, ` +
+        `address=${ammContext.baseInfo.dstToken.address}, ` +
+        `chainId=${ammContext.baseInfo.dstToken.chainId}, ` +
+        `price=${dstUsdPrice}, ` +
+        `asks=${JSON.stringify(dstTokenAsks)}`
       );
       throw new Error(
-        `No dstToken/USDT obtained, unable to quote ${ammContext.baseInfo.dstToken.symbol}/USDT`
+        `No dstToken/USDT price obtained for ${ammContext.baseInfo.dstToken.symbol}, ` +
+        `price=${dstUsdPrice}`
       );
     }
     Object.assign(sourceObject.quote_data, {

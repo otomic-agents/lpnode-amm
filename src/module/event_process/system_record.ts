@@ -5,7 +5,13 @@ interface SystemRecord {
   hash: string;
   timestamp: number; // create time
   transferOutTimestamp?: number;
-  transferConfirmTimestamp?: number;
+  transferOutConfirmTimestamp?: number;
+  transferInTimestamp?: number;
+  transferInConfirmTimestamp?: number;
+  transferInRefundTimestamp?: number;
+  initSwapTimestamp?: number;
+  confirmSwapTimestamp?: number;
+  refundSwapTimestamp?: number;
   hedgeTimestamp: number; // hedge time
   id: string;
   baseInfo?: {

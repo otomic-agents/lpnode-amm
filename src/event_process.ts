@@ -151,6 +151,9 @@ class EventProcess {
       IEVENT_NAME.EVENT_TRANSFER_IN,
       IEVENT_NAME.EVENT_TRANSFER_IN_CONFIRM,
       IEVENT_NAME.EVENT_TRANSFER_IN_REFUND,
+      IEVENT_NAME.EVENT_INIT_SWAP,
+      IEVENT_NAME.EVENT_CONFIRM_SWAP,
+      IEVENT_NAME.EVENT_REFUND_SWAP,
     ];
     console.log(msg)
     if (processCmdList.includes(msg.cmd)) {
@@ -181,7 +184,9 @@ class EventProcess {
       if (
         msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT ||
         msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_CONFIRM ||
-        msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND
+        msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND ||
+        msg.cmd === IEVENT_NAME.EVENT_INIT_SWAP ||
+        msg.cmd === IEVENT_NAME.EVENT_CONFIRM_SWAP
       ) {
         const hash = crypto.createHash("md5").update(message).digest("hex");
         console.log(hash);
@@ -213,6 +218,16 @@ class EventProcess {
       }
       if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_IN_REFUND) {
         await business.onTransferInRefund(msg);
+      }
+
+      if (msg.cmd === IEVENT_NAME.EVENT_INIT_SWAP) {
+        await business.onInitSwap(msg);
+      }
+      if (msg.cmd === IEVENT_NAME.EVENT_CONFIRM_SWAP) {
+        await business.onConfirmSwap(msg);
+      }
+      if (msg.cmd === IEVENT_NAME.EVENT_REFUND_SWAP) {
+        await business.onRefundSwap(msg);
       }
     } catch (e) {
       logger.error(`process Event Error Cmd ${msg.cmd}`, e);

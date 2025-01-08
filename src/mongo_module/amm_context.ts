@@ -19,7 +19,8 @@ const ammContextSchema = new Schema({
   askTime: Object,
   systemOrder: Object,
   lockInfo: Object,
-  tradeStatus: Number,
+  tradeStatus: String,
+
   profitStatus: Number,
   flowStatus: String,
   dexTradeInfo_out: Object,
@@ -28,6 +29,10 @@ const ammContextSchema = new Schema({
   dexTradeInfo_in: Object,
   dexTradeInfo_in_confirm: Object,
   dexTradeInfo_in_refund: Object,
+  dexTradeInfo_init_swap: Object,
+  dexTradeInfo_confirm_swap: Object,
+  dexTradeInfo_refund_swap: Object,
+  hasTransaction: Boolean,
   createtime: {
     type: Date,
     default: Date.now,
@@ -39,7 +44,13 @@ ammContextSchema.index({ tradeStatus: 1, type: -1 });
 ammContextSchema.index({ profitStatus: 1, type: -1 });
 ammContextSchema.index({ flowStatus: 1, type: -1 });
 ammContextSchema.index({ "quoteInfo.quote_hash": 1, type: -1 });
-
+ammContextSchema.index({
+  "hasTransaction": 1,
+  "_id": -1
+}, {
+  background: true,
+  name: "idx_hasTransaction_id"
+});
 
 
 

@@ -7,6 +7,7 @@ import {
   ICexCoinConfig,
   IHedgeConfig,
   IHedgeType,
+  ISpecialTokenConfig
 } from "./interface/interface";
 import { logger } from "./sys_lib/logger";
 import { chainListModule } from "./mongo_module/chain_list";
@@ -21,6 +22,8 @@ import { installModule } from "./mongo_module/install";
 import { ICexAccountApiType } from "./interface/std_difi";
 import path from "path";
 
+
+
 class DataConfig {
   private baseConfig: any;
   private hedgeConfig: IHedgeConfig = {
@@ -28,6 +31,8 @@ class DataConfig {
     hedgeAccount: "",
     feeSymbol: "",
   };
+  private specialTokenConfig: Map<string, ISpecialTokenConfig> = new Map();
+
   private chainTokenUsd: Map<number, number> = new Map();
   // @ts-ignore
   private chainMaxTokenUsd: Map<number, number> = new Map();
@@ -66,8 +71,8 @@ class DataConfig {
   private lpConfig: {
     quotationInterval: number;
   } = {
-    quotationInterval: 1000 * 10,
-  };
+      quotationInterval: 1000 * 10,
+    };
   private extendFun: any = null;
   private statusReport: any = null;
   public setExtend(extendFun: any) {
@@ -252,6 +257,17 @@ class DataConfig {
         "The basic configuration data is incorrect, waiting for reconfiguration"
       );
     }
+    const specialTokens = _.get(baseConfig, "specialTokenConfig.fixedPriceTokens", []);
+    this.specialTokenConfig.clear();
+    for (const token of specialTokens) {
+      this.specialTokenConfig.set(token.symbol, token);
+    }
+  }
+  public getSpecialTokenConfig(symbol: string): ISpecialTokenConfig | undefined {
+    return this.specialTokenConfig.get(symbol);
+  }
+  public isSpecialToken(symbol: string): boolean {
+    return this.specialTokenConfig.has(symbol);
   }
 
   private checkBaseConfig(baseConfig: any) {
@@ -578,8 +594,8 @@ class DataConfig {
       walletName: string;
       srcClientUri: string;
       dstClientUri: string;
-      relayApiKey:string;
-      
+      relayApiKey: string;
+
     }[] = await bridgesModule.find(findOption).lean();
     this.bridgeTokenList = [];
     logger.info(`loaded BridgeConfigs count: [${lpConfigList.length}] `);
@@ -601,7 +617,7 @@ class DataConfig {
         srcToken: item.srcToken,
         dstToken: item.dstToken,
         msmq_name: item.msmqName,
-        msmq_path :item.msmqName+"_"+ item.relayApiKey,
+        msmq_path: item.msmqName + "_" + item.relayApiKey,
         wallet: {
           name: item.walletName,
           balance: {},
@@ -738,7 +754,7 @@ class DataConfig {
     });
     return ret;
   }
-  public findItemByMsmqPath(name:string){
+  public findItemByMsmqPath(name: string) {
     const ret: any = _.find(this.bridgeTokenList, {
       msmq_path: name,
     });

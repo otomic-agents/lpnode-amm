@@ -1,5 +1,6 @@
 import { AmmContext } from "../../interface/context";
 import { IEVENT_TRANSFER_IN_CONFIRM } from "../../interface/event";
+import { ETradeStatus } from "../../interface/interface";
 import { ammContextModule } from "../../mongo_module/amm_context";
 import { BaseEventProcess } from "./base_event_process";
 import * as _ from "lodash";
@@ -20,14 +21,9 @@ class EventProcessTransferInConfirm extends BaseEventProcess {
                 { "systemOrder.orderId": orderId },
                 {
                     $set: {
-                        "dexTradeInfo_in_confirm": {
-                            rawData: _.get(
-                                msg,
-                                "business_full_data.event_transfer_in_confirm",
-                                {}
-                            ),
-                        },
+                        "dexTradeInfo_in_confirm": { "rawData": _.get(msg, "business_full_data.event_transfer_in_confirm", {}) },
                         "systemOrder.transferInConfirmTimestamp": new Date().getTime(),
+                        "tradeStatus": ETradeStatus.TransferInConfirm,
                     },
                 },
                 {
