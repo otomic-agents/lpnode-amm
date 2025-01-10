@@ -3,7 +3,7 @@ import { MongoProvider } from '../providers/database/mongo.provider';
 import axios from 'axios';
 import { Collection } from 'mongodb';
 
-// RPC 请求接口
+// RPC request interface
 interface RpcRequest {
     jsonrpc: string;
     method: string;
@@ -11,10 +11,10 @@ interface RpcRequest {
     id: number;
 }
 
-// RPC 响应接口
+// RPC response interface
 interface RpcResponse {
     jsonrpc: string;
-    result?: BalanceResult[];
+    result?: BalanceResult; // Changed to a single object
     error?: {
         code: number;
         message: string;
@@ -22,16 +22,68 @@ interface RpcResponse {
     id: number;
 }
 
-// BalanceResult 接口（基于 ccxt 返回的现货数据结构）
+// BalanceResult interface
 interface BalanceResult {
     accountId: string;
-    exchangeResult: Record<string, { free: number; used: number; total: number }>;
+    exchangeResult: {
+        info: {
+            makerCommission: string;
+            takerCommission: string;
+            buyerCommission: string;
+            sellerCommission: string;
+            commissionRates: {
+                maker: string;
+                taker: string;
+                buyer: string;
+                seller: string;
+            };
+            canTrade: boolean;
+            canWithdraw: boolean;
+            canDeposit: boolean;
+            brokered: boolean;
+            requireSelfTradePrevention: boolean;
+            preventSor: boolean;
+            updateTime: string;
+            accountType: string;
+        };
+        balances: {
+            asset: string;
+            free: string;
+            locked: string;
+        }[];
+    };
 }
 
-// 钱包余额接口
+// Wallet balance interface
 interface WalletBalance {
     accountId: string;
-    exchangeResult: Record<string, { free: number; used: number; total: number }>;
+    exchangeResult: {
+        info: {
+            makerCommission: string;
+            takerCommission: string;
+            buyerCommission: string;
+            sellerCommission: string;
+            commissionRates: {
+                maker: string;
+                taker: string;
+                buyer: string;
+                seller: string;
+            };
+            canTrade: boolean;
+            canWithdraw: boolean;
+            canDeposit: boolean;
+            brokered: boolean;
+            requireSelfTradePrevention: boolean;
+            preventSor: boolean;
+            updateTime: string;
+            accountType: string;
+        };
+        balances: {
+            asset: string;
+            free: string;
+            locked: string;
+        }[];
+    };
     updatedAt: Date;
     lastUpdateTime: Date;
 }
@@ -47,7 +99,7 @@ export class CexBalanceSyncService implements OnModuleInit {
 
     async onModuleInit() {
         this.logger.log('BalanceSyncService initializing...');
-        this.balanceCollection = this.mongoProvider.getCollection<WalletBalance>('cex_wallet_balances'); // 表名改为 cex_wallet_balances
+        this.balanceCollection = this.mongoProvider.getCollection<WalletBalance>('cex_wallet_balances');
         await this.ensureIndexes();
         this.startSyncLoop();
     }
@@ -110,11 +162,12 @@ export class CexBalanceSyncService implements OnModuleInit {
                 throw new Error(`RPC error: ${response.data.error.message}`);
             }
 
-            if (!response.data.result || !Array.isArray(response.data.result)) {
-                throw new Error('Invalid RPC response format');
+            if (!response.data.result) {
+                throw new Error('Invalid RPC response format: result is missing');
             }
 
-            return response.data.result;
+            // Convert single object to an array
+            return [response.data.result];
         } catch (error) {
             this.logger.error('Failed to fetch balances from RPC:', error);
             throw error;
