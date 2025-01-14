@@ -13,3 +13,5 @@ export AMM_APP_DISPLAY_IMAGE=kldtks/edge:otmoic-lpnode-amm-1bd4b1e9
 export MARKET_APP_DISPLAY_IMAGE=magicpigdocker/otmoic-lpnode-exchange-adapter:v0.19
 export APP_NAME=amm-01
 export LP_ADMIN_PANEL_ACCESS_BASEURL=http://lpnode-admin-server:18006
+export NO_COLOR=true
+export LP_MARKET_SERVICE_HOST=amm-market-price-service
