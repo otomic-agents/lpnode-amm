@@ -5,7 +5,7 @@ const timezone = require("dayjs/plugin/timezone");
 const dayjs = require("dayjs");
 dayjs.extend(utc);
 dayjs.extend(timezone);
-const log: Logger<ILogObj> = new Logger({ prettyLogTimeZone: "UTC" });
+const log: Logger<ILogObj> = new Logger({ prettyLogTimeZone: "UTC", stylePrettyLogs: false });
 import * as _ from "lodash";
 
 export { log as logger };

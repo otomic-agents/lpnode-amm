@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { MongoProvider } from '../providers/database/mongo.provider';
 import axios from 'axios';
 import { Collection } from 'mongodb';
+import * as _ from "lodash";
 
 // RPC request interface
 interface RpcRequest {
@@ -12,9 +13,9 @@ interface RpcRequest {
 }
 
 // RPC response interface
-interface RpcResponse {
+interface RpcResponse<T = any> {
     jsonrpc: string;
-    result?: BalanceResult; // Changed to a single object
+    result?: T;
     error?: {
         code: number;
         message: string;
@@ -92,9 +93,13 @@ interface WalletBalance {
 export class CexBalanceSyncService implements OnModuleInit {
     private readonly logger = new Logger(CexBalanceSyncService.name);
     private balanceCollection: Collection<WalletBalance>;
+    private readonly rpcUrl: string;
 
     constructor(private readonly mongoProvider: MongoProvider) {
-        this.logger.log('BalanceSyncService constructed');
+        const host = _.get(process.env, "LP_MARKET_SERVICE_HOST", "");
+        const port = _.get(process.env, "LP_MARKET_SERVICE_PORT", "18080");
+        this.rpcUrl = `http://${host}:${port}/jsonrpc`;
+        this.logger.log('BalanceSyncService constructed', this.rpcUrl);
     }
 
     async onModuleInit() {
@@ -104,15 +109,51 @@ export class CexBalanceSyncService implements OnModuleInit {
         this.startSyncLoop();
     }
 
+    private async callRpc<T>(method: string, params: Record<string, any> = {}): Promise<T> {
+        const rpcRequest: RpcRequest = {
+            jsonrpc: '2.0',
+            method,
+            params,
+            id: 1,
+        };
+
+        try {
+            this.logger.log(`Calling RPC method: ${method}`);
+            const response = await axios.post<RpcResponse<T>>(this.rpcUrl, rpcRequest, {
+                headers: { 'Content-Type': 'application/json' },
+                timeout: 30000,
+            });
+
+            if (response.data.error) {
+                throw new Error(`RPC error: ${response.data.error.message}`);
+            }
+
+            if (response.data.result === undefined) {
+                throw new Error('Invalid RPC response format: result is missing');
+            }
+
+            return response.data.result;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                this.logger.error(`Axios error in ${method}:`, {
+                    message: error.message,
+                    code: error.code,
+                    response: error.response?.data
+                });
+            } else {
+                this.logger.error(`Failed to execute ${method}:`, error);
+            }
+            throw error;
+        }
+    }
+
     private async ensureIndexes() {
         try {
             await this.balanceCollection.createIndex(
                 { accountId: 1 },
                 { unique: true }
             );
-
             await this.balanceCollection.createIndex({ updatedAt: 1 });
-
             this.logger.log('Indexes created successfully');
         } catch (error) {
             this.logger.error('Failed to create indexes:', error);
@@ -124,6 +165,13 @@ export class CexBalanceSyncService implements OnModuleInit {
 
         for (; ;) {
             try {
+                const isHedgingEnabled = await this.checkHedgingEnabled();
+
+                if (!isHedgingEnabled) {
+                    this.logger.log('Hedging is disabled, skipping sync cycle');
+                    await new Promise(resolve => setTimeout(resolve, 3 * 60 * 1000));
+                    continue;
+                }
                 await this.syncWalletBalances();
             } catch (error) {
                 this.logger.error('Error in sync loop:', error);
@@ -131,6 +179,16 @@ export class CexBalanceSyncService implements OnModuleInit {
                 this.logger.log('Waiting for 3 minutes before next sync cycle...');
                 await new Promise(resolve => setTimeout(resolve, 3 * 60 * 1000));
             }
+        }
+    }
+
+    private async checkHedgingEnabled(): Promise<boolean> {
+        try {
+            const result = await this.callRpc<boolean>('isHedgingEnabled');
+            return !!result;
+        } catch (error) {
+            this.logger.error('Failed to check hedging status:', error);
+            return false;
         }
     }
 
@@ -145,29 +203,9 @@ export class CexBalanceSyncService implements OnModuleInit {
     }
 
     private async fetchBalancesFromRpc(): Promise<BalanceResult[]> {
-        const rpcRequest: RpcRequest = {
-            jsonrpc: '2.0',
-            method: 'fetchBalance',
-            params: {},
-            id: 1,
-        };
-
         try {
-            const response = await axios.post<RpcResponse>('http://127.0.0.1:18080/jsonrpc', rpcRequest, {
-                headers: { 'Content-Type': 'application/json' },
-                timeout: 30000,
-            });
-
-            if (response.data.error) {
-                throw new Error(`RPC error: ${response.data.error.message}`);
-            }
-
-            if (!response.data.result) {
-                throw new Error('Invalid RPC response format: result is missing');
-            }
-
-            // Convert single object to an array
-            return [response.data.result];
+            const result = await this.callRpc<BalanceResult>('fetchBalance');
+            return [result];
         } catch (error) {
             this.logger.error('Failed to fetch balances from RPC:', error);
             throw error;
