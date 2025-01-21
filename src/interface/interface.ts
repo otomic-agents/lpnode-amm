@@ -31,7 +31,16 @@ interface IBridgeTokenConfigItem {
   hedge_info: BridgeHedgeInfo;
   fee: string;
 }
-
+interface ISpecialTokenConfig {
+  symbol: string;
+  orderBookConfig: {
+    price: string;
+    quantity: string;
+    depthLevels: number;
+    enabled: boolean;
+    stream: string;
+  };
+}
 enum ISwapStep {
   ASK = "ASK",
   LOCK = "LOCK",
@@ -195,4 +204,5 @@ export {
   IBalanceLock,
   ISwapStep,
   EFlowStatus,
+  ISpecialTokenConfig,
 };
