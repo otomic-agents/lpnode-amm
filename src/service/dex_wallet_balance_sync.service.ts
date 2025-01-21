@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Inject,Logger, OnModuleInit } from '@nestjs/common';
 import { MongoProvider } from '../providers/database/mongo.provider';
 import axios from 'axios';
 import { Collection } from 'mongodb';
@@ -59,9 +59,8 @@ export class DexWalletBalanceSyncService implements OnModuleInit {
     private readonly logger = new Logger(DexWalletBalanceSyncService.name);
     private balanceCollection: Collection<WalletBalance>;
 
-    constructor(private readonly mongoProvider: MongoProvider) {
-        this.logger.log('WalletBalanceService constructed');
-    }
+    @Inject()
+    private readonly mongoProvider: MongoProvider;
 
     async onModuleInit() {
         this.logger.log('WalletBalanceService initializing...');

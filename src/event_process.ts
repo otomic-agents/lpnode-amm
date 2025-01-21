@@ -9,6 +9,8 @@ import { logger } from "./sys_lib/logger";
 import * as _ from "lodash";
 import { systemRedisBus } from "./system_redis_bus";
 import { channelMessageModule } from "./mongo_module/channel_message";
+const util = require('util');
+
 class SingleQueue {
   private tasks: any[];
   private isRunning: boolean;
@@ -155,19 +157,18 @@ class EventProcess {
       IEVENT_NAME.EVENT_CONFIRM_SWAP,
       IEVENT_NAME.EVENT_REFUND_SWAP,
     ];
-    console.log(msg)
     if (processCmdList.includes(msg.cmd)) {
       logger.debug(
-        "received message",
+        "📥 Message received:",
         `【${msg.cmd}】`,
-        JSON.stringify(msg).substring(0, 100)
+        util.inspect(msg, { depth: 1, compact: true })
       );
     } else {
       logger.debug(
-        "received message skip",
+        "⏭️ Skipping message:",
         `【${channel}】`,
         `【${msg.cmd}】`,
-        JSON.stringify(msg).substring(0, 100)
+        util.inspect(msg, { depth: 1, compact: true })
       );
     }
 
