@@ -257,10 +257,13 @@ class DataConfig {
         "🔄 Awaiting valid hedge account configuration..."
       );
     }
-    const specialTokens = _.get(baseConfig, "specialTokenConfig.fixedPriceTokens", []);
+    const specialTokens = _.get(baseConfig, "specialTokenConfig.orderBookConfig", []);
     this.specialTokenConfig.clear();
     for (const token of specialTokens) {
-      this.specialTokenConfig.set(token.symbol, token);
+      this.specialTokenConfig.set(token.symbol, {
+        symbol:token.symbol,
+        orderBookConfig:token,
+      });
     }
   }
   public getSpecialTokenConfig(symbol: string): ISpecialTokenConfig | undefined {
