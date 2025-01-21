@@ -34,6 +34,7 @@ import { EthUnit } from "../utils/eth";
 import { SystemMath } from "../utils/system_math";
 import { ConsoleDirDepth5 } from "../utils/console";
 import { SystemError, SystemErrorDict } from "./system_error";
+import { statusReport } from "../status_report";
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -206,6 +207,7 @@ class Quotation {
         msmq: item.msmq_name,
       },
     };
+    statusReport.appendStatus("lastQuotationKeep", new Date().getTime())
     // logger.debug(`send update quote to keep alive.${item.msmq_name}`);
     const quoteCmd = JSON.stringify(quoteInfo);
     redisPub.publish(item.msmq_name + "_" + item.relay_api_key, quoteCmd).catch((e: any) => {
