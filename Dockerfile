@@ -1,20 +1,31 @@
 # base image
 FROM docker.io/library/node:20.11.0-buster
-#  file system
+
+# Install ts-node globally
+RUN npm install -g ts-node typescript
+
+# Add source files
 ADD ./ /data/lp_main/
 
-# port information
+# Expose port
 EXPOSE 18081
 
-# working directory
+# Set working directory  
 WORKDIR /data/lp_main/
-# install dependencies
+
+# Install system dependencies
 RUN apt-get update
 RUN yes|apt-get install libusb-1.0-0-dev
 RUN yes|apt-get install libudev-dev
-RUN npm i
-# build
-RUN npx gulp
-# CMD [ "node", "main.js" ]
-CMD [ "node","--enable-source-maps", "dist/main.js" ]
 
+# Install npm dependencies
+RUN npm i
+
+# Add version info for debugging
+RUN node -v && npm -v && ts-node -v
+
+# Run build process
+RUN npx gulp
+
+# Start with ts-node
+CMD [ "ts-node", "src/main.ts" ]

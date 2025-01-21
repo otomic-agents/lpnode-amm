@@ -40,6 +40,6 @@ class SysIoRedis {
   }
 }
 setInterval(() => {
-  logger.debug(`system redis conn count:${systemRedisConnCount}`);
+  // logger.debug(`system redis conn count:${systemRedisConnCount}`);
 }, 1000 * 10);
 export { SysIoRedis };
