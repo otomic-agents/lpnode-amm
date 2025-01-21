@@ -179,7 +179,7 @@ enum EFlowStatus {
   Locked = "Locked",
   TransferOut = "TransferOut",
   TransferIn = "TransferIn",
-  TransferInRefund = "TransferInRefund",
+  TransferInefund = "TransferInefund",
   WaitHedge = "WaitHedge",
   NoHedge = "NoHedge",
   HedgeCompletion = "HedgeCompletion",
@@ -187,22 +187,8 @@ enum EFlowStatus {
   HedgeFailure = "HedgeFailure",
   HedgeAnalyzeCompletion = "HedgeAnalyzeCompletion",
 }
-enum ETradeStatus {
-  Empty = "Empty",
-  Locked = "Locked",
-  TransferOut = "TransferOut",
-  TransferIn = "TransferIn",
-  TransferOutRefund = "TransferOutRefund",
-  TransferInRefund = "TransferInRefund",
-  TransferOutConfirm = "TransferOutConfirm",
-  TransferInConfirm = "TransferInConfirm",
-  TransferInitSwap = "TransferInitSwap",
-  TransferConfirmSwap = "TransferConfirmSwap",
-  TransferRefundSwap = "TransferRefundSwap"
-}
 
 export {
-  ETradeStatus,
   ISpotHedgeInfo,
   IBridgeTokenConfigItem,
   ILpCmd,
@@ -218,5 +204,5 @@ export {
   IBalanceLock,
   ISwapStep,
   EFlowStatus,
-  ISpecialTokenConfig
+  ISpecialTokenConfig,
 };

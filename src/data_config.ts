@@ -105,62 +105,62 @@ class DataConfig {
    * @async
    * @returns {*} "void"
    */
-  public async prepareConfigResource() {     
-    let configId: string | null | undefined;     
-    let clientId: string;     
-    let configIdKey = "";     
-    try {       
-      const appName = _.get(process.env, "APP_NAME", null);       
-      if (!appName) {         
-        logger.error("🚫 Application name not found in environment variables");         
-        await TimeSleepMs(3000);         
-        process.exit(1);       
-      }       
-      configIdKey = `config_id_${appName}`;       
-      configId = await dataRedis.get(configIdKey);       
-      if (configId == null) {         
-        throw new Error("🔍 Unable to retrieve configuration from Redis");       
-      }       
-      await this.getConfigResource(configId);     
-    } catch (e) {       
-      const err: any = e;       
-      logger.warn("⚠️ Configuration ID not found in system", err.toString());       
-      const errMessage = err.toString();       
-      if (         
-        errMessage.includes("configId is not exist") ||         
-        errMessage.includes("unable to get config from redis")       
-      ) {         
-        logger.error("⛔ Configuration ID does not exist in the system");         
-        const [createConfigId, createClientId] =           
-          await this.createConfigResource();         
-        configId = createConfigId;         
-        clientId = createClientId;         
-        if (!clientId) {           
-          logger.error("❌ Failed to create remote resources");           
-          process.exit(0);         
-        }         
-        await dataRedis.set(configIdKey, clientId).then(() => {           
-          console.log("💾 Successfully stored client ID in database:", clientId);         
-        });         
-        await (() => {           
-          return new Promise(() => {             
-            this.statusReport               
-              .pendingStatus("⏳ Configuration in progress, please wait...")               
-              .catch((e: any) => {                 
-                logger.error(`🔥 Status update failed`, e);               
-              });             
-            logger.warn("⌛ Waiting for configuration process to complete...");           
-          });           
-        })();       
-      }     
-    }     
-    if (!configId) {       
-      logger.error("❌ Failed to obtain valid configuration ID");       
-      process.exit(1);     
-    }     
-    logger.debug(`🔑 Active configuration ID: ${configId}`);     
-    const baseConfig: any = await this.getConfigResource(configId);     
-    await this.initBaseConfig(baseConfig);   
+  public async prepareConfigResource() {
+    let configId: string | null | undefined;
+    let clientId: string;
+    let configIdKey = "";
+    try {
+      const appName = _.get(process.env, "APP_NAME", null);
+      if (!appName) {
+        logger.error("Unable to get Appname");
+        await TimeSleepMs(3000);
+        process.exit(1);
+      }
+      configIdKey = `config_id_${appName}`;
+      configId = await dataRedis.get(configIdKey);
+      if (configId == null) {
+        throw new Error("unable to get config from redis");
+      }
+      await this.getConfigResource(configId);
+    } catch (e) {
+      const err: any = e;
+      logger.warn("ConfigId not found", err.toString());
+      const errMessage = err.toString();
+      if (
+        errMessage.includes("configId is not exist") ||
+        errMessage.includes("unable to get config from redis")
+      ) {
+        logger.error("configId is not exist,||||||||||");
+        const [createConfigId, createClientId] =
+          await this.createConfigResource();
+        configId = createConfigId;
+        clientId = createClientId;
+        if (!clientId) {
+          logger.error("unable to create resources remotely");
+          process.exit(0);
+        }
+        await dataRedis.set(configIdKey, clientId).then(() => {
+          console.log("save clientId to database", clientId);
+        });
+        await (() => {
+          return new Promise(() => {
+            this.statusReport
+              .pendingStatus("Wait for the configuration to complete")
+              .catch((e: any) => {
+                logger.error(`Failed to write status`, e);
+              });
+            logger.warn("Wait for the configuration to complete..");
+          });
+        })();
+      }
+    }
+    if (!configId) {
+      logger.error("The correct configId was not read");
+      process.exit(1);
+    }
+    logger.debug(`configId is:${configId} clientId`);
+    const baseConfig: any = await this.getConfigResource(configId);
+    await this.initBaseConfig(baseConfig);
   }
 
   public async rewriteMarketUrl() {
@@ -197,15 +197,15 @@ class DataConfig {
   }
 
   private async initBaseConfig(baseConfig: any) {
-    logger.info("🔄 Loading base configuration:", JSON.stringify(baseConfig));
+    logger.info("baseConfig:", JSON.stringify(baseConfig));
     this.baseConfig = baseConfig;
     try {
       this.checkBaseConfig(baseConfig);
     } catch (e) {
       logger.debug(e);
-      logger.error(`⚠️ Invalid base configuration structure detected`);
+      logger.error(`Incorrect base configuration data`);
       await TimeSleepForever(
-        "🚨 Configuration validation failed - awaiting new configuration data"
+        "The basic configuration data is incorrect, waiting for reconfiguration"
       );
     }
     const chainDataConfigList: {
@@ -226,10 +226,10 @@ class DataConfig {
         Number(chainData.config.maxSwapNativeTokenValue)
       );
       logger.debug(
-        `🔗 Chain ${chainData.chainId}:`,
-        "Min swap value: $",
+        chainData.chainId,
+        "minSwapNativeTokenValue:",
         Number(chainData.config.minSwapNativeTokenValue),
-        "Max swap value: $",
+        "maxSwapNativeTokenValue:",
         Number(chainData.config.maxSwapNativeTokenValue)
       );
     }
@@ -237,9 +237,9 @@ class DataConfig {
     const hedgeAccount = _.get(baseConfig, "hedgeConfig.hedgeAccount", null);
     const feeSymbol = _.get(baseConfig, "hedgeConfig.feeSymbol", "");
     if (!hedgeType) {
-      logger.error(`❌ Missing hedge type in configuration`);
+      logger.error(`Incorrect base configuration data`);
       await TimeSleepForever(
-        "⚠️ Critical configuration missing - awaiting valid hedge settings"
+        "The basic configuration data is incorrect, waiting for reconfiguration"
       );
     }
     if (hedgeType === "null" || !hedgeType) {
@@ -251,19 +251,16 @@ class DataConfig {
     this.hedgeAccountList = _.get(baseConfig, "hedgeConfig.accountList", []);
     if (hedgeAccount.length <= 0 && hedgeType !== "Null") {
       logger.error(
-        `⛔ Invalid hedge configuration: No hedge accounts configured for active hedge type`
+        `The basic configuration data is incorrect, please check the hedge account settings`
       );
       await TimeSleepForever(
-        "🔄 Awaiting valid hedge account configuration..."
+        "The basic configuration data is incorrect, waiting for reconfiguration"
       );
     }
-    const specialTokens = _.get(baseConfig, "specialTokenConfig.orderBookConfig", []);
+    const specialTokens = _.get(baseConfig, "specialTokenConfig.fixedPriceTokens", []);
     this.specialTokenConfig.clear();
     for (const token of specialTokens) {
-      this.specialTokenConfig.set(token.symbol, {
-        symbol:token.symbol,
-        orderBookConfig:token,
-      });
+      this.specialTokenConfig.set(token.symbol, token);
     }
   }
   public getSpecialTokenConfig(symbol: string): ISpecialTokenConfig | undefined {
