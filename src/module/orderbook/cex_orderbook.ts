@@ -57,11 +57,10 @@ class CexOrderbook implements IOrderbook {
  * @returns IOrderbookStoreItem | undefined - Orderbook data or undefined if not found
  */
   public getSpotOrderbook(stdSymbol: string): IOrderbookStoreItem | undefined {
-    const orderbookItem = this.spotOrderbook.get(stdSymbol);
     if (dataConfig.isSpecialToken(stdSymbol)) {
       return this.getSpecialOrderbook(stdSymbol);
     }
-
+    const orderbookItem = this.spotOrderbook.get(stdSymbol);
     if (orderbookItem) {
       const timeNow = new Date().getTime();
       // logger.info(
