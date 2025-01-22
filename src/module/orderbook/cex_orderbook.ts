@@ -1,7 +1,6 @@
 /**
  * It is used to synchronize the order book data of Cex market service. The current market service already supports spot currency perpetual and U perpetual
  */
-import { Console } from "console";
 import {
   IMarketOrderbookRet,
   IOrderbookStoreItem,
@@ -32,7 +31,7 @@ class CexOrderbook implements IOrderbook {
     if (!tokenConfig) {
       throw new Error(`Special token config not found for ${stdSymbol}`);
     }
-    console.log(tokenConfig,"@@@@@@@@@@@@@@@@@@@@")
+
     const fixedDepth: string[][] = [];
     for (let i = 0; i < tokenConfig.orderBookConfig.depthLevels; i++) {
       fixedDepth.push([

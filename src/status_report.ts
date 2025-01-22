@@ -25,7 +25,7 @@ class StatusReport {
     setTimeout(() => {
       this.storeData();
       this.intervalReport();
-    }, 1000 * 30);
+    }, 1000 * 15);
   }
 
   public async appendStatus(key: string, val: any) {

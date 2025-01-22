@@ -218,5 +218,5 @@ export {
   IBalanceLock,
   ISwapStep,
   EFlowStatus,
-  ISpecialTokenConfig
+  ISpecialTokenConfig,
 };
