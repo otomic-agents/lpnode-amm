@@ -79,16 +79,20 @@ export class DexWalletBalanceSyncService implements OnModuleInit {
                 },
                 { unique: true }
             );
-
+     
             await this.balanceCollection.createIndex({ chainId: 1 });
-            await this.balanceCollection.createIndex({ updatedAt: 1 });
+            await this.balanceCollection.createIndex({ 
+                updatedAt: 1 
+            }, {
+                expireAfterSeconds: 600
+            });
             await this.balanceCollection.createIndex({ wallet_address: 1 });
-
+     
             this.logger.log('Indexes created successfully');
         } catch (error) {
             this.logger.error('Failed to create indexes:', error);
         }
-    }
+     }
 
     private async startUpdateLoop() {
         this.logger.log('Starting update loop process');
