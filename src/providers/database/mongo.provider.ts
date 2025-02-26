@@ -24,7 +24,6 @@ export class MongoProvider implements OnModuleInit, OnModuleDestroy {
         const password = process.env.MONGODB_PASSWORD;
         const dbName = process.env.MONGODB_DBNAME_LP_STORE;
 
-        // 构建完整的连接串，包括 authSource
         const url = `mongodb://${username}:${password}@${host}:${port}/${dbName}?authSource=${dbName}`;
 
         this.logger.debug(`Starting to connect to database: ${host}:${port}/${dbName}`);
