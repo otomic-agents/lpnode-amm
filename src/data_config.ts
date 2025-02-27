@@ -119,7 +119,7 @@ class DataConfig {
       configIdKey = `config_id_${appName}`;       
       configId = await dataRedis.get(configIdKey);       
       if (configId == null) {         
-        throw new Error("🔍 Unable to retrieve configuration from Redis");       
+        throw new Error("🔍 Unable to retrieve configuration from Redis, [configId is not exist]");       
       }       
       await this.getConfigResource(configId);     
     } catch (e) {       
