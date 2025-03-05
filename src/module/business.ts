@@ -92,24 +92,6 @@ class Business {
   public async onRefundSwap(msg: any) {
     eventProcessRefundSwap.process(msg);
   }
-  private getLpOrderId(msg: IEVENT_TRANSFER_OUT_CONFIRM): number {
-    const orderInfo = _.get(
-      msg,
-      "business_full_data.pre_business.order_append_data",
-      "{}"
-    );
-    if (!orderInfo) {
-      logger.error("order information could not be found...");
-      return 0;
-    }
-    const orderId = _.get(JSON.parse(orderInfo), "orderId", undefined);
-    if (!orderId || !_.isFinite(orderId)) {
-      logger.error("orderId parsing failed...");
-      return 0;
-    }
-    return orderId;
-  }
-
   public async onTransferOutRefund(msg: any) {
     const orderId = this.getLpOrderId(msg);
     const ammContext: AmmContext = await ammContextModule
@@ -119,6 +101,32 @@ class Business {
       .lean();
     if (!ammContext) {
       throw new Error("No order information found");
+    }
+    // Update the context with the RefundSwap event data
+    const doc = await ammContextModule
+      .findOneAndUpdate(
+        { "systemOrder.orderId": orderId },
+        {
+          $set: {
+            tradeStatus: ETradeStatus.TransferOutRefund,
+            "dexTradeInfo_out_refund": {
+              rawData: _.get(
+                msg,
+                "business_full_data.event_transfer_out_refund",
+                {}
+              ),
+            },
+            "systemOrder.transferOutRefundTimestamp": new Date().getTime(),
+          },
+        },
+        {
+          returnDocument: "after",
+        }
+      )
+      .lean();
+
+    if (!doc) {
+      throw new Error(`No documentation was found that should be updated`);
     }
 
     const cmdMsg = JSON.stringify({
@@ -141,6 +149,25 @@ class Business {
         logger.error(`Reply message to Lp Error:`, e);
       });
   }
+  private getLpOrderId(msg: IEVENT_TRANSFER_OUT_CONFIRM): number {
+    const orderInfo = _.get(
+      msg,
+      "business_full_data.pre_business.order_append_data",
+      "{}"
+    );
+    if (!orderInfo) {
+      logger.error("order information could not be found...");
+      return 0;
+    }
+    const orderId = _.get(JSON.parse(orderInfo), "orderId", undefined);
+    if (!orderId || !_.isFinite(orderId)) {
+      logger.error("orderId parsing failed...");
+      return 0;
+    }
+    return orderId;
+  }
+
+
   private async makeAmmContext(
     item: IBridgeTokenConfigItem,
     msg: IEVENT_ASK_QUOTE
