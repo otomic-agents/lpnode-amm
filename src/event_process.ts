@@ -168,7 +168,7 @@ class EventProcess {
         "⏭️ Skipping message:",
         `【${channel}】`,
         `【${msg.cmd}】`,
-        util.inspect(msg, { depth: 1, compact: true })
+        // util.inspect(msg, { depth: 1, compact: true })
       );
     }
 

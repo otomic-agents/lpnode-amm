@@ -6,6 +6,7 @@ interface IQuoteData {
   __initDstGasBuyPrice?: string;
   __initDstGasSellPrice?: string;
   dst_usd_price: string;
+  errorCode?:number;
   price: string;
   origPrice: string;
   origTotalPrice: string;

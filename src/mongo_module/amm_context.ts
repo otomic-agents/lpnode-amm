@@ -23,6 +23,7 @@ const ammContextSchema = new Schema({
 
   profitStatus: Number,
   flowStatus: String,
+  swapAssetInformation:Object,
   dexTradeInfo_out: Object,
   dexTradeInfo_out_confirm: Object,
   dexTradeInfo_out_refund: Object,
@@ -33,6 +34,9 @@ const ammContextSchema = new Schema({
   dexTradeInfo_confirm_swap: Object,
   dexTradeInfo_refund_swap: Object,
   hasTransaction: Boolean,
+  baseProcessed:Boolean,
+  transactionCompleted:Boolean,
+  swapProcessed:Boolean,
   createtime: {
     type: Date,
     default: Date.now,
@@ -53,6 +57,22 @@ ammContextSchema.index({
 });
 
 
+ammContextSchema.index({
+  baseProcessed: 1,
+  hasTransaction: 1,
+  transactionCompleted: 1,
+  swapProcessed: 1
+}, {
+  background: true,
+  name: "idx_transaction_processing_status"
+});
+
+
+ammContextSchema.index({ swapProcessed: 1 }, {
+  background: true,
+  name: "idx_swapProcessed",
+  sparse: true 
+});
 
 export const ammContextModule = mongoConn.model(
   "ammContextModule",

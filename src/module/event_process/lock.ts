@@ -190,6 +190,7 @@ class EventProcessLock extends BaseEventProcess {
           tradeStatus: ETradeStatus.Locked,
           lockMsg: _.get(msg, "pre_business.err_msg", ""),
           systemContext: ammContext.systemContext,
+          swapAssetInformation: msg.pre_business.swap_asset_information,
           swapInfo: ammContext.swapInfo,
           step: 1,
           systemOrder,
