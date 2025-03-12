@@ -1,6 +1,7 @@
 import { EFlowStatus, IBridgeTokenConfigItem } from "./interface";
-
-interface AmmContext {
+import { ObjectId } from 'mongodb';
+interface AmmDatabaseContext {
+  _id: ObjectId,
   appName: string;
   summary: string;
   bridgeItem: IBridgeTokenConfigItem;
@@ -104,9 +105,6 @@ interface AmmContext {
     hedgeResult: any[];
   };
   tradeStatus: string;
-  hasTransaction: boolean;
-  baseProcessed: boolean;
-  transactionCompleted: boolean;
   profitStatus: number;
   systemContext: {
     lockStepInfo: any;
@@ -115,6 +113,15 @@ interface AmmContext {
   };
   flowStatus: EFlowStatus;
   transferoutConfirmTime: number;
+  hasTransaction: boolean;
+  dexTradeInfo_out?: any;
+  dexTradeInfo_in?: any;
+  dexTradeInfo_in_refund?: any;
+  dexTradeInfo_in_confirm?: any;
+  dexTradeInfo_init_swap?: any;
+  dexTradeInfo_confirm_swap?: any;
+  dexTradeInfo_refund_swap?: any;
+  swapAssetInformation?: any;
 }
 
-export { AmmContext };
+export { AmmDatabaseContext };

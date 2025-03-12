@@ -94,13 +94,22 @@ class Quotation {
       capacity: `0x${(50000000000000000000000).toString(16)}`, // The maximum supply that the system can provide
       native_token_price: `0`, // srcToken/TargetChain Coin Price
       native_token_usdt_price: `0`, // TargetChain Coin Price/USDT
-      native_token_max: `1`, // native_token maximum exchange amount
-      native_token_min: `0.1`, // minimum exchange amount
+      native_token_max: `0`, // native_token maximum exchange amount
+      native_token_min: `0`, // minimum exchange amount
       timestamp: new Date().getTime(), // Time quotes
       quote_hash: "", // Quotation unique hash
     };
   }
 
+  public async getFailedQuoteInfo(ammContext: AmmContext):Promise<any>{
+    const quoteHash = crypto.createHash("sha1").update(uuidv4()).digest("hex");
+    const quoteInfo: { cmd: string; quote_data: IQuoteData } = {
+      cmd: ILpCmd.CMD_UPDATE_QUOTE,
+      quote_data: this.getDefaultPriceStruct(),
+    };
+    quoteInfo.quote_data.quote_hash = quoteHash;
+    return quoteInfo;
+  }
   /**
    *
    * @param {AmmContext} ammContext ""
@@ -144,7 +153,7 @@ class Quotation {
     } catch (e) {
       logger.error(e);
       this.reportQuotationError(ammContext, e)
-      return [undefined, undefined];
+      return [undefined, undefined, e.toString()];
     }
     return [quoteHash, quoteInfo];
   }
@@ -390,6 +399,7 @@ class Quotation {
     if (enable === "false") {
       console.log("amm status:", enable);
       logger.warn("amm is closed.");
+      this.onAskQuoteFailed(ammContext,"amm is closed.");
       return;
     }
     if (
@@ -398,11 +408,13 @@ class Quotation {
         .eq(mathlib.bignumber(0))
     ) {
       logger.warn("The inputAmount must be greater than 0");
+      this.onAskQuoteFailed(ammContext,"The inputAmount must be greater than 0");
       return;
     }
 
-    const [quoteHash, quoteInfo] = await this.quotationItem(ammContext);
+    const [quoteHash, quoteInfo, errMessage] = await this.quotationItem(ammContext);
     if (!_.isString(quoteHash)) {
+      this.onAskQuoteFailed(ammContext,errMessage);
       return;
     }
     _.set(quoteInfo, "cid", ammContext.AskInfo.cid);
@@ -422,6 +434,20 @@ class Quotation {
     ammContext.flowStatus = EFlowStatus.AnswerOffer;
     await ammContextModule.create(ammContext);
     await this.storeQuoteHistory(quoteHash, quoteInfo.quote_data);
+  }
+  public async onAskQuoteFailed(ammContext: AmmContext,message:string){
+    const quoteInfo = await this.getFailedQuoteInfo(ammContext)
+    _.set(quoteInfo, "cid", ammContext.AskInfo.cid);
+    _.set(quoteInfo, "cmd", ILpCmd.EVENT_ASK_REPLY);
+    _.set(quoteInfo, "quote_data.error_code", 1000);
+    _.set(quoteInfo, "quote_data.error_message", message.toString());
+    logger.info(`send Message`, ammContext.systemInfo.msmqName, quoteInfo.cmd);
+    const quoteCmd = JSON.stringify(quoteInfo);
+    redisPub
+      .publish(ammContext.systemInfo.msmqName, quoteCmd)
+      .catch((e: any) => {
+        logger.debug(`publishing an offer message produced an error`, e);
+      });
   }
 
   /**

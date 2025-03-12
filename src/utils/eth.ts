@@ -9,11 +9,14 @@ function getUnitStr(unit: number) {
       return item;
     }
   }
-  throw new Error(`type not found`);
+  throw new Error(`type not found,${unit}`);
 }
 
 class EthUnit {
   static toWei(input: string, unit: number) {
+    if (unit == 8) {
+      return web3.utils.toWei(input, "gwei");
+    }
     const weiStr = getUnitStr(unit);
     return web3.utils.toWei(input, weiStr);
   }
