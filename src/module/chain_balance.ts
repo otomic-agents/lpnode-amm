@@ -254,6 +254,7 @@ class ChainBalance {
       balanceRaw: string;
       decimals: number | undefined;
       symbol: string | any;
+      lastUpdate:number;
     }[] = [];
     // eslint-disable-next-line array-callback-return
     Object.keys(this.chainWalletBalance).map((chainId) => {
@@ -282,6 +283,7 @@ class ChainBalance {
             balance: _.get(item, "balance", 0),
             balanceRaw: _.get(item, "source", ""),
             decimals: _.get(item, "decimals", undefined),
+            lastUpdate : new Date().getTime(),
           });
         });
       });
