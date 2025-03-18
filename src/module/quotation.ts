@@ -1167,7 +1167,10 @@ class Quotation {
       want_usdt_percentage: want_usdt_percentage,
       average_gas_usd: gasResult.averageGasUsd
     });
-
+    if (want_usdt_percentage.gt(mathlib.bignumber(1))) {
+      logger.error("❌ Gas cost exceeds transaction value. Cannot proceed with the transaction.");
+      throw new Error("Transaction gas cost exceeds the total transaction value. Please increase transaction amount or try again later.");
+    }
     if (want_usdt_percentage.gt(ammContext.baseInfo.fee)) {
       logger.info("🚩resize fee:", want_usdt_percentage.toFixed(3));
       ammContext.baseInfo.sourceFee = ammContext.baseInfo.fee;
