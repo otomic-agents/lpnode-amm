@@ -148,6 +148,7 @@ class EventProcess {
       IEVENT_NAME.CMD_ASK_QUOTE,
       IEVENT_NAME.EVENT_LOCK_QUOTE,
       IEVENT_NAME.EVENT_TRANSFER_OUT,
+      IEVENT_NAME.EVENT_LOCKED_QUOTE,
       IEVENT_NAME.EVENT_TRANSFER_OUT_CONFIRM,
       IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND,
       IEVENT_NAME.EVENT_TRANSFER_IN,
@@ -187,7 +188,8 @@ class EventProcess {
         msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_CONFIRM ||
         msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT_REFUND ||
         msg.cmd === IEVENT_NAME.EVENT_INIT_SWAP ||
-        msg.cmd === IEVENT_NAME.EVENT_CONFIRM_SWAP
+        msg.cmd === IEVENT_NAME.EVENT_CONFIRM_SWAP||
+        msg.cmd === IEVENT_NAME.EVENT_LOCKED_QUOTE
       ) {
         const hash = crypto.createHash("md5").update(message).digest("hex");
         console.log(hash);
@@ -197,6 +199,9 @@ class EventProcess {
           return;
         }
         await redis_ins.set(hash, "1", "EX", 600); // 600 sec = 10 m
+      }
+      if (msg.cmd === IEVENT_NAME.EVENT_LOCKED_QUOTE){
+        await business.onQuoteLocked(msg);
       }
       if (msg.cmd === IEVENT_NAME.EVENT_TRANSFER_OUT) {
         await business.onTransferOut(msg);

@@ -1,6 +1,7 @@
 enum IEVENT_NAME {
   "CMD_ASK_QUOTE" = "CMD_ASK_QUOTE",
   "EVENT_LOCK_QUOTE" = "EVENT_LOCK_QUOTE",
+  "EVENT_LOCKED_QUOTE" = "EVENT_LOCKED_QUOTE",
   "EVENT_TRANSFER_OUT" = "EVENT_TRANSFER_OUT",
   "EVENT_TRANSFER_OUT_CONFIRM" = "EVENT_TRANSFER_OUT_CONFIRM",
   "EVENT_TRANSFER_OUT_REFUND" = "EVENT_TRANSFER_OUT_REFUND",
@@ -57,6 +58,50 @@ interface IEVENT_LOCK_QUOTE {
       append_information: string;
     };
     hash: string | null;
+    lp_salt: any;
+    locked: any;
+    timestamp: any;
+  };
+  business_full_data: any;
+}
+interface IEVENT_LOCKED_QUOTE {
+  cmd: string;
+  quote_data: any;
+  quote_remove_info: any;
+  pre_business: {
+    swap_asset_information: {
+      bridge_name: string;
+      lp_id_fake: string;
+      sender: string;
+      amount: string;
+      dst_address: string;
+      dst_amount: string;
+      dst_native_amount: string;
+      step_time_lock: number; // The maximum time allowed for the lock to execute.
+      agreement_reached_time: number;
+      quote: {
+        quote_base: {
+          bridge: {
+            src_chain_id: number;
+            dst_chain_id: number;
+            src_token: string;
+            dst_token: string;
+            bridge_name: string;
+          };
+          lp_bridge_address: string;
+          price: string;
+          native_token_price: string;
+          capacity: string;
+          lp_node_uri: string;
+        };
+        quote_name: string;
+        timestamp: number;
+      };
+      system_fee_src: number;
+      system_fee_dst: number;
+      append_information: string;
+    };
+    hash: string ;
     lp_salt: any;
     locked: any;
     timestamp: any;
@@ -248,6 +293,7 @@ interface IEVENT_TRANSFER_OUT_CONFIRM {
 export {
   IEVENT_NAME,
   IEVENT_LOCK_QUOTE,
+  IEVENT_LOCKED_QUOTE,
   IEVENT_TRANSFER_OUT,
   IEVENT_TRANSFER_OUT_CONFIRM,
   IEVENT_ASK_QUOTE,
