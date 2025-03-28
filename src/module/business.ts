@@ -4,6 +4,7 @@ import { logger } from "../sys_lib/logger";
 import { redisPub } from "../redis_bus";
 import {
   IEVENT_ASK_QUOTE,
+  IEVENT_LOCKED_QUOTE,
   IEVENT_LOCK_QUOTE,
   IEVENT_TRANSFER_OUT,
   IEVENT_TRANSFER_OUT_CONFIRM,
@@ -26,6 +27,7 @@ import { eventProcessTransferInRefund } from "./event_process/transferin_refund"
 import { eventProcessInitSwap } from "./event_process/init_swap";
 import { eventProcessConfirmSwap } from "./event_process/confirm_swap";
 import { eventProcessRefundSwap } from "./event_process/refund_swap";
+import { eventProcessLocked } from "./event_process/locked";
 
 class Business {
   public async askQuote(msg: IEVENT_ASK_QUOTE, channel: string) {
@@ -64,6 +66,9 @@ class Business {
    */
   public async onTransferOut(msg: IEVENT_TRANSFER_OUT) {
     await eventProcessTransferOut.process(msg);
+  }
+  public async onQuoteLocked(msg:IEVENT_LOCKED_QUOTE){
+    await eventProcessLocked.process(msg);
   }
 
   // eslint-disable-next-line valid-jsdoc
