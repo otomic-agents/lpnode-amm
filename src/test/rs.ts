@@ -89,7 +89,7 @@ for (let i = 0; i < 150; i++) {
       console.error('=== 403 Forbidden Error ===');
       console.error('Request URL:', url);
       console.error('Request Headers:', error.config.headers);
-      console.error('Request Body:', data);  // 打印请求体
+      console.error('Request Body:', data);  
       console.error('Response Headers:', error.response.headers);
       console.error('Response Data:', error.response.data);
       console.error('========================');

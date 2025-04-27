@@ -1,5 +1,5 @@
 import * as _ from "lodash"
-import { AmmDatabaseContext } from '../interface/amm_database_context';
+import { AmmDatabaseContext } from '../../interface/amm_database_context';
 export class CalculateProcessBase {
 
     protected getSwapType(row: AmmDatabaseContext): string {

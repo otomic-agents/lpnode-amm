@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { MongoProvider } from '../providers/database/mongo.provider';
 import { CalculateProcessBase } from "./calculate_process_base";
 import { Collection } from 'mongodb';
-import { AmmDatabaseContext } from '../interface/amm_database_context';
+import { AmmDatabaseContext } from '../../interface/amm_database_context';
 import { ObjectId } from 'mongodb';
 
 enum ChainType {

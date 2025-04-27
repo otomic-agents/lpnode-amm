@@ -566,10 +566,10 @@ class EventProcessLock extends BaseEventProcess {
     if (!ammContext.hedgeEnabled) {
       return true;
     }
-    const accountId = ammContext.bridgeItem.hedge_info.getHedgeAccount();
+    const accountId = await ammContext.bridgeItem.hedge_info.getHedgeAccount();
     if (
-      !(await ammContext.bridgeItem.hedge_info
-        .getHedgeIns()
+      !(((await ammContext.bridgeItem.hedge_info
+        .getHedgeIns()))
         .checkHedgeCond(ammContext))
     ) {
       logger.error(`Hedging conditions are not met，Unable to lock price.`);
@@ -578,15 +578,15 @@ class EventProcessLock extends BaseEventProcess {
       );
     }
     if (
-      !(await ammContext.bridgeItem.hedge_info
-        .getHedgeIns()
+      !((await ammContext.bridgeItem.hedge_info
+        .getHedgeIns())
         .preExecOrder(ammContext))
     ) {
       throw new Error(`preExecOrder error`);
     }
     logger.info("create lock result ");
-    const balanceLockId = await ammContext.bridgeItem.hedge_info
-      .getHedgeIns()
+    const balanceLockId = (await ammContext.bridgeItem.hedge_info
+      .getHedgeIns())
       .lockHedgeBalance(ammContext, accountId);
     _.set(
       msg,

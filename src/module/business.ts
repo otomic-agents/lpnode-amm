@@ -2,6 +2,7 @@ import _ from "lodash";
 import { dataConfig } from "../data_config";
 import { logger } from "../sys_lib/logger";
 import { redisPub } from "../redis_bus";
+import { stringify as flatStringify } from 'flatted';
 import {
   IEVENT_ASK_QUOTE,
   IEVENT_LOCKED_QUOTE,
@@ -43,6 +44,23 @@ class Business {
       return;
     }
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
+
+    console.log('\n');
+    console.log('='.repeat(80));
+    console.log('🔍 AMM CONTEXT DETAILS 🔍');
+    console.log('='.repeat(80));
+
+    try {
+      const safeJson = flatStringify(AmmContext, null, 2);
+      console.log(safeJson);
+    } catch (error:any) {
+      console.log('Failed to stringify AmmContext:', error.message);
+      console.log('Printing object keys instead:', Object.keys(AmmContext));
+    }
+
+    console.log('='.repeat(80));
+    console.log('\n');
+
     await quotation.asksQuote(AmmContext);
   }
   private channelNameToMsmqName(input: string): string {
@@ -67,7 +85,7 @@ class Business {
   public async onTransferOut(msg: IEVENT_TRANSFER_OUT) {
     await eventProcessTransferOut.process(msg);
   }
-  public async onQuoteLocked(msg:IEVENT_LOCKED_QUOTE){
+  public async onQuoteLocked(msg: IEVENT_LOCKED_QUOTE) {
     await eventProcessLocked.process(msg);
   }
 
@@ -206,7 +224,7 @@ class Business {
     }
     const context: AmmContext = {
       appName: _.get(process.env, "APP_NAME", ""),
-      hedgeEnabled: item.enable_hedge,
+      hedgeEnabled: await item.hedge_info.isEnable(),
       summary: `chainInfo: ${token0.chainId}-${token1.chainId} ,swapInfo: ${token0.symbol}-${token1.symbol}`,
       systemContext: {
         lockStepInfo: {},

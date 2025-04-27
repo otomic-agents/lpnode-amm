@@ -23,7 +23,7 @@ function buildTs() {
   return gulp.src('src/**/*.ts')
     .pipe(sourcemaps.init())
     .pipe(ts({
-      target: 'ES6',
+      target: 'es2021',
       lib: ['es2019'],
       noImplicitAny: false,
       downlevelIteration: true,

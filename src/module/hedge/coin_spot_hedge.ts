@@ -63,21 +63,23 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
         logger.error(`An error occurred while processing the queue`, e);
       }
     });
+    const hedgeConfig = await dataConfig.getHedgeConfig()
     if (
-      dataConfig.getHedgeConfig().hedgeType === IHedgeType.CoinSpotHedge &&
-      dataConfig.getHedgeConfig().hedgeAccount !== ""
+      hedgeConfig.hedgeType === IHedgeType.CoinSpotHedge &&
+      hedgeConfig.hedgeAccount !== ""
     ) {
       logger.info(
         `initialize hedgeAccount account`,
-        dataConfig.getHedgeConfig().hedgeAccount
+        hedgeConfig.hedgeAccount
       );
       await this.initAccount();
     } else {
       logger.debug(`no hedging required`);
       return;
     }
+    console.log((await dataConfig.getHedgeConfig()).hedgeAccount,"VVVVVVVVVVVVVV")
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       throw `account ins not initialized`;
@@ -108,10 +110,10 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     }
   }
 
-  public getHedgeFeeSymbol(): string {
+  public async getHedgeFeeSymbol(): Promise<string>  {
 
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       throw `account ins not initialized`;
@@ -120,7 +122,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     // if (exchangeName === ICexExchangeList.binance) {
     //   return "BNB";
     // }
-    const symbol = dataConfig.getHedgeConfig().feeSymbol
+    const symbol = (await dataConfig.getHedgeConfig()).feeSymbol
     if (symbol === "") {
       throw "Please configure feeSymbol.";
     }
@@ -162,7 +164,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       return true;
     }
     const balance = accountManager
-      .getAccount(dataConfig.getHedgeConfig().hedgeAccount)
+      .getAccount((await dataConfig.getHedgeConfig()).hedgeAccount)
       ?.balance.getSpotBalance(symbol);
     if (!balance) {
       throw new Error(`failed to get balance`);
@@ -176,7 +178,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       type: "userBalance",
       symbol,
       balance,
-      accountId: dataConfig.getHedgeConfig().hedgeAccount,
+      accountId: (await dataConfig.getHedgeConfig()).hedgeAccount,
     });
     logger.warn(`【${symbol}】not enough balance,User input:${inputAmount} `);
     throw new Error(`not enough balance`);
@@ -195,9 +197,9 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       );
       return true;
     }
-    logger.debug("get account", dataConfig.getHedgeConfig().hedgeAccount);
+    logger.debug("get account", (await  dataConfig.getHedgeConfig()).hedgeAccount);
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       throw new Error(`Account instance not found`);
@@ -225,7 +227,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     gasTokenPrice: number
   ): Promise<number> {
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       throw new Error(`Account instance not found`);
@@ -423,7 +425,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     const amount = ethers.formatEther(ammContext.swapInfo.srcAmount);
     const srcTokenCountBn = new BigNumber(amount);
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       return false;
@@ -432,7 +434,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     const cexBalanceBn = new BigNumber(cexBalance.free);
     const cexBalanceLockedBn = await this.getLockedBalance(
       // account locked balance
-      dataConfig.getHedgeConfig().hedgeAccount,
+      (await  dataConfig.getHedgeConfig()).hedgeAccount,
       cexSymbol[0].symbol
     );
     if (cexBalanceBn.minus(cexBalanceLockedBn).lt(srcTokenCountBn)) {
@@ -457,7 +459,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   public async preExecOrder(ammContext: AmmContext): Promise<boolean> {
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       logger.error(`account ins not found`);
@@ -550,7 +552,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
       ammContext.bridgeItem.symbol_info.getGasTokenStableStdSymbol(ammContext);
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       logger.error(`did not complete account initialization`);
@@ -583,7 +585,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
     const stdSymbol = `${ammContext.baseInfo.srcToken.symbol}/USDT`;
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       logger.warn(`account ins init error`);
@@ -617,7 +619,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   public async calculateCapacity_11(ammContext: AmmContext): Promise<number> {
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       logger.warn(`account ins not initialized`);
@@ -660,7 +662,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
     const tokenInfo = this.getTokenInfoByAmmContext(ammContext);
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       logger.error(`did not complete account initialization`);
@@ -690,7 +692,7 @@ class CoinSpotHedge extends CoinSpotHedgeBase implements IHedgeClass {
 
   private async calculateCapacity_bb(ammContext: AmmContext): Promise<number> {
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await  dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       logger.error(`did not complete account initialization`);

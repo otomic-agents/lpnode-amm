@@ -3,7 +3,7 @@ FROM docker.io/library/node:20.11.0-buster
 
 # Install ts-node globally
 RUN npm install -g ts-node typescript
-
+RUN npm install -g @nestjs/cli
 # Add source files
 ADD ./ /data/lp_main/
 
@@ -25,7 +25,7 @@ RUN npm i
 RUN node -v && npm -v && ts-node -v
 
 # Run build process
-RUN npx gulp
+RUN nest build
 
 # Start with ts-node
-CMD [ "ts-node", "src/main.ts" ]
+CMD [ "node", "dist/main.js" ]

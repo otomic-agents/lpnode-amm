@@ -2,7 +2,7 @@ import redis
 
 
 def delete_keys_with_prefix():
-    # 创建 Redis 连接
+    # Create Redis connection
     client = redis.Redis(
         host='redis-cluster-proxy.user-system-vaughnmedellins394',
         port=6379,
@@ -10,10 +10,10 @@ def delete_keys_with_prefix():
         decode_responses=True
     )
 
-    # 定义要匹配的前缀
+    # Define the prefix to match
     prefix = 'otmoiclp-vaughnmedellins394_otmoiclp:'
 
-    # 使用 SCAN 命令获取所有键
+    # Use SCAN command to get all keys
     try:
         cursor = '0'
         while cursor != 0:
@@ -21,7 +21,7 @@ def delete_keys_with_prefix():
             print(f"Scanned keys: {keys}")
             for key in keys:
                 if key.startswith(prefix):
-                    # 去掉前缀部分
+                    # Remove the prefix part
                     stripped_key = key[len(prefix):]
 
                     print(

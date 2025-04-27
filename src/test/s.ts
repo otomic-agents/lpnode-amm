@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 定义接口时使用下划线命名
+// Define interfaces using underscore naming
 interface BridgeInfo {
   src_chain_id: number;
   dst_chain_id: number;
@@ -23,7 +23,7 @@ interface QuoteBase {
   relay_api_key: string;
 }
 
-// 构造发送的数据
+// Construct data to send
 const data: QuoteBase[] = [{
   bridge: {
     src_chain_id: 9006,
@@ -44,10 +44,10 @@ const data: QuoteBase[] = [{
   relay_api_key: "B2pAM9eBIKU5l5o"
 }];
 
-// URL 配置
+// URL configuration
 const url = 'https://5b4522f4.nathanielight.myterminus.com/relay/lpnode/B2pAM9eBIKU5l5o/quote_and_live_confirmation';
 
-// 创建并发请求
+// Create concurrent requests
 const promises = [];
 for (let i = 0; i < 20; i++) {
   const startTime = new Date().getTime();
@@ -67,7 +67,7 @@ for (let i = 0; i < 20; i++) {
   promises.push(promise);
 }
 
-// 使用 Promise.all 处理所有并发请求
+// Use Promise.all to handle all concurrent requests
 Promise.all(promises)
   .then(responses => {
     responses.forEach((response, index) => {
@@ -80,16 +80,16 @@ Promise.all(promises)
   })
   .catch(error => {
     if (error.response) {
-      // 服务器响应的错误
+      // Server response error
       console.error('Error Response:', {
         status: error.response.status,
         data: error.response.data
       });
     } else if (error.request) {
-      // 请求发送失败
+      // Request sending failed
       console.error('Request Error:', error.request);
     } else {
-      // 其他错误
+      // Other errors
       console.error('Error:', error.message);
     }
   });

@@ -101,7 +101,7 @@ interface ISpotOrderResult {
   orderId: number;
   side: string;
   lostAmount: string;
-  origAmount: string; // 的amount
+  origAmount: string; // amount
   fee: { [key: string]: string };
   price: string;
   symbol: string; // "ETHUSDT"

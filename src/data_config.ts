@@ -1,5 +1,7 @@
 /* eslint-disable arrow-parens */
 import { chainAdapter } from "./chain_adapter/chain_adapter";
+import { NestApplicationContext } from '@nestjs/core';
+import { HedgeDataService } from './nestjs/HedgeData/hedge_data.service';
 import * as fs from "fs";
 import * as _ from "lodash";
 import {
@@ -21,6 +23,7 @@ import { installModule } from "./mongo_module/install";
 
 import { ICexAccountApiType } from "./interface/std_difi";
 import path from "path";
+import { HedgeTask } from "./nestjs/HedgeData/interface";
 
 
 class DataConfig {
@@ -74,6 +77,7 @@ class DataConfig {
     };
   private extendFun: any = null;
   private statusReport: any = null;
+  private hedgeDataService: HedgeDataService;
   public setExtend(extendFun: any) {
     this.extendFun = extendFun;
   }
@@ -95,7 +99,11 @@ class DataConfig {
 
   public enableSwap: false;
   private bridgeTokenList: IBridgeTokenConfigItem[] = [];
-
+  public async init(service: {
+    hedgeDataService: HedgeDataService
+  }): Promise<void> {
+    this.hedgeDataService = service.hedgeDataService;
+  }
   /**
    * Prepare admin Config
    * @date 2023/3/21 - 16:06:24
@@ -120,6 +128,7 @@ class DataConfig {
       if (configId == null) {
         throw new Error("🔍 Unable to retrieve configuration from Redis, [configId is not exist]");
       }
+      logger.debug(`🔑 Active configuration ID: ${configId}`);
       await this.getConfigResource(configId);
     } catch (e) {
       const err: any = e;
@@ -232,30 +241,7 @@ class DataConfig {
         Number(chainData.config.maxSwapNativeTokenValue)
       );
     }
-    let hedgeType = _.get(baseConfig, "hedgeConfig.hedgeType", null);
-    const hedgeAccount = _.get(baseConfig, "hedgeConfig.hedgeAccount", null);
-    const feeSymbol = _.get(baseConfig, "hedgeConfig.feeSymbol", "");
-    if (!hedgeType) {
-      logger.error(`❌ Missing hedge type in configuration`);
-      await TimeSleepForever(
-        "⚠️ Critical configuration missing - awaiting valid hedge settings"
-      );
-    }
-    if (hedgeType === "null" || !hedgeType) {
-      hedgeType = "Null";
-    }
-    this.hedgeConfig.hedgeType = hedgeType;
-    this.hedgeConfig.hedgeAccount = hedgeAccount;
-    this.hedgeConfig.feeSymbol = feeSymbol;
-    this.hedgeAccountList = _.get(baseConfig, "hedgeConfig.accountList", []);
-    if (hedgeAccount.length <= 0 && hedgeType !== "Null") {
-      logger.error(
-        `⛔ Invalid hedge configuration: No hedge accounts configured for active hedge type`
-      );
-      await TimeSleepForever(
-        "🔄 Awaiting valid hedge account configuration..."
-      );
-    }
+
     const specialTokens = _.get(baseConfig, "specialTokenConfig.orderBookConfig", []);
     this.specialTokenConfig.clear();
     for (const token of specialTokens) {
@@ -290,8 +276,9 @@ class DataConfig {
     }
   }
 
-  public getHedgeAccountList() {
-    return this.hedgeAccountList;
+  public async getHedgeAccountList() {
+    return this.hedgeDataService.getHedgeAccountList();
+    // return this.hedgeAccountList;
   }
 
   private async getConfigResource(configId: string) {
@@ -536,8 +523,15 @@ class DataConfig {
     return address;
   }
 
-  public getHedgeConfig() {
-    return this.hedgeConfig;
+  public async getHedgeConfig(): Promise<IHedgeConfig> {
+    return await this.hedgeDataService.getHedgeConfig();
+  }
+  public async isHedgeEnable(bridgeId: string): Promise<boolean> {
+    const hedgeConfig = await this.hedgeDataService.getHedgeByBridgeId(bridgeId);
+    if (hedgeConfig != null && hedgeConfig) {
+      return true;
+    }
+    return false;
   }
 
   public getLpConfig() {
@@ -638,16 +632,8 @@ class DataConfig {
       );
       this.bridgeTokenList.push(proxyedFormatedItem);
     }
-    const hedgeTokenList = _.filter(this.bridgeTokenList, (item) => {
-      return item.enable_hedge === true;
-    });
     await this.loadBridgeConfig();
-    if (_.isArray(hedgeTokenList) && hedgeTokenList.length >= 1) {
-      logger.info(`check hedging configuration`, "🌎");
-      if (!this.hedgeAvailable()) {
-        await TimeSleepForever("please add hedging account configuration");
-      }
-    }
+
     console.log("bridge tokens:\r\n");
     console.table(this.bridgeTokenList);
   }
@@ -657,20 +643,7 @@ class DataConfig {
   }
 
   private async loadBridgeConfig() {
-    if (
-      _.get(this.baseConfig, "bridgeBaseConfig.enabledHedge", undefined) ===
-      undefined
-    ) {
-      logger.debug("bridgeBaseConfig.enabledHedge Can not be empty");
-      await TimeSleepForever("bridgeBaseConfig.enabledHedge Can not be empty");
-      return;
-    }
-    const bridgeConfig = _.get(this.baseConfig, "bridgeConfig", []);
-    const defHedgeSetting = _.get(
-      this.baseConfig,
-      "bridgeBaseConfig.enabledHedge",
-      false
-    );
+    const defHedgeSetting = false;
     const defFeeSetting = _.get(
       this.baseConfig,
       "bridgeBaseConfig.defaultFee",
@@ -693,31 +666,34 @@ class DataConfig {
       await TimeSleepForever("bridgeBaseConfig.minChargeUsdt Can not be empty");
       return;
     }
-    this.bridgeTokenList = this.bridgeTokenList.map((it) => {
-      const itemConfig = _.find(bridgeConfig, { bridgeId: it.id.toString() });
+    for (let i = 0; i < this.bridgeTokenList.length; i++) {
+      const it = this.bridgeTokenList[i];
+      const itemConfig: HedgeTask = await this.hedgeDataService.getHedgeByBridgeId(it.id.toString());
+
       if (itemConfig) {
-        it.fee = _.get(itemConfig, "fee", undefined);
+        it.fee = _.get(itemConfig, "fee", defFeeSetting);
         if (it.fee === undefined) {
           logger.warn(`fee is undefined`);
         }
-        it.enable_hedge = _.get(itemConfig, "enableHedge", defHedgeSetting);
+
+        // Set enable_hedge based on itemConfig.status
+        it.enable_hedge = itemConfig.status === 'active';
+
+        console.log("\n");
+        console.log("⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐");
+        console.log(`⭐    HEDGE CONFIG LOADED: ${itemConfig.name.toUpperCase()}    ⭐`);
+        console.log(`⭐    HEDGE ENABLED: ${it.enable_hedge}    ⭐`);
+        console.log(`⭐    FEE SETTING: ${it.fee}    ⭐`);
+        console.log(`⭐    STATUS: ${itemConfig.status}    ⭐`);
+        console.log("⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐");
+        console.log("\n");
       } else {
-        it.fee = _.get(itemConfig, "fee", defFeeSetting);
-        it.enable_hedge = _.get(itemConfig, "enableHedge", defHedgeSetting);
+        it.fee = defFeeSetting;
+        it.enable_hedge = false; // Default to false when no itemConfig exists
       }
-      return it;
-    });
+    }
   }
 
-  private hedgeAvailable(): boolean {
-    if (this.getHedgeConfig().hedgeType === IHedgeType.Null) {
-      return false;
-    }
-    if (this.getHedgeConfig().hedgeAccount === "") {
-      return false;
-    }
-    return true;
-  }
 
   public getChainName(chainId: number): string | undefined {
     return this.chainMap.get(chainId);
