@@ -15,22 +15,29 @@ class BridgeHedgeInfo {
   constructor(item: IBridgeTokenConfigItem) {
     this.bridgeItem = item;
   }
-  public getHedgeIns(): IHedgeClass {
-    const ins = hedgeManager.getHedgeIns(dataConfig.getHedgeConfig().hedgeType);
+  public async getHedgeIns(): Promise<IHedgeClass> {
+    const ins = hedgeManager.getHedgeIns((await dataConfig.getHedgeConfig()).hedgeType);
     if (!ins) {
       throw `No hedging implementation found`;
     }
     return ins;
   }
-  public getHedgeType(): IHedgeType {
-    return dataConfig.getHedgeConfig().hedgeType;
+  public async isEnable(): Promise<boolean> {
+    const enable = await dataConfig.isHedgeEnable(this.bridgeItem.id.toString());
+    const bridgeId = this.bridgeItem.id.toString();
+    const statusText = enable ? "ENABLED" : "DISABLED";
+    console.log(`   📌 HEDGE STATUS: ${statusText}`);
+    return enable;
   }
-  public getHedgeAccount(): string {
-    return dataConfig.getHedgeConfig().hedgeAccount;
+  public async getHedgeType(): Promise<IHedgeType> {
+    return (await dataConfig.getHedgeConfig()).hedgeType;
   }
-  public getAccountIns(): StdAccount {
+  public async getHedgeAccount(): Promise<string> {
+    return (await dataConfig.getHedgeConfig()).hedgeAccount;
+  }
+  public async getAccountIns(): Promise<StdAccount> {
     const accountIns = accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       throw `The loaded hedging account was not found`;

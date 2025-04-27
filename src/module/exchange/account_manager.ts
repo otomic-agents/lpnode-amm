@@ -50,13 +50,14 @@ class AccountManager {
   }
 
   public async initAccountsInfo() {
-    const accounts: ICexAccount[] = dataConfig.getHedgeAccountList();
+    const accounts: ICexAccount[] = await dataConfig.getHedgeAccountList();
     console.log(JSON.stringify(accounts));
     await AsyncEach(accounts, async (accountItem: ICexAccount) => {
       const accountIns = new StdAccount(accountItem);
       logger.debug(`initAccountsInfo Store Account instance`, accountItem.accountId);
       await accountIns.init();
       this.accountInsList.set(accountItem.accountId, accountIns);
+      logger.debug(`initAccountsInfo Store set  Account instance`, accountItem.accountId);
     });
   }
   public async loadAccounts(accountList: ICexAccount[]) {

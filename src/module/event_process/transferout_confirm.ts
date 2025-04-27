@@ -126,10 +126,10 @@ class EventProcessTransferOutConfirm extends BaseEventProcess {
     msg: IEVENT_TRANSFER_OUT_CONFIRM,
     ammContext: AmmContext
   ) {
-    if (ammContext.bridgeItem.hedge_info.getHedgeType() === IHedgeType.Null) {
+    if (await ammContext.bridgeItem.hedge_info.getHedgeType() === IHedgeType.Null) {
       return true;
     }
-    const hedgeType = ammContext.bridgeItem.hedge_info.getHedgeType();
+    const hedgeType = await ammContext.bridgeItem.hedge_info.getHedgeType();
 
     const sourceCountEtherString = _.get(
       msg,

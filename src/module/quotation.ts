@@ -128,7 +128,7 @@ class Quotation {
       if (ammContext.hedgeEnabled) {
         const srcTokenPrice = quotationPrice.getSrcTokenBuyPrice(ammContext);
         const dstTokenPrice = quotationPrice.getDstTokenBuyPrice(ammContext);
-        const hedgeIns = ammContext.bridgeItem.hedge_info.getHedgeIns();
+        const hedgeIns =await  ammContext.bridgeItem.hedge_info.getHedgeIns();
         await hedgeIns.checkMinHedge(ammContext, srcTokenPrice, dstTokenPrice);
         logger.info(`The cex order limit has been met`);
         await hedgeIns.checkSwapAmount(ammContext); // Check the balance and hedging amount, whether there is enough amount in CEX, sell the left side, or spend the left side currency
@@ -138,7 +138,7 @@ class Quotation {
       this.price_src_token(ammContext, quoteInfo); // src_usd_price
       this.price_dst_token(ammContext, quoteInfo);
       await this.price(ammContext, quoteInfo); //  origPrice price origTotalPrice dst_usd_price mode
-      this.price_hedge_fee_price(ammContext, quoteInfo); // Process the price of the hedge target account fee currency pair
+      await this.price_hedge_fee_price(ammContext, quoteInfo); // Process the price of the hedge target account fee currency pair
 
       this.price_native_token(ammContext, quoteInfo); // native_token_usdt_price native_token_price  native_token_orig_price native_token_symbol
       // --
@@ -166,11 +166,11 @@ class Quotation {
       ammContext: ammContext
     };
     if (e instanceof Error) {
-      // e 是 Error 对象，可以安全地访问 message 和 stack
+      
       errorInfo.errorMsg = e.message;
-      errorInfo.errorStack = e.stack || 'No stack trace available'; // 有些环境可能不提供栈追踪
+      errorInfo.errorStack = e.stack || 'No stack trace available'; 
     } else {
-      errorInfo.errorMsg = e.toString(); // 直接转换为字符串
+      errorInfo.errorMsg = e.toString(); 
     }
     const body = stringify(errorInfo);
     logger.info("🪰", body)
@@ -256,7 +256,7 @@ class Quotation {
 
   /**
    * @param {AmmContext} ammContext  "context"
-   * @param {*} sourceObject 的
+   * @param {*} sourceObject 
    * @returns {void} ""
    */
   private async native_token_min(ammContext: AmmContext, sourceObject: any) {
@@ -266,7 +266,7 @@ class Quotation {
     const gasTokenPrice = quotationPrice.getGasTokenBuyPrice(ammContext);
     let minHedgeCount = -1;
     if (ammContext.hedgeEnabled) {
-      const accountIns = ammContext.bridgeItem.hedge_info.getAccountIns();
+      const accountIns = await  ammContext.bridgeItem.hedge_info.getAccountIns();
       if (accountIns) {
         [minHedgeCount] = await accountIns.order.getSpotTradeMinMax(
           `${gasSymbol}/USDT`,
@@ -322,7 +322,7 @@ class Quotation {
     let minCexTradeCount = -1;
     let maxCexTradeCount = -1;
     if (ammContext.hedgeEnabled) {
-      const accountIns = ammContext.bridgeItem.hedge_info.getAccountIns();
+      const accountIns = await ammContext.bridgeItem.hedge_info.getAccountIns();
       if (accountIns) {
         [minCexTradeCount, maxCexTradeCount] =
           await accountIns.order.getSpotTradeMinMax(
@@ -479,10 +479,11 @@ class Quotation {
    * @param ammContext
    * @param sourceObject
    */
-  public price_hedge_fee_price(ammContext: AmmContext, sourceObject: any) {
+  public async price_hedge_fee_price(ammContext: AmmContext, sourceObject: any) {
     if (ammContext.hedgeEnabled) {
-      const hedgeFeeSymbol = ammContext.bridgeItem.hedge_info
-        .getHedgeIns()
+      const hedgeIns = await ammContext.bridgeItem.hedge_info
+      .getHedgeIns();
+      const hedgeFeeSymbol = await hedgeIns
         .getHedgeFeeSymbol();
       const { stdSymbol, asks } =
         this.quotationPrice.getCoinOrderBookByCoinName(hedgeFeeSymbol);
@@ -897,8 +898,9 @@ class Quotation {
     if (ammContext.hedgeEnabled) {
       const dstTokenPrice = quotationPrice.getDstTokenSellPrice(ammContext);
       const gasTokenPrice = quotationPrice.getGasTokenBuyPrice(ammContext);
-      minHedgeInputNumber = await ammContext.bridgeItem.hedge_info
-        .getHedgeIns()
+      const hedgeIns = await ammContext.bridgeItem.hedge_info
+      .getHedgeIns()
+      minHedgeInputNumber =  await hedgeIns
         .getMinHedgeAmount(
           ammContext,
           srcTokenPrice,
@@ -967,8 +969,8 @@ class Quotation {
       ) {
         hedgeCapacity = -1;
       } else {
-        hedgeCapacity = await ammContext.bridgeItem.hedge_info
-          .getHedgeIns()
+        hedgeCapacity = (await ammContext.bridgeItem.hedge_info
+          .getHedgeIns())
           .calculateCapacity(ammContext);
       }
     }

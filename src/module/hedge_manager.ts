@@ -6,24 +6,33 @@ import * as _ from "lodash";
 
 class HedgeManager {
   public async init() {
-    if (dataConfig.getHedgeConfig().hedgeType === IHedgeType.Null) {
-      logger.info(`No need for hedging.`);
-      return;
-    }
-    const enabledHedge = _.get(
-      dataConfig.getBridgeBaseConfig(),
-      "enabledHedge",
-      "false"
-    );
-    if (!enabledHedge || enabledHedge === "false") {
-      logger.warn("No need for hedging.");
-      return;
-    }
-    logger.debug(`init HedgeManager`);
     try {
-      await coinSpotHedge.init(); // init spot hedge
-    } catch (e: any) {
-      logger.error("init coinSpotHedge error", e);
+      const hedgeConfig = await dataConfig.getHedgeConfig();
+      console.log("\n");
+      console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥");
+      console.log("🔥                        HEDGE CONFIGURATION                        🔥");
+      console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥");
+      console.log(JSON.stringify(hedgeConfig, null, 2));
+      console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥");
+      console.log("\n");
+      // Check if hedging is needed based on hedge type
+      if (await hedgeConfig.hedgeType === IHedgeType.Null) {
+        logger.info(`Hedging disabled: Hedge type is Null`);
+        return;
+      }
+      
+      logger.info(`Initializing HedgeManager with type: ${hedgeConfig.hedgeType}`);
+      
+      // Initialize spot hedge
+      await coinSpotHedge.init();
+      logger.info("Spot hedge initialization completed successfully");
+      
+    } catch (e:any) {
+      console.log(e)
+      logger.error(`HedgeManager initialization failed: ${e.message}`, {
+        error: e,
+        stack: e.stack
+      });
     }
   }
 

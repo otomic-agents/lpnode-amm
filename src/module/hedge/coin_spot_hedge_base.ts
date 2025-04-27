@@ -142,12 +142,12 @@ class CoinSpotHedgeBase {
   }
   protected async getAccountIns() {
     const accountIns = await accountManager.getAccount(
-      dataConfig.getHedgeConfig().hedgeAccount
+      (await dataConfig.getHedgeConfig()).hedgeAccount
     );
     if (!accountIns) {
       throw new Error(
         `No instance of hedging account was found.AccountId:${
-          dataConfig.getHedgeConfig().hedgeAccount
+          (await dataConfig.getHedgeConfig()).hedgeAccount
         }`
       );
     }

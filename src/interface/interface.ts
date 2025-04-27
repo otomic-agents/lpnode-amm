@@ -8,7 +8,7 @@ import { BridgeHedgeInfo } from "../module/bridge_extend/bridge_hedge_info";
 
 interface IBridgeTokenConfigItem {
   id: string;
-  bridge_name: string; // tokenBridge的name
+  bridge_name: string; // tokenBridge name
   src_chain_id: number;
   dst_chain_id: number;
   srcToken: string;
@@ -58,7 +58,7 @@ interface IHedgeConfig {
 }
 
 interface ILPConfig {
-  lp_id_fake: string; // lp 的id
+  lp_id_fake: string; // lp id
 }
 
 interface ILPConfigCacheItem {
@@ -118,7 +118,7 @@ interface IHedgeClass {
     prepareOrder(ammContext: AmmContext): Promise<any>;
   };
 
-  getHedgeFeeSymbol(): string;
+  getHedgeFeeSymbol(): Promise<string>;
 
   checkMinHedge(
     ammContext: AmmContext,

@@ -1,6 +1,7 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from "./app.module";
+import { NestFactory, NestApplicationContext } from '@nestjs/core';
+import { AppModule } from "./nestjs/app.module";
 import { initSysConfig } from './config/sys.config';
+import { HedgeDataService } from './nestjs/HedgeData/hedge_data.service';
 const fs = require("fs");
 const path = require("path");
 const envFile = fs.existsSync(path.join(__dirname, "env.js"));
@@ -38,6 +39,7 @@ dataConfig.setExtend(extend_bridge_item);
 dataConfig.setReport(statusReport);
 import { orderbookSymbolManager } from "./module/orderbook/orderbook_symbol_manager";
 import { portfolioRequestManager } from "./module/exchange/cex_exchange/portfolio/request/portfolio_request";
+import { HedgeDataModule } from './nestjs/hedge-data.module';
 
 class Main {
   private async checkAdminPanel() {
@@ -66,10 +68,17 @@ class Main {
       await TimeSleepMs(5000);
     }
   }
+
   public async main() {
     await this.initMongodb();
     await this.listenEvent();
     await this.checkAdminPanel();
+    const hedgeDataApp = await NestFactory.createApplicationContext(HedgeDataModule);
+    const hedgeDataService = hedgeDataApp.get(HedgeDataService)
+    await hedgeDataApp.init();
+    await dataConfig.init({
+      hedgeDataService
+    });
     await dataConfig.prepareConfigResource();
 
     httpServer.start();
@@ -92,7 +101,8 @@ class Main {
       dataConfig.getBaseConfig(),
       "hedgeConfig.hedgeAccount"
     );
-    dataConfig.getHedgeAccountList().forEach((item) => {
+    const accountList = await dataConfig.getHedgeAccountList();
+    accountList.forEach((item) => {
       if (item.accountId === hedgeAccount) {
         userType = item.apiType;
       }

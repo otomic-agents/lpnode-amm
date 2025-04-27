@@ -28,13 +28,11 @@ class AdapterSpot implements IStdExchangeSpot {
     return IOrderExecModel.SYNC;
   }
   public async loadBalance(): Promise<void> {
-    const spotBalanceUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/spotBalances?accountId=${
-      this.accountId
-    }`;
+    const spotBalanceUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/spotBalances?accountId=${this.accountId
+      }`;
     logger.debug(
       `Loading balance information...`,
-      `${adapterConfig.getAdapterServiceBaseUrl()}/api/spotBalances?accountId=${
-        this.accountId
+      `${adapterConfig.getAdapterServiceBaseUrl()}/api/spotBalances?accountId=${this.accountId
       }`
     );
     try {
@@ -68,7 +66,7 @@ class AdapterSpot implements IStdExchangeSpot {
     };
   }) {
     for (const asset in balances) {
-      //   logger.info("save balance", asset);
+      // logger.info("save balance", asset);
       this.balance.set(asset, {
         asset,
         free: balances[asset].free.toString(),
@@ -80,7 +78,7 @@ class AdapterSpot implements IStdExchangeSpot {
   public async loadMarkets(): Promise<void> {
     logger.debug(`loadMarkets`);
     try {
-      const fetchMarketsUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/public/fetchMarkets`;
+      const fetchMarketsUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/public/fetchMarkets?accountId=${this.accountId}`;
       logger.info("fetch markets url:", fetchMarketsUrl);
       const response = await axios.request({
         url: fetchMarketsUrl,
@@ -151,14 +149,20 @@ class AdapterSpot implements IStdExchangeSpot {
       logger.warn(`symbol info not fount `);
       return [0, 0];
     }
-    const minNotional = _.get(symbolInfo, "limits.cost.min", 0);
+
+    let minNotional = _.get(symbolInfo, "limits.cost.min", 0);
+    if (minNotional == null) {
+      minNotional = 0
+    }
     const maxNotional = _.get(symbolInfo, "limits.cost.max", 0);
     console.log("minNotional", minNotional, "maxNotional", maxNotional);
+
     logger.info({
       title: "getTradeMinMax",
       info: [
         `${minNotional}/${price}`,
         `${maxNotional}/${price}`,
+
         SystemMath.execNumber(`${minNotional}/${price}`),
         SystemMath.execNumber(`${maxNotional}/${price}`),
       ],
@@ -223,6 +227,7 @@ class AdapterSpot implements IStdExchangeSpot {
     if (stdSymbol === "T/USDT") {
       return true;
     }
+
     const item = this.spotSymbolsInfo.get(stdSymbol);
     if (!item) {
       logger.warn(`No trading pair information found ${stdSymbol}`);
@@ -377,13 +382,11 @@ class AdapterSpot implements IStdExchangeSpot {
     lostAmount = _.get(orderData, "lostAmount", "");
     // delete orderData["lostAmount"];
     let result, orderUrl;
-    orderUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/order/createMarketOrder?accountId=${
-      this.accountId
-    }`;
-    if (simulation === true) {
-      orderUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/order/simulationCreateMarketOrder?accountId=${
-        this.accountId
+    orderUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/order/createMarketOrder?accountId=${this.accountId
       }`;
+    if (simulation === true) {
+      orderUrl = `${adapterConfig.getAdapterServiceBaseUrl()}/api/order/simulationCreateMarketOrder?accountId=${this.accountId
+        }`;
     }
     try {
       result = await axios.request({

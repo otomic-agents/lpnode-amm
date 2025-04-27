@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { MongoProvider } from '../providers/database/mongo.provider';
-import { AmmDatabaseContext } from '../interface/amm_database_context';
+import { AmmDatabaseContext } from '../../interface/amm_database_context';
 import { Collection } from 'mongodb';
 import * as _ from "lodash"
 import { CalculateProcessBase } from './calculate_process_base';

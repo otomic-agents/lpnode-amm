@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx gulp",
-    "start": "node --enable-source-maps --experimental-specifier-resolution=node dist/main.js"
+    "npxbuild": "npx gulp",
+    "start": "node --enable-source-maps --experimental-specifier-resolution=node dist/main.js",
+    "build": "nest build "
   },
   "keywords": [],
   "author": "",
@@ -52,7 +53,7 @@
     "eslint-plugin-jsdoc": "^37.4.2",
     "ethers": "^6.0.8",
     "express": "^4.18.2",
-    "flatted": "^3.3.1",
+    "flatted": "^3.3.3",
     "graceful-fs": "^4.2.9",
     "gulp": "^4.0.2",
     "gulp-sourcemaps": "^3.0.0",
@@ -86,6 +87,7 @@
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
+    "@nestjs/cli": "^11.0.6",
     "@types/bull": "^4.10.0",
     "@types/ioredis": "^4.28.10",
     "@types/node": "^17.0.45",
