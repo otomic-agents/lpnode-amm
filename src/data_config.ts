@@ -280,7 +280,10 @@ class DataConfig {
     return this.hedgeDataService.getHedgeAccountList();
     // return this.hedgeAccountList;
   }
-
+  public async hedgeIsCreating(bridgeId:string):Promise<boolean>{
+    return await this.hedgeDataService.hedgeIsCreating(bridgeId);
+  }
+  
   private async getConfigResource(configId: string) {
     let result;
     const lpAdminPanelUrl = appEnv.GetLpAdminUrl();

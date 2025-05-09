@@ -44,5 +44,8 @@ class BridgeHedgeInfo {
     }
     return accountIns;
   }
+  public async isCreating(){
+    return await dataConfig.hedgeIsCreating(this.bridgeItem.id.toString())
+  }
 }
 export { BridgeHedgeInfo };

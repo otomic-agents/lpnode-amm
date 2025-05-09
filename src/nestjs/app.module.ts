@@ -8,6 +8,7 @@ import { WalletDexAllBalanceSyncService } from './WalletDexAllBalanceSync/Wallet
 import { RedisModule } from './providers/database/redis.module';
 import { MarketDataSyncService } from './MarketDataSync/MarketDataSync.service';
 import { WalletCexAllBalanceSyncService } from './WalletCexAllBalanceSync/WalletCexAllBalanceSync.service';
+import { HedgeTaskDataSyncService } from './HedgeTaskDataSync/HedgeTaskDataSync.service';
 @Module({
     imports: [MongoModule,RedisModule],
     controllers: [],
@@ -17,8 +18,10 @@ import { WalletCexAllBalanceSyncService } from './WalletCexAllBalanceSync/Wallet
         CalculateBaseService,
         CalculateSwapService,
         WalletDexAllBalanceSyncService,
-        MarketDataSyncService,
         WalletCexAllBalanceSyncService,
+        MarketDataSyncService,
+        HedgeTaskDataSyncService,
+        
     ],
     exports: []
 })

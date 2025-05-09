@@ -585,7 +585,7 @@ class EventProcessLock extends BaseEventProcess {
       throw new Error(`preExecOrder error`);
     }
     logger.info("create lock result ");
-    const balanceLockId = (await ammContext.bridgeItem.hedge_info
+    const balanceLockId = await (await ammContext.bridgeItem.hedge_info
       .getHedgeIns())
       .lockHedgeBalance(ammContext, accountId);
     _.set(

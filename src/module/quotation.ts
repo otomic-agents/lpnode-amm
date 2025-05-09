@@ -969,7 +969,7 @@ class Quotation {
       ) {
         hedgeCapacity = -1;
       } else {
-        hedgeCapacity = (await ammContext.bridgeItem.hedge_info
+        hedgeCapacity = await  (await ammContext.bridgeItem.hedge_info
           .getHedgeIns())
           .calculateCapacity(ammContext);
       }
