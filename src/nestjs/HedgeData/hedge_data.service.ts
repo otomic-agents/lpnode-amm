@@ -55,6 +55,25 @@ export class HedgeDataService implements OnModuleInit {
             throw error;
         }
     }
+    async hedgeIsCreating(bridge_id: string): Promise<boolean> {
+        const appName = _.get(process.env, "APP_NAME", undefined)
+        try {
+            const findOption: any = {
+                amm_name: appName,
+                bridge_id: new ObjectId(bridge_id.toString())
+            }
+            const result: HedgeTask[] = await this.hedgeCollection.find(findOption).toArray();
+
+            for (const hedgeTask of result) {
+                if (hedgeTask.status === "pending") {
+                    return true
+                }
+            }
+            return false
+        } catch (error) {
+            return false
+        }
+    }
     async getHedgeType(): Promise<string> {
         let HedgeType = "Null"
         const appName = _.get(process.env, "APP_NAME", undefined)

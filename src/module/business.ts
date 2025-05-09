@@ -43,10 +43,16 @@ class Business {
       logger.error(`The correct bridge configuration was not found:${channel}`);
       return;
     }
+    const isPendingCreation = await bridgeItem.hedge_info.isCreating()
+    if (isPendingCreation === true) {
+      throw new Error(`Hedge is pending creation, please wait...`);
+      return;
+    }
     const AmmContext = await this.makeAmmContext(bridgeItem, msg);
-
+    console.log(bridgeItem.id)
     console.log('\n');
     console.log('='.repeat(80));
+    console.log(isPendingCreation);
     console.log('🔍 AMM CONTEXT DETAILS 🔍');
     console.log('='.repeat(80));
 
