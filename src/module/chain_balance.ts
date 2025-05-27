@@ -16,6 +16,7 @@ import { IBridgeTokenConfigItem } from "../interface/interface";
 import { systemRedisBus } from "../system_redis_bus";
 import { statusReport } from "../status_report";
 import { chainBalanceLockModule } from "../mongo_module/chain_balance_lock";
+import { GlobalStatus } from "../global_status";
 
 // const var_dump = require("var_dump");
 
@@ -38,6 +39,7 @@ class ChainBalance {
         balance: {
           [key: string]: {
             token: string;
+            tokanName: string;
             source: string;
             balance: number;
             decimals: number;
@@ -64,9 +66,9 @@ class ChainBalance {
   }
   public shouldUpdateBalance(): boolean {
     if (new Date().getTime() - this.lastUpdatedTime > 800) {
-      return true
+      return true;
     }
-    return false
+    return false;
   }
   public async updateBalanceSync(): Promise<boolean> {
     const chainList: IChainListItem[] = this.uniqDstChain();
@@ -79,6 +81,7 @@ class ChainBalance {
     logger.debug(`sync dex account balance`);
     const chainList: IChainListItem[] = this.uniqDstChain();
     this.getChainWalletInfo(chainList).then(async () => {
+      logger.info("dex balance sync complete");
       logger.debug("emit", "balance:load:complete");
       // await TimeSleepMs(1000 * 20);
       eventBus.emit("balance:load:complete");
@@ -98,14 +101,14 @@ class ChainBalance {
         ret = await axios.request({
           url: reqUrl,
           method: "POST",
-          timeout: 5000
+          timeout: 5000,
         });
         const serviceCode = _.get(ret, "data.code", 1);
         if (serviceCode !== 200) {
           logger.error(`${reqUrl}`, serviceCode);
           throw new Error("The server returned an error. status !==200");
         }
-        // logger.debug("client response", _.get(ret, "data.data", {}));
+        logger.debug("client response", _.get(ret, "data.data", {}));
         this.setRemoteInfoToLocalBalance(
           _.get(ret, "data.data", {}),
           item.chainId
@@ -165,7 +168,7 @@ class ChainBalance {
     );
 
     const freeBalance = balance - lockBalance;
-    logger.info("freeBalanceInfo")
+    logger.info("freeBalanceInfo");
     console.log({
       token,
       balance,
@@ -188,7 +191,7 @@ class ChainBalance {
       amount: number;
       locked: true;
     }[] = await chainBalanceLockModule.find({
-      walletName: walletName,
+      walletName,
       tokenId: totkenId,
       locked: true,
     });
@@ -218,11 +221,15 @@ class ChainBalance {
     }
     for (const item of info) {
       const uniqToken = dataConfig.convertAddressToUniq(item.token, chainId);
+      const tokenInfo = dataConfig.getSymbolInfoByToken(item.token, chainId);
+      const chainName = dataConfig.getChainName(chainId);
+      // console.log(tokenInfo, "****************")
       _.set(
         this.chainWalletBalance,
         `Cid_${chainId}.${item.wallet_name}.balance.${uniqToken}`,
         {
           token: item.token,
+          tokenName: tokenInfo.tokenName,
           source: item.balance_value.hex,
           balance: this.formatChainBalance(
             item.balance_value.hex,
@@ -231,6 +238,11 @@ class ChainBalance {
           decimals: item.decimals,
         }
       ); // Set balance first so that it will not be overwritten
+      GlobalStatus.statusReportService.setDexBalance(
+        chainName,
+        tokenInfo.tokenName,
+        this.formatChainBalance(item.balance_value.hex, item.decimals)
+      );
       _.set(this.chainWalletBalance, `Cid_${chainId}.${item.wallet_name}`, {
         wallet_name: item.wallet_name,
         address: item.wallet_address,
@@ -254,7 +266,7 @@ class ChainBalance {
       balanceRaw: string;
       decimals: number | undefined;
       symbol: string | any;
-      lastUpdate:number;
+      lastUpdate: number;
     }[] = [];
     // eslint-disable-next-line array-callback-return
     Object.keys(this.chainWalletBalance).map((chainId) => {
@@ -283,7 +295,7 @@ class ChainBalance {
             balance: _.get(item, "balance", 0),
             balanceRaw: _.get(item, "source", ""),
             decimals: _.get(item, "decimals", undefined),
-            lastUpdate : new Date().getTime(),
+            lastUpdate: new Date().getTime(),
           });
         });
       });

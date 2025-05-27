@@ -1,9 +1,10 @@
 {
-  "extends": "eslint-config-egg/typescript",
+  "extends": ["eslint-config-egg/typescript","prettier"],
   "parserOptions": {
     "project": "./tsconfig.json"
   },
   "rules": {
+    "object-shorthand": "off",
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-var-requires": "off",
@@ -17,7 +18,7 @@
     "valid-jsdoc": "warn",
     "indent": [
       "error",
-      2,
+      4,
       {
         "SwitchCase": 1
       }
