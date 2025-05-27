@@ -165,7 +165,7 @@ export class WalletDexAllBalanceSyncService implements OnModuleInit {
     private async startSyncLoop() {
         this.logger.log('Starting wallet balance sync loop');
         const syncIntervalMinutes = 5; // Sync interval (minutes)
-
+        // eslint-disable-next-line no-constant-condition
         while (true) {
             try {
                 this.logger.log('Starting new sync cycle');
@@ -215,9 +215,9 @@ export class WalletDexAllBalanceSyncService implements OnModuleInit {
     // Get token info
     private async getTokenInfo(chainId: number, tokenAddress: string): Promise<TokenInfo | null> {
         try {
-            return await this.tokensCollection.findOne({ 
-                chainId, 
-                address: tokenAddress 
+            return await this.tokensCollection.findOne({
+                chainId,
+                address: tokenAddress
             });
         } catch (error) {
             this.logger.error(`Failed to get token info: chainId=${chainId}, tokenAddress=${tokenAddress}`, error);
@@ -353,11 +353,11 @@ export class WalletDexAllBalanceSyncService implements OnModuleInit {
                 tokenAddress: tokenAddress, // Keep original case
                 balance,
                 decimals,
-                symbol: tokenInfo.marketName,
+                symbol: tokenInfo.tokenName,
                 formattedBalance,
                 updatedAt: new Date()
             };
-            
+
             // Use upsert operation to update or insert record
             await this.balanceCollection.updateOne(
                 {
@@ -383,19 +383,19 @@ export class WalletDexAllBalanceSyncService implements OnModuleInit {
             // Use ethers.js v6 to handle big numbers
             const balance = ethers.getBigInt(balanceStr);
             const divisor = ethers.getBigInt(10) ** BigInt(decimals);
-            
+
             // Convert to floating point string with appropriate decimal places
             const beforeDecimal = (balance / divisor).toString();
             const afterDecimal = (balance % divisor).toString().padStart(decimals, '0');
-            
+
             // Remove trailing zeros
             const trimmedAfterDecimal = afterDecimal.replace(/0+$/, '');
-            
+
             if (trimmedAfterDecimal.length > 0) {
                 return `${beforeDecimal}.${trimmedAfterDecimal}`;
-            } else {
-                return beforeDecimal;
-            }
+            } 
+            return beforeDecimal;
+            
         } catch (error) {
             this.logger.error(`Failed to format balance: ${balanceStr}, precision: ${decimals}`, error);
             return balanceStr; // Return original string on error

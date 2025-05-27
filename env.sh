@@ -15,3 +15,5 @@ export APP_NAME=amm-01
 export LP_ADMIN_PANEL_ACCESS_BASEURL=http://lpnode-admin-server:18006
 export NO_COLOR=true
 export LP_MARKET_SERVICE_HOST=amm-market-price-service
+export METRICS_ENDPOINT=http://metrics-hub-service:9500/metrics
+export INSTANCE_NAME=magicdog
