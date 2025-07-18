@@ -3,15 +3,26 @@ async function AsyncEach(list: any[], itemFun: any) {
     return [];
   }
 
-  const result: any[] = [];
-  for (let i = 0; i < list.length; i++) {
-    const ret = await itemFun(list[i]);
-    if (ret === false) {
-      return result;
+  const promises = list.map(async (item) => {
+    try {
+      const ret = await itemFun(item);
+      return ret;
+    } catch (error) {
+      throw error;
     }
-    result.push(ret);
+  });
+
+  const results = await Promise.all(promises);
+
+  const finalResult: any[] = [];
+  for (let i = 0; i < results.length; i++) {
+    if (results[i] === false) {
+      return finalResult;
+    }
+    finalResult.push(results[i]);
   }
-  return result;
+
+  return finalResult;
 }
 
 export { AsyncEach };

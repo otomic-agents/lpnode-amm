@@ -1,5 +1,8 @@
 {
-  "extends": ["eslint-config-egg/typescript","prettier"],
+  "extends": [
+    "eslint-config-egg/typescript",
+    "prettier"
+  ],
   "parserOptions": {
     "project": "./tsconfig.json"
   },
@@ -18,16 +21,36 @@
     "valid-jsdoc": "warn",
     "indent": [
       "error",
-      4,
+      2,
       {
-        "SwitchCase": 1
+        "SwitchCase": 1,
+        "MemberExpression": 1,
+        "FunctionDeclaration": {
+          "parameters": "first"
+        },
+        "FunctionExpression": {
+          "parameters": "first"
+        },
+        "CallExpression": {
+          "arguments": "first"
+        }
       }
     ],
-    "linebreak-style": [0, "unix", "windows"],
+    "linebreak-style": [
+      0,
+      "unix",
+      "windows"
+    ],
     "quotes": "off",
     "@typescript-eslint/indent": "off",
-    "semi": ["error", "always"],
-    "strict": ["error", "global"],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "strict": [
+      "error",
+      "global"
+    ],
     "global-require": 0
   }
 }

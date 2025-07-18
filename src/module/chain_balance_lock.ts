@@ -54,9 +54,10 @@ class ChainBalanceLock {
     stepTimeLock: number
   ): Promise<void> {
     try {
-      stepTimeLock = 120
+      stepTimeLock = 120;
       if (chainBalance.shouldUpdateBalance()) {
-        await chainBalance.updateBalanceSync();
+        logger.info("await sync_balance for qotationHash", qotationHash);
+        await chainBalance.updateBalanceSync(chainId);
       }
 
       await chainBalanceLockModule.updateOne(
@@ -104,8 +105,8 @@ class ChainBalanceLock {
     }
   }
   public async freeBalance(qotationHash: string): Promise<void> {
-    chainBalance.updateBalanceSync();
-    logger.info("free chain balance qotationHash", qotationHash)
+    chainBalance.updateBalanceSync(0);
+    logger.info("free chain balance qotationHash", qotationHash);
     await chainBalanceLockModule.updateMany(
       {
         qotationHash: qotationHash,
