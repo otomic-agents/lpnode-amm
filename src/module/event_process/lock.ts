@@ -441,7 +441,7 @@ class EventProcessLock extends BaseEventProcess {
       !_.isFinite(limitTime) ||
       !_.isFinite(createTime) ||
       limitTime === 0 ||
-      createTime == 0
+      createTime === 0
     ) {
       throw new Error("incorrect lock time parameter");
     }
@@ -494,7 +494,7 @@ class EventProcessLock extends BaseEventProcess {
       "0x0"
     );
     if (dstTokenFree < dstTokenNumber) {
-      logger.info("dstTokenFree < dstTokenNumber", dstTokenFree, dstTokenNumber)
+      logger.info("dstTokenFree < dstTokenNumber", dstTokenFree, dstTokenNumber);
       const errMsg =
         "Insufficient balance: The destination token balance is less than the required amount.";
 

@@ -70,9 +70,22 @@ class ChainBalance {
     }
     return false;
   }
-  public async updateBalanceSync(): Promise<boolean> {
+  public async updateBalanceSync(chainId: number): Promise<boolean> {
     const chainList: IChainListItem[] = this.uniqDstChain();
-    await this.getChainWalletInfo(chainList);
+    logger.debug(`[updateBalanceSync] Start processing - chainId: ${chainId}, chainList:`, chainList);
+
+    let filteredChainList: IChainListItem[];
+    if (chainId > 0) {
+      filteredChainList = chainList.filter(item => {
+        return item.chainId === chainId;
+      });
+      logger.debug("Filtered chainList for chainId", chainId, ":", filteredChainList);
+    } else {
+      filteredChainList = chainList;
+      logger.debug("chainId <= 0, using original chainList without filtering");
+    }
+
+    await this.getChainWalletInfo(filteredChainList);
     logger.debug("emit", "balance:load:complete");
     eventBus.emit("balance:load:complete");
     return true;
@@ -94,7 +107,7 @@ class ChainBalance {
   // get chain wallet info
   private async getChainWalletInfo(chainList: IChainListItem[]) {
     const eachFun = async (item: IChainListItem) => {
-      let reqUrl = `${item.clientUri}/lpnode/get_wallets`;
+      const reqUrl = `${item.clientUri}/lpnode/get_wallets`;
       logger.debug(`request url ............${reqUrl}`);
       let ret: any;
       try {
